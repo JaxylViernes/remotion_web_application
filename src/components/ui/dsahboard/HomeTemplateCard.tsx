@@ -1,5 +1,4 @@
 import { Box, Card, Typography } from "@mui/material";
-import { useRef } from "react";
 
 export const HomeTemplateCard: React.FC<{
   label: string;
@@ -8,21 +7,6 @@ export const HomeTemplateCard: React.FC<{
   hoverOverlay?: boolean;
   size?: string;
 }> = ({ label, description, hoverOverlay = false, size = "small" }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const handleMouseEnter = () => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 2;
-      videoRef.current.play();
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  };
 
   return (
     <Card
@@ -37,8 +21,6 @@ export const HomeTemplateCard: React.FC<{
           boxShadow: "0px 10px 30px rgba(12, 18, 30, 0.12)",
         },
       }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       {/* Video Preview */}
       <Box
@@ -47,11 +29,8 @@ export const HomeTemplateCard: React.FC<{
           height: size === "large" ? 240 : 160,
         }}
       >
-        <video
-          ref={videoRef}
-          muted
-          playsInline
-          preload="metadata"
+        <img
+          alt={`${label} preview`}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           src={`/template_previews/${(label ?? "").replace(/\s+/g, "")}.mp4`}
         />

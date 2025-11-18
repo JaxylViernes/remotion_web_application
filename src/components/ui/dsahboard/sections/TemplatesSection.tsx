@@ -38,8 +38,7 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({
           placeholder="Search our templates..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 md:w-96 px-4 py-2 border border-gray-200 rounded-xl 
-          shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm sm:text-base"
+         className="w-full sm:w-80 md:w-96 px-4 py-2 border border-gray-100 rounded-xl shadow-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm sm:text-base"
         />
       </div>
 
@@ -51,12 +50,11 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({
             <button
               key={index}
               onClick={() => setTab(index)}
-              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-indigo-100 text-indigo-700 border-indigo-300"
-                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-xs sm:text-sm font-medium rounded-full transition-all duration-200 ${
+  isActive
+    ? "bg-indigo-600 text-white shadow-md" 
+    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+ }`}
             >
               {category}
             </button>

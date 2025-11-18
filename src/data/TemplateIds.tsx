@@ -13,5 +13,8 @@ export const templatesWithTheirIds: { [key: string]: string } = {
     "12": "Kinetic Typography",
     "13": "Neon Flicker",
     "14": "Heat Map",
-    "15": "Flip Cards"
+    "15": "Flip Cards",
+    "16": "Parallax",
+    "17": "Neon Tube",
+    "18": "Retro Neon Text"
 };
