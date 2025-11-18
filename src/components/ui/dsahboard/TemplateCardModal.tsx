@@ -1,29 +1,11 @@
 import { Box, Button, Card, CardContent, Typography } from "@mui/material";
-import { useRef } from "react";
 
-// 🔹 Smaller, cleaner card for Modal
 export const ModalTemplateCard: React.FC<{
   label: string;
   description: string;
   onSelect: (template: string, description: string) => void;
   url: string;
 }> = ({ label, description, onSelect, url }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const handleMouseEnter = () => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 3;
-      videoRef.current.play();
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  };
-
   return (
     <Card
       sx={{
@@ -39,18 +21,14 @@ export const ModalTemplateCard: React.FC<{
         display: "flex",
         flexDirection: "column",
       }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       {/* Smaller Video Preview */}
       <Box sx={{ position: "relative", height: 120 }}>
-        <video
-          ref={videoRef}
-          muted
-          playsInline
-          preload="metadata"
+
+        <img
+          alt={`${label} preview`}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          src={`${url}`}
+          src={`${url}`} 
         />
       </Box>
 

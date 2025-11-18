@@ -35,6 +35,10 @@ export const getTemplateRoute = (templateId: number, projectId: number) => {
       return `/project/${projectId}/flipcards`;
     case 16: // Logo Animation
       return `/project/${projectId}/logoanimation`;
+    case 17: // Neon Tube
+      return `/project/${projectId}/neontube`;
+    case 18: // Retro Neon
+      return `/project/${projectId}/retroneon`;
     default:
       return `/project/${projectId}/unknown`;
   }

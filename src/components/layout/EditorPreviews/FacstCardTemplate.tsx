@@ -56,14 +56,14 @@ export const RemotionFacstCardPlayer: React.FC<
         duration,
       }}
       durationInFrames={30 * duration}
-      compositionWidth={1080} // native size
+      compositionWidth={1080} 
       compositionHeight={1920}
       fps={30}
       controls={controls}
       autoPlay={autoPlay}
       loop={loop}
       style={{
-        width, // directly fit into preview frame
+        width, 
         height,
         display: "block",
       }}
