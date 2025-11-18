@@ -33,6 +33,10 @@ export const TemplateNavigator = (template: string) => {
         return leading + "/flipcards";
       case "Logo Animation":
         return leading + "/logoanimation";
+      case "Neon Lights Text":
+        return leading + "/neontube";
+      case "Retro Neon Text":
+        return leading + "/retroneon";
       default:
         return "/";
     }

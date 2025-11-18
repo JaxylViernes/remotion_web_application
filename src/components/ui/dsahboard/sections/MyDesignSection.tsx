@@ -78,7 +78,7 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search your templates..."
-            className="w-full bg-white/60 backdrop-blur-md rounded-xl pl-10 pr-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+            className="w-full bg-white rounded-xl pl-10 pr-3 py-2.5 text-sm border border-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
           />
         </div>
       </div>
@@ -123,8 +123,8 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
             {/* Create a Design Card */}
             <div
               onClick={() => setNewProjectOpen(true)}
-              className="group relative border-2 border-dashed border-gray-300 hover:border-indigo-400 bg-white/60 backdrop-blur-lg rounded-2xl flex flex-col items-center justify-center h-60 cursor-pointer transition hover:-translate-y-1 hover:shadow-lg"
-            >
+              className="group relative border-2 border-dashed border-gray-200 hover:border-indigo-500 bg-white/70 backdrop-blur-lg rounded-2xl flex flex-col items-center justify-center h-60 cursor-pointer transition hover:-translate-y-1 hover:shadow-xl"
+              >
               <div className="bg-indigo-100 text-indigo-600 p-4 rounded-full group-hover:bg-indigo-600 group-hover:text-white transition">
                 <FiPlus size={28} />
               </div>
@@ -137,8 +137,7 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="relative bg-white/70 backdrop-blur-md border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition transform hover:-translate-y-1 group cursor-pointer"
-                onMouseEnter={() => setHoveredId(project.id)}
+                className="relative bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl transition transform hover:-translate-y-1 group cursor-pointer"
                 onMouseLeave={() => setHoveredId(null)}
               >
                 {/* Checkbox */}

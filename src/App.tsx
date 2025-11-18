@@ -31,6 +31,8 @@ import { KpiFlipBatchRendering } from "./pages/batchrendering/KpilipCards.tsx";
 import { HeatmapEditor } from "./components/editors/HeatMap/Holder.tsx";
 import { FlipCardsEditor } from "./components/editors/FlipCards/Holder.tsx";
 import { LogoAnimationEditor } from "./components/editors/LogoAnimation/Holder.tsx";
+import { NeonTubeFlickerEditor } from "./components/editors/NeonTubeFlicker/Holder.tsx";
+import { DynamicTextEditor } from "./components/editors/RetroNeonText/Holder.tsx";
 import RequireAuth from "./pages/auth/AuthChecker.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword.tsx";
 
@@ -97,38 +99,38 @@ function App() {
         />
 
         <Route
-  path="/template/kinetictext"
-  element={
-    <RequireAuth>
-      <KineticEditor />
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/project/:id/kinetictext"
-  element={
-    <RequireAuth>
-      <KineticEditor />
-    </RequireAuth>
-  }
-/>
+          path="/template/kinetictext"
+          element={
+            <RequireAuth>
+              <KineticEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/kinetictext"
+          element={
+            <RequireAuth>
+              <KineticEditor />
+            </RequireAuth>
+          }
+        />
 
-<Route
-  path="/template/flipcards"
-  element={
-    <RequireAuth>
-      <FlipCardsEditor />
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/project/:id/flipcards"
-  element={
-    <RequireAuth>
-      <FlipCardsEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/template/flipcards"
+          element={
+            <RequireAuth>
+              <FlipCardsEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/flipcards"
+          element={
+            <RequireAuth>
+              <FlipCardsEditor />
+            </RequireAuth>
+          }
+        />
 
         <Route
           path="/template/factcards"
@@ -181,21 +183,24 @@ function App() {
         />
 
         <Route
-          path="/template/kpiflipcards"
+          path="/template/retroneon"
           element={
             <RequireAuth>
-              <KpiFlipCardEditor />
+              <DynamicTextEditor />
             </RequireAuth>
           }
         />
         <Route
-          path="/project/:id/kpiflipcards"
+          path="/project/:id/retroneon"
           element={
             <RequireAuth>
-              <KpiFlipCardEditor />
+              <DynamicTextEditor />
             </RequireAuth>
           }
         />
+
+
+
         <Route
           path="/template/kpiflipcards/mode/batchrendering"
           element={
@@ -219,7 +224,8 @@ function App() {
               <KenBurnsEditor />
             </RequireAuth>
           }
-        /><Route
+        />
+        <Route
           path="/template/kenburnscarousel"
           element={
             <RequireAuth>
@@ -317,58 +323,75 @@ function App() {
           }
         />
 
-         <Route
-  path="/template/neonflicker"
-  element={
-    <RequireAuth>
-      <NeonFlickerEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/template/neonflicker"
+          element={
+            <RequireAuth>
+              <NeonFlickerEditor />
+            </RequireAuth>
+          }
+        />
 
-<Route
-  path="/project/:id/neonflicker"
-  element={
-    <RequireAuth>
-      <NeonFlickerEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/project/:id/neonflicker"
+          element={
+            <RequireAuth>
+              <NeonFlickerEditor />
+            </RequireAuth>
+          }
+        />
 
- <Route
-  path="/template/logoanimation"
-  element={
-    <RequireAuth>
-      <LogoAnimationEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/template/logoanimation"
+          element={
+            <RequireAuth>
+              <LogoAnimationEditor />
+            </RequireAuth>
+          }
+        />
 
-<Route
-  path="/project/:id/logoanimation"
-  element={
-    <RequireAuth>
-      <LogoAnimationEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/project/:id/logoanimation"
+          element={
+            <RequireAuth>
+              <LogoAnimationEditor />
+            </RequireAuth>
+          }
+        />
 
-<Route
-  path="/template/heatmap"
-  element={
-    <RequireAuth>
-      <HeatmapEditor />
-    </RequireAuth>
-  }
-/>
-<Route
-  path="/project/:id/heatmap"
-  element={
-    <RequireAuth>
-      <HeatmapEditor />
-    </RequireAuth>
-  }
-/>
+        <Route
+          path="/template/heatmap"
+          element={
+            <RequireAuth>
+              <HeatmapEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/heatmap"
+          element={
+            <RequireAuth>
+              <HeatmapEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/template/neontube"
+          element={
+            <RequireAuth>
+              <NeonTubeFlickerEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/neontube"
+          element={
+            <RequireAuth>
+              <NeonTubeFlickerEditor />
+            </RequireAuth>
+          }
+        />
 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -388,7 +411,7 @@ function App() {
         <Route path="/qtester" element={<QuoteTester />} />
         {/* <Route path="/testpage" element={<QuoteTemplateEditor2 />} /> */}
       </Routes>
-       {/* 👇 Must be rendered globally */}
+      {/* 👇 Must be rendered globally */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -405,7 +428,6 @@ function App() {
         }}
       />
     </BrowserRouter>
-    
   );
 }
 
