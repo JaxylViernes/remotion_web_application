@@ -11,17 +11,16 @@ import {
 // --- INTERFACES ---
 export interface LanguageData {
   name: string;
-  usage: number; // The value (e.g., percentage)
-  squares: number; // How many squares to show
-  logo: string; // Filename of the logo (e.g., "python.png")
+  usage: number; 
+  squares: number; 
+  logo: string; 
 }
 
-// This is the main config object that the editor will pass to the Remotion comp
 export interface HeatmapConfig {
   id: string;
   title: string;
   subtitle: string;
-  textColor: string; // <-- ADDED
+  textColor: string; 
   languages: LanguageData[];
   primaryColor: string;
   secondaryColor: string;

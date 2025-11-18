@@ -1,8 +1,5 @@
 import React from 'react';
-// --- THIS IS THE FIX ---
-// Import 'useVideoConfig'
 import { useCurrentFrame, useVideoConfig, interpolate, spring } from 'remotion';
-// -----------------------
 
 interface TypographyConfig {
   id: string;
@@ -28,7 +25,6 @@ interface KineticTypographyIntroProps extends Record<string, unknown> {
   config: TypographyConfig;
 }
 
-// Utility function to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number = 1): string => {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
