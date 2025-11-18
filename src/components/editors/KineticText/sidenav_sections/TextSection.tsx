@@ -1,18 +1,28 @@
+import type { SetStateAction } from "react";
 import type React from "react";
+import type { TypographyConfig } from "../../../../models/KineticText";
 
 export interface KineticTextProps {
   words: string[];
+  setConfig: React.Dispatch<SetStateAction<TypographyConfig>>;
   setWords: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const KineticTextSection: React.FC<KineticTextProps> = ({
   words,
   setWords,
+  setConfig
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Split text by new lines to create the array of words
-    setWords(e.target.value.split("\n"));
-  };
+  const newWords = e.target.value.split("\n");
+
+  setWords(newWords);
+  setConfig((prev) => ({
+    ...prev,
+    words: newWords
+  }));
+};
+
 
   return (
     <div

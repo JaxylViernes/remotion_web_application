@@ -1,4 +1,5 @@
-import React from "react";
+import React, { type SetStateAction } from "react";
+import type { TypographyConfig } from "../../../../models/KineticText";
 
 interface TimingConfig {
   staggerDelay: number;
@@ -8,6 +9,7 @@ interface TimingConfig {
 
 export interface KineticTimingProps {
   timing: TimingConfig;
+  setConfig: React.Dispatch<SetStateAction<TypographyConfig>>;
   setTiming: React.Dispatch<React.SetStateAction<TimingConfig>>;
 }
 
@@ -48,17 +50,20 @@ const SliderInput: React.FC<{
 export const KineticTimingSection: React.FC<KineticTimingProps> = ({
   timing,
   setTiming,
+  setConfig
 }) => {
   // --- FIX #1: Corrected handler logic ---
   const handleTimingChange = (
     key: keyof TimingConfig,
     value: number
   ) => {
-    // Pass a new object based on the props, not an updater function
-    setTiming({
+    const newtiming = {
       ...timing,
       [key]: value,
-    });
+    }
+    // Pass a new object based on the props, not an updater function
+    setTiming(newtiming);
+    setConfig((prev)=>({...prev, timing: newtiming}))
   };
 
   return (

@@ -1,4 +1,6 @@
 import type React from "react";
+import type { TypographyConfig } from "../../../../models/KineticText";
+import type { SetStateAction } from "react";
 
 interface ColorConfig {
   primary: string;
@@ -8,22 +10,27 @@ interface ColorConfig {
 
 export interface KineticColorProps {
   colors: ColorConfig;
+  setConfig: React.Dispatch<SetStateAction<TypographyConfig>>;
   setColors: React.Dispatch<React.SetStateAction<ColorConfig>>;
 }
 
 export const KineticColorSection: React.FC<KineticColorProps> = ({
   colors,
   setColors,
+  setConfig
 }) => {
   const handleColorChange = (
     key: keyof ColorConfig,
     value: string
   ) => {
     // Pass the new complete colors object to the setColors prop
-    setColors({
+    const newcolors = {
       ...colors,
-      [key]: value,
-    });
+      [key]: value
+    }
+    setColors(newcolors);
+    setConfig((prev)=>({...prev, colors: newcolors}))
+
   };
 
   const colorInputStyle: React.CSSProperties = {

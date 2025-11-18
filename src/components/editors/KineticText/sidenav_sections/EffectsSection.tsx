@@ -1,4 +1,5 @@
-import React from "react";
+import React, { type SetStateAction } from "react";
+import type { TypographyConfig } from "../../../../models/KineticText";
 
 interface EffectsConfig {
   shakeIntensity: number;
@@ -8,6 +9,7 @@ interface EffectsConfig {
 
 export interface KineticEffectsProps {
   effects: EffectsConfig;
+  setConfig: React.Dispatch<SetStateAction<TypographyConfig>>;
   setEffects: React.Dispatch<React.SetStateAction<EffectsConfig>>;
 }
 
@@ -48,17 +50,20 @@ const SliderInput: React.FC<{
 export const KineticEffectsSection: React.FC<KineticEffectsProps> = ({
   effects,
   setEffects,
+  setConfig
 }) => {
   // --- FIX #1: Corrected handler logic ---
   const handleEffectChange = (
     key: keyof EffectsConfig,
     value: number
   ) => {
-    // Pass a new object based on the props, not an updater function
-    setEffects({
+    const neweffects = {
       ...effects,
       [key]: value,
-    });
+    }
+    // Pass a new object based on the props, not an updater function
+    setEffects(neweffects);
+    setConfig((prev)=>({...prev, effects: neweffects}))
   };
 
   return (

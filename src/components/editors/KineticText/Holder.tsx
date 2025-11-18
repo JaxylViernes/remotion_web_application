@@ -18,6 +18,8 @@ import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { backendPrefix } from "../../../config"; // Assuming this path is correct
 import type { KineticTiming, TypographyConfig, KineticColors, KineticEffects  } from "../../../models/KineticText";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 const defaultConfig: TypographyConfig = {
   id: "default-kinetic-v1",
@@ -64,7 +66,7 @@ export const KineticEditor: React.FC = () => {
   })
   const [templateName, setTemplateName] = useState("💥 Kinetic Text Template");
   // Main state for the Remotion component
-  const [config, setConfig] = useState(defaultConfig);
+  const [config, setConfig] = useState<TypographyConfig>(defaultConfig);
 
   // UI State
   const [previewSize, setPreviewSize] = useState(0.7);
@@ -133,7 +135,7 @@ export const KineticEditor: React.FC = () => {
     saveNewProject,
     lastSavedProps,
   } = useProjectSave({
-    templateId: 1, // 👈 Set a unique ID for this template
+    templateId: 12, // 👈 Set a unique ID for this template
     buildProps: () => config, // 👈 Save the entire config object
     videoEndpoint: `${backendPrefix}/generatevideo/kineticrender`, // 👈 Use the kinetic endpoint
   });
@@ -176,32 +178,41 @@ export const KineticEditor: React.FC = () => {
   const handleExport = async (format: string) => {
     setIsExporting(true);
     setExportUrl(null); // Clear previous URL
-    try {
-      const response = await fetch(`/generatevideo/kineticrender`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config: config,
-          format: format,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
-      }
-
-      const data = await response.json();
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    const response = await renderVideo({config}, 12, "KineticText",format);
+    if(response === "error"){
+      toast.error("There was an error rendering your video")
+    }else{
+      setExportUrl(response);
+      toast.success("Video rendered successfully");
     }
+    setShowModal(true);
+    setIsExporting(false);
+    // try {
+    //   const response = await fetch(`/generatevideo/kineticrender`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       config: config,
+    //       format: format,
+    //     }),
+    //   });
+
+    //   if (!response.ok) {
+    //     const errorText = await response.text();
+    //     throw new Error(
+    //       `HTTP error! status: ${response.status}, message: ${errorText}`
+    //     );
+    //   }
+
+    //   const data = await response.json();
+    //   setExportUrl(data.url);
+    //   setShowModal(true);
+    // } catch (error) {
+    //   console.error("Export failed:", error);
+    //   alert(`Export failed: ${error || "Please try again."}`);
+    // } finally {
+    //   setIsExporting(false);
+    // }
   };
 
   return (
@@ -279,12 +290,13 @@ export const KineticEditor: React.FC = () => {
             {/* <h2 ... > 💥 Kinetic Text Template </h2> */}
 
             {activeSection === "text" && (
-              <KineticTextSection words={words} setWords={setWords} />
+              <KineticTextSection words={words} setWords={setWords} setConfig={setConfig}/>
             )}
 
             {activeSection === "colors" && (
               <KineticColorSection
                 colors={colors}
+                setConfig={setConfig}
                 setColors={setColors}
               />
             )}
@@ -292,12 +304,14 @@ export const KineticEditor: React.FC = () => {
             {activeSection === "timing" && (
               <KineticTimingSection
                 timing={timing}
+                setConfig={setConfig}
                 setTiming={setTiming}
               />
             )}
 
             {activeSection === "effects" && (
               <KineticEffectsSection
+              setConfig={setConfig}
                 effects={effects}
                 setEffects={setEffects}
               />
