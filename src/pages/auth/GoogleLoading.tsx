@@ -11,16 +11,20 @@ const GoogleLoading = () => {
       toast.error("No email found from Google login");
       window.location.assign("/");
       return;
-    }else{
-        loginWithGoogle(email);
+    } else {
+      loginWithGoogle(email);
     }
 
     console.log("Google email:", email);
   }, []);
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen w-full bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] overflow-hidden px-6 text-center">
-      
+    <div
+      className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden px-6 text-center"
+      style={{
+        background: `radial-gradient(circle at 30% 20%, #e9ddff 0%, #f8d7e3 40%, #ffffff 90%)`,
+      }}
+    >
       {/* Floating particles */}
       <div className="absolute w-[180px] h-[180px] bg-purple-500/30 rounded-full blur-3xl top-16 left-12 animate-float-slow"></div>
       <div className="absolute w-[260px] h-[260px] bg-blue-500/20 rounded-full blur-3xl bottom-16 right-12 animate-float-slower"></div>
@@ -29,7 +33,7 @@ const GoogleLoading = () => {
       <div className="animate-fade-in-up mb-10">
         <div className="logo flex items-center gap-3">
           <span className="logo__dot block w-4 h-4 rounded-full bg-purple-500 animate-pulse-dot"></span>
-          <span className="logo__text text-3xl font-semibold text-white tracking-wide">
+          <span className="logo__text text-3xl font-semibold text-black tracking-wide">
             ViralMotion
           </span>
         </div>
@@ -42,7 +46,7 @@ const GoogleLoading = () => {
       </div>
 
       {/* Text */}
-      <p className="text-gray-300 font-medium text-lg animate-fade-in-up delay-300">
+      <p className="text-black-300 font-medium text-lg animate-fade-in-up delay-300">
         Setting up your account...
       </p>
 
