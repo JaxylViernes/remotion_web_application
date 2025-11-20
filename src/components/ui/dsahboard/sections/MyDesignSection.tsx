@@ -138,6 +138,7 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
               <div
                 key={project.id}
                 className="relative bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl transition transform hover:-translate-y-1 group cursor-pointer"
+                onMouseEnter={() => setHoveredId(project.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
                 {/* Checkbox */}
