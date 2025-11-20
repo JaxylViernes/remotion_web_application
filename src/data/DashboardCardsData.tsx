@@ -25,11 +25,11 @@ export const templateCategories = {
       url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763457722/KineticTypography_-_1_vudumo.gif",
     },
 
-    {
-      name: "Neon Flicker",
-      description: "A dynamic 'Neon Flicker' template for a fast-paced text intro.",
-      url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763455882/NeonFlickerTitle_un2ykp.gif",
-    },
+    // {
+    //   name: "Neon Flicker",
+    //   description: "A dynamic 'Neon Flicker' template for a fast-paced text intro.",
+    //   url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763455882/NeonFlickerTitle_un2ykp.gif",
+    // },
 
     {
       name: "Logo Animation",
@@ -37,17 +37,17 @@ export const templateCategories = {
       url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763455885/LogoAnimation_forx64.gif",
     },
 
-    {
-      name: "Neon Lights Text",
-      description: "Flickering neon tube title animation with custom colors and retro effects.",
-      url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763462261/2ad1296b-c166-43a7-9eb1-502e09bcfba7_rcdrjg.gif",
-    },
+    // {
+    //   name: "Neon Lights Text",
+    //   description: "Flickering neon tube title animation with custom colors and retro effects.",
+    //   url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763462261/2ad1296b-c166-43a7-9eb1-502e09bcfba7_rcdrjg.gif",
+    // },
 
-    {
-      name: "Retro Neon Text",
-      description: "Highly customizable text animation with complex visual styles and cinematic effects.",
-      url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763465190/733729ed-b5e5-4f39-80df-6097d0243645_g0qaos.gif"
-    }
+    // {
+    //   name: "Retro Neon Text",
+    //   description: "Highly customizable text animation with complex visual styles and cinematic effects.",
+    //   url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763465190/733729ed-b5e5-4f39-80df-6097d0243645_g0qaos.gif"
+    // }
   ],
   Analytics: [
     {
@@ -64,11 +64,6 @@ export const templateCategories = {
       name: "Curve Line Trend",
       description: "Visualize time series data using animated trend line graphs.",
       url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763457710/CurveLineTrend_ymo1il_obwrkq.gif",
-    },
-    {  
-      name: "Heat Map",
-      description: "Animate your data into a sleek, colorful heatmap.",
-      url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763455882/HeatMap_wgxr72.gif",
     },
     {
       name: "Flip Cards",

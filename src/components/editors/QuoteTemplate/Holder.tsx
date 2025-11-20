@@ -8,7 +8,7 @@ import { defaultpanelwidth } from "../../../data/DefaultValues";
 import { quoteSpotlightDurationCalculator } from "../../../utils/QuoteSpotlightHelpers";
 import { ExportModal } from "../../ui/modals/ExportModal";
 // import { TopNavWithoutBatchrendering } from "../../navigations/single_editors/withoutswitchmodesbutton";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
@@ -18,6 +18,7 @@ import { useBackgroundImages } from "../../../hooks/datafetching/UserImagesAndOn
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
 import { renderVideo } from "../../../utils/VideoRenderer";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export const QuoteTemplateEditor: React.FC = () => {
   const { id } = useParams();
@@ -290,7 +291,7 @@ export const QuoteTemplateEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 1,
     buildProps: () => ({
       quote,
@@ -301,7 +302,7 @@ export const QuoteTemplateEditor: React.FC = () => {
       fontfamily: fontFamily,
       duration,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/quotetemplatewchoices`,
+    compositionId: "QuoteComposition"
   });
 
   useEffect(() => {

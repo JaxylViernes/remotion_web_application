@@ -11,13 +11,16 @@ import { CardDataPanel } from "./sidenav_sections/Data";
 import { defaultpanelwidth } from "../../../data/DefaultValues";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
 import { useParams } from "react-router-dom";
 import { useFileUpload } from "../../../hooks/uploads/HandleImageUpload";
 import { useBackgroundImages } from "../../../hooks/datafetching/UserImagesAndOnlineImages";
 import { backendPrefix } from "../../../config";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import toast from "react-hot-toast";
+import { renderVideo } from "../../../utils/VideoRenderer";
 
 export const KpiFlipCardEditor: React.FC = () => {
   const { id } = useParams();
@@ -164,96 +167,58 @@ export const KpiFlipCardEditor: React.FC = () => {
   };
 
   const {
-      userUploads,
-      loadingUploads,
-      fetchUserUploads,
-      onlineImages,
-      loadingOnline,
-      fetchOnlineImages,
-      searchQuery,
-      setSearchQuery,
-    } = useBackgroundImages();
-  
-    useEffect(() => {
-      fetchUserUploads();
-      fetchOnlineImages("gradient");
-    }, []);
+    userUploads,
+    loadingUploads,
+    fetchUserUploads,
+    onlineImages,
+    loadingOnline,
+    fetchOnlineImages,
+    searchQuery,
+    setSearchQuery,
+  } = useBackgroundImages();
+
+  useEffect(() => {
+    fetchUserUploads();
+    fetchOnlineImages("gradient");
+  }, []);
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      let finalImageUrl = backgroundImage;
-      const origin = window.location.origin;
-      if (!finalImageUrl.startsWith(origin))
-        finalImageUrl = `${origin}${finalImageUrl}`;
+    const inputProps = {
+      backgroundImage,
+      title,
+      titleFontSize,
+      titleFontColor,
+      titleFontFamily,
+      subtitle,
+      subtitleFontSize,
+      subtitleFontColor,
+      subtitleFontFamily,
+      cardsData,
+      cardWidth,
+      cardHeight,
+      cardBorderRadius,
+      cardBorderColor,
+      cardLabelColor,
+      cardLabelFontSize,
+      cardContentFontFamily,
+      cardGrid,
+      delayStart,
+      delayStep,
+      cardColorBack: cardBackColor,
+      cardColorFront: cardFrontColor,
+      valueFontSize,
+    };
 
-      const response = await fetch(`${backendPrefix}/generatevideo/kpiflipcard`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          backgroundImage: finalImageUrl,
-          title,
-          titleFontSize,
-          titleFontColor,
-          titleFontFamily,
-          subtitle,
-          subtitleFontSize,
-          subtitleFontColor,
-          subtitleFontFamily,
-          cardsData,
-          cardWidth,
-          cardHeight,
-          cardBorderRadius,
-          cardBorderColor,
-          cardLabelColor,
-          cardLabelFontSize,
-          cardContentFontFamily,
-          cardGrid,
-          delayStart,
-          delayStep,
-          cardColorBack: cardBackColor,
-          cardColorFront: cardFrontColor,
-          valueFontSize,
-          format,
-        }),
-      });
 
-      if (!response.ok) throw new Error(await response.text());
-      const result = await response.json();
-      const renderUrl = result.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 4,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(result.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error}`);
-    } finally {
-      setIsExporting(false);
+    const response = await renderVideo(inputProps, 12, "KpiFlipCard", format);
+    if(response === "error"){
+      toast.error("There was an error rendering your video")
+    }else{
+      setExportUrl(response);
     }
+    setIsExporting(false);
+    setShowModal(true);
   };
 
   // 🟢 Project save hook
@@ -265,7 +230,7 @@ export const KpiFlipCardEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 4, // 👈 unique template ID for KPI Flip
     buildProps: () => ({
       backgroundImage,
@@ -288,11 +253,11 @@ export const KpiFlipCardEditor: React.FC = () => {
       cardGrid,
       delayStart,
       delayStep,
-      cardBackColor,
-      cardFrontColor,
+      cardColorBack: cardBackColor,
+      cardColorFront: cardFrontColor,
       valueFontSize,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/kpiflipcard`,
+    compositionId: "KpiFlipCard"
   });
 
   // 🟢 Load project if editing existing
@@ -339,8 +304,6 @@ export const KpiFlipCardEditor: React.FC = () => {
         .finally(() => setIsLoading(false));
     }
   }, [id]);
-
-
 
   return (
     <div style={{ display: "flex", height: "100%", flex: 1 }}>

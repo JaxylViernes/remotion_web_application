@@ -13,9 +13,11 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { backendPrefix } from "../../../config";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export interface MetricDataRemotion {
   front: string;
@@ -123,16 +125,16 @@ export const FlipCardsEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 3,
+  } = useProjectSave2({
+    templateId: 16,
     buildProps: () => {
       const metricsForSave =
         userMetrics === null
           ? defaultFlipCardsConfig.metrics
           : convertUiMetricsToRemotion(userMetrics);
-      return { ...config, metrics: metricsForSave };
+      return {config: { ...config, metrics: metricsForSave} };
     },
-    videoEndpoint: `${backendPrefix}/generatevideo/flipcardsrender`,
+    compositionId: "FlipCards"
   });
 
   const convertUiMetricsToRemotion = (
@@ -174,8 +176,8 @@ export const FlipCardsEditor: React.FC = () => {
         .then((data) => {
           setTemplateName(data.title);
           setProjectId(data.id);
-          setConfig(data.props);
-          setUserMetrics(convertRemotionMetricsToUi(data.props.metrics));
+          setConfig(data.props.config);
+          setUserMetrics(convertRemotionMetricsToUi(data.props.config.metrics));
           lastSavedProps.current = data.props;
         })
         .catch((err) => console.error("❌ Project load failed:", err))
@@ -213,45 +215,24 @@ export const FlipCardsEditor: React.FC = () => {
   const handleExport = async (format: string) => {
     setIsExporting(true);
     setExportUrl(null);
-    try {
-      const metricsForExport =
-        userMetrics === null
-          ? defaultFlipCardsConfig.metrics
-          : convertUiMetricsToRemotion(userMetrics);
+    const metricsForExport =
+      userMetrics === null
+        ? defaultFlipCardsConfig.metrics
+        : convertUiMetricsToRemotion(userMetrics);
 
-      const configToExport = {
-        ...config,
-        metrics: metricsForExport,
-      };
+    const inputProps = {
+      ...config,
+      metrics: metricsForExport,
+    };
+    const response = await renderVideo({config: inputProps}, 16, "FlipCards", format);
 
-      const response = await fetch(
-        `${backendPrefix}/generatevideo/flipcardsrender`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            config: configToExport,
-            format: format,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! ${response.status}, message: ${errorText}`
-        );
-      }
-
-      const data = await response.json();
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    if(response === "error"){
+      toast.error("There was an error rendering your video")
+    }else{
+      setExportUrl(response);
     }
+    setIsExporting(false);
+    setShowModal(true);
   };
 
   const isPanelVisible = isMobile ? true : !collapsed;

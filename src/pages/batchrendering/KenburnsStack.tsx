@@ -11,8 +11,17 @@ import { ImageProportionsSecion } from "../../components/ui/batchrendering/secti
 import { KenBurnsBatchOutputs } from "../../components/ui/batchrendering/sections/kenburnstemplate/BatchOutputs";
 import { BatchRenderingSideNavFooter } from "../../components/ui/batchrendering/sidenav/Footer";
 import { KenburnsBatchRenderingInidicator } from "../../components/ui/batchrendering/progressindicators/KenBurnsProgressIndicator";
-import { FiGrid, FiHash, FiImage, FiMaximize, FiMenu, FiX } from "react-icons/fi";
+import {
+  FiGrid,
+  FiHash,
+  FiImage,
+  FiMaximize,
+  FiMenu,
+  FiX,
+} from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import { renderVideo } from "../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 export const KenBurnsSwipeBatchRendering: React.FC = () => {
   const [userImages, setUserImages] = useState<string[]>([]);
@@ -52,49 +61,24 @@ export const KenBurnsSwipeBatchRendering: React.FC = () => {
   const handleExportForCombination = async (combo: any, index: number) => {
     updateCombination(index, { status: "exporting" });
     try {
-      const response = await fetch(`${backendPrefix}/generatevideo/kenburnsswipe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images: combo.images,
-          cardHeightRatio: kenBurnsProportionHelper(combo.proportion).height,
-          cardWidthRatio: kenBurnsProportionHelper(combo.proportion).width,
-          duration: kenBurnsDurationCalculator(combo.images.length),
-          format: "mp4",
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 8,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
+      const inputProps = {
+        images: combo.images,
+        cardHeightRatio: kenBurnsProportionHelper(combo.proportion).height,
+        cardWidthRatio: kenBurnsProportionHelper(combo.proportion).width,
+        duration: kenBurnsDurationCalculator(combo.images.length),
+      };
+      const response = await renderVideo(
+        inputProps,
+        8,
+        "KenBurnsCarousel",
+        "mp4"
+      );
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
@@ -179,7 +163,7 @@ export const KenBurnsSwipeBatchRendering: React.FC = () => {
     fetchUploads();
   }, []);
 
- const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
     { id: "images", label: "Images", icon: <FiImage /> },
@@ -278,7 +262,10 @@ export const KenBurnsSwipeBatchRendering: React.FC = () => {
           >
             🎬 Ken Burns Carousel Batch Rendering
           </Typography>
-          <button onClick={() => setMobileOpen(false)} className="text-gray-600">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-600"
+          >
             <FiX size={20} />
           </button>
         </div>

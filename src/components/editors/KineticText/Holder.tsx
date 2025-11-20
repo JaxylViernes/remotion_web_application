@@ -14,12 +14,12 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { backendPrefix } from "../../../config"; // Assuming this path is correct
 import type { KineticTiming, TypographyConfig, KineticColors, KineticEffects  } from "../../../models/KineticText";
 import { renderVideo } from "../../../utils/VideoRenderer";
 import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 const defaultConfig: TypographyConfig = {
   id: "default-kinetic-v1",
@@ -134,10 +134,10 @@ export const KineticEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 12, // 👈 Set a unique ID for this template
-    buildProps: () => config, // 👈 Save the entire config object
-    videoEndpoint: `${backendPrefix}/generatevideo/kineticrender`, // 👈 Use the kinetic endpoint
+  } = useProjectSave2({
+    templateId: 12, 
+    buildProps: () => ({config}), 
+    compositionId: "KineticText",
   });
 
   // 🟢 Load project if editing existing (ADDED)
@@ -183,36 +183,9 @@ export const KineticEditor: React.FC = () => {
       toast.error("There was an error rendering your video")
     }else{
       setExportUrl(response);
-      toast.success("Video rendered successfully");
     }
     setShowModal(true);
     setIsExporting(false);
-    // try {
-    //   const response = await fetch(`/generatevideo/kineticrender`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       config: config,
-    //       format: format,
-    //     }),
-    //   });
-
-    //   if (!response.ok) {
-    //     const errorText = await response.text();
-    //     throw new Error(
-    //       `HTTP error! status: ${response.status}, message: ${errorText}`
-    //     );
-    //   }
-
-    //   const data = await response.json();
-    //   setExportUrl(data.url);
-    //   setShowModal(true);
-    // } catch (error) {
-    //   console.error("Export failed:", error);
-    //   alert(`Export failed: ${error || "Please try again."}`);
-    // } finally {
-    //   setIsExporting(false);
-    // }
   };
 
   return (

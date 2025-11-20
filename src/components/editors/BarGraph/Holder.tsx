@@ -4,7 +4,6 @@ import { BarGraphTemplatePreview } from "../../layout/EditorPreviews/BarGraphPre
 import { defaultpanelwidth } from "../../../data/DefaultValues";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
-import { useProjectSave } from "../../../hooks/SaveProject";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
 import { useParams } from "react-router-dom";
@@ -16,15 +15,17 @@ import { usePreviewControls } from "../../../hooks/LiveEditorConstants";
 import { useExportModal } from "../../../hooks/ExportModalState";
 import { barGraphConfigs } from "../../../hooks/singleoutputs/BarGraphStates";
 import { useBackgroundImages } from "../../../hooks/datafetching/UserImagesAndOnlineImages";
-import { BarGraphNavs } from './Sidenav';
-import { TypographyPanelBarGraphTemplate } from './sidenav_sections/Header';
-import { DataPanel } from './sidenav_sections/DataEnrty';
-import { BarGraphControlsPanel } from './sidenav_sections/BarGraphConfig';
+import { BarGraphNavs } from "./Sidenav";
+import { TypographyPanelBarGraphTemplate } from "./sidenav_sections/Header";
+import { DataPanel } from "./sidenav_sections/DataEnrty";
+import { BarGraphControlsPanel } from "./sidenav_sections/BarGraphConfig";
 import { backendPrefix } from "../../../config";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export const BarGraphEditor: React.FC = () => {
   const { id } = useParams();
-  const templateId = 3;
   const { isUploading, uploadedUrl, uploadFile } = useFileUpload({
     type: "image",
   });
@@ -127,70 +128,34 @@ export const BarGraphEditor: React.FC = () => {
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      let finalImageUrl = backgroundImage;
+    const inputProps = {
+      data,
+      title,
+      titleFontColor,
+      backgroundImage,
+      accent,
+      subtitle,
+      currency: "",
+      titleFontSize,
+      subtitleFontSize,
+      subtitleColor: subtitleFontColor,
+      barHeight,
+      barGap,
+      barLabelFontSize,
+      barValueFontSize,
+      fontFamily,
+      duration,
+    };
+    const response = await renderVideo(inputProps, 3, "BarGraph", format);
 
-      const response = await fetch(`${backendPrefix}/generatevideo/bargraph`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data,
-          title,
-          titleFontColor,
-          backgroundImage: finalImageUrl,
-          accent,
-          subtitle,
-          currency: "",
-          titleFontSize,
-          subtitleFontSize,
-          subtitleColor: subtitleFontColor,
-          barHeight,
-          barGap,
-          barLabelFontSize,
-          barValueFontSize,
-          fontFamily,
-          duration,
-          format,
-        }),
-      });
-
-      if (!response.ok) throw new Error(await response.text());
-      const result = await response.json();
-      setExportUrl(result.url);
-      const renderUrl = result.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    if(response === "error"){
+      toast.error("There was an error exporting the video");
+    }else{
+      setExportUrl(response);
     }
+    setShowModal(true);
+    setIsExporting(false);
+   
   };
 
   const {
@@ -201,8 +166,8 @@ export const BarGraphEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 3, 
+  } = useProjectSave2({
+    templateId: 3,
     buildProps: () => ({
       data,
       title,
@@ -217,10 +182,10 @@ export const BarGraphEditor: React.FC = () => {
       barGap,
       barLabelFontSize,
       barValueFontSize,
-      backgroundImage: backgroundImage,
+      backgroundImage,
       duration,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/bargraph`,
+    compositionId: "BarGraph"
   });
 
   useEffect(() => {
@@ -386,7 +351,6 @@ export const BarGraphEditor: React.FC = () => {
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 userUploads={userUploads}
-                
               />
             )}
           </div>

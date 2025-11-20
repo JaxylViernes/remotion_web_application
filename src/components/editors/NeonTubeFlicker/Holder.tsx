@@ -136,7 +136,7 @@ export const NeonTubeFlickerEditor: React.FC = () => {
         .then((data) => {
           setTemplateName(data.title);
           setProjectId(data.id);
-          setConfig(data.props); 
+          setConfig(data.props.config); 
           lastSavedProps.current = data.props;
         })
         .catch((err) => console.error("❌ Project load failed:", err))

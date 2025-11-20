@@ -9,12 +9,14 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { useVideoUpload } from "../../../hooks/uploads/HandleVideoUploads";
 import { userVideos } from "../../../hooks/datafetching/UserVideos";
 import { backendPrefix } from "../../../config";
-
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export const SplitScreenEditor: React.FC = () => {
   const { id } = useParams();
@@ -129,60 +131,26 @@ export const SplitScreenEditor: React.FC = () => {
   // 🟢 Export
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/splitscreen`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bottomHeightPercent,
-          bottomOpacity,
-          bottomVideoUrl,
-          bottomVolume,
-          swap,
-          topHeightPercent,
-          topOpacity,
-          topVideoUrl,
-          topVolume,
-          duration,
-          format,
-        }),
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 6,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error}`);
-    } finally {
-      setIsExporting(false);
+    const inputProps = {
+      bottomHeightPercent,
+      bottomOpacity,
+      bottomVideoUrl,
+      bottomVolume,
+      swap,
+      topHeightPercent,
+      topOpacity,
+      topVideoUrl,
+      topVolume,
+      duration,
+    };
+    const response = await renderVideo(inputProps, 6, "SplitScreen", format);
+    if (response === "error") {
+      toast.error("There was an error rendering your video");
+    } else {
+      setExportUrl(response);
     }
+    setIsExporting(false);
+    setShowModal(true);
   };
 
   // 🟢 Project Save Hook
@@ -194,7 +162,7 @@ export const SplitScreenEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 6,
     buildProps: () => ({
       bottomHeightPercent,
@@ -208,7 +176,7 @@ export const SplitScreenEditor: React.FC = () => {
       topVolume,
       duration,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/splitscreen`,
+    compositionId: "SplitScreen",
   });
 
   // 🟢 Load project if editing existing

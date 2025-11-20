@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { LogoTemplateSideNav } from "./Sidenav"; 
-import { LogoTextSection } from "./sidenav_sections/TextSection"; 
-import { LogoColorSection } from "./sidenav_sections/ColorSection"; 
-import { LogoTimingSection } from "./sidenav_sections/TimingSection"; 
-import { LogoAnimationPreview } from "../../layout/EditorPreviews/LogoAnimationPreview"; 
+import { LogoTemplateSideNav } from "./Sidenav";
+import { LogoTextSection } from "./sidenav_sections/TextSection";
+import { LogoColorSection } from "./sidenav_sections/ColorSection";
+import { LogoTimingSection } from "./sidenav_sections/TimingSection";
+import { LogoAnimationPreview } from "../../layout/EditorPreviews/LogoAnimationPreview";
 import { defaultpanelwidth } from "../../../data/DefaultValues";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
 import { backendPrefix } from "../../../config";
 import type { LogoLiquidOverlayProps } from "../../remotion_compositions/LogoAnimation";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 // Define a default configuration from your schema
 const defaultConfig: LogoLiquidOverlayProps = {
@@ -20,7 +22,7 @@ const defaultConfig: LogoLiquidOverlayProps = {
   durationOutline: 2,
   durationFill: 2.5,
   baseColor: "#FFD700",
-  durationEndPause: 2
+  durationEndPause: 2,
 };
 
 // Define the type for the active section
@@ -30,9 +32,7 @@ export const LogoAnimationEditor: React.FC = () => {
   const { id } = useParams();
 
   // 🟢 Core States
-  const [templateName, setTemplateName] = useState(
-    "💧 Liquid Logo Template"
-  );
+  const [templateName, setTemplateName] = useState("💧 Liquid Logo Template");
   // Main state for the Remotion component, using your props type
   const [config, setConfig] = useState<LogoLiquidOverlayProps>(defaultConfig);
 
@@ -40,8 +40,7 @@ export const LogoAnimationEditor: React.FC = () => {
   const [previewSize, setPreviewSize] = useState(0.8); // Default zoom
   const [showSafeMargins, setShowSafeMargins] = useState(true);
   const [previewBg, setPreviewBg] = useState<"dark" | "light" | "grey">("dark");
-  const [activeSection, setActiveSection] =
-    useState<LogoActiveSection>("text");
+  const [activeSection, setActiveSection] = useState<LogoActiveSection>("text");
   const [collapsed, setCollapsed] = useState(false);
 
   // Export State
@@ -101,10 +100,10 @@ export const LogoAnimationEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 2, // 👈 Set a unique ID for this new template
-    buildProps: () => config, // 👈 Save the entire config object
-    videoEndpoint: `${backendPrefix}/generatevideo/logoanimationrender`, // 👈 Use a new endpoint
+  } = useProjectSave2({
+    templateId: 14, // 👈 Set a unique ID for this new template
+    buildProps: () => ({config}), // 👈 Save the entire config object
+    compositionId: "LogoAnimation"
   });
 
   // 🟢 Load project if editing existing
@@ -121,7 +120,7 @@ export const LogoAnimationEditor: React.FC = () => {
         .then((data) => {
           setTemplateName(data.title);
           setProjectId(data.id);
-          setConfig(data.props); // 👈 Set the config from loaded props
+          setConfig(data.props.config); // 👈 Set the config from loaded props
           lastSavedProps.current = data.props;
         })
         .catch((err) => console.error("❌ Project load failed:", err))
@@ -136,49 +135,31 @@ export const LogoAnimationEditor: React.FC = () => {
   };
 
   // Helper functions to update config state
-  const setText = (text: string) =>
-    setConfig((prev) => ({ ...prev, text }));
-  
+  const setText = (text: string) => setConfig((prev) => ({ ...prev, text }));
+
   const setColor = (baseColor: string) =>
     setConfig((prev) => ({ ...prev, baseColor }));
 
   // This function receives a *partial* timing object
-  const setTiming = (newTiming: Partial<{ durationOutline: number; durationFill: number }>) =>
-    setConfig((prev) => ({ 
-      ...prev, 
-      ...newTiming 
+  const setTiming = (
+    newTiming: Partial<{ durationOutline: number; durationFill: number }>
+  ) =>
+    setConfig((prev) => ({
+      ...prev,
+      ...newTiming,
     }));
-
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
     setExportUrl(null);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/logoanimationrender`, { // 👈 Use new endpoint
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config: config,
-          format: format,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! ${response.status}, message: ${errorText}`
-        );
-      }
-
-      const data = await response.json();
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    const response = await renderVideo({ config }, 14, "LogoAnimation", format);
+    if (response === "error") {
+      toast.error("There was an error rendering your video");
+    } else {
+      setExportUrl(response);
     }
+    setShowModal(true);
+    setIsExporting(false);
   };
 
   return (
@@ -254,17 +235,11 @@ export const LogoAnimationEditor: React.FC = () => {
 
             {/* Render active section based on state */}
             {activeSection === "text" && (
-              <LogoTextSection
-                text={config.text}
-                setText={setText}
-              />
+              <LogoTextSection text={config.text} setText={setText} />
             )}
 
             {activeSection === "color" && (
-              <LogoColorSection
-                color={config.baseColor}
-                setColor={setColor}
-              />
+              <LogoColorSection color={config.baseColor} setColor={setColor} />
             )}
 
             {activeSection === "timing" && (

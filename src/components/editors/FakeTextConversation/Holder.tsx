@@ -13,11 +13,13 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { useVideoUpload } from "../../../hooks/uploads/HandleVideoUploads";
 import { userVideos } from "../../../hooks/datafetching/UserVideos";
 import { backendPrefix } from "../../../config";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import { renderVideo } from "../../../utils/VideoRenderer";
 
 type ChatLine = { speaker: "person_1" | "person_2"; text: string };
 
@@ -44,8 +46,12 @@ export const FakeTextConversationEditor: React.FC = () => {
   const [fontSize, setFontSize] = useState(28);
   const [fontColor, setFontColor] = useState("");
 
-  const [bgVideo, setBgVideo] = useState(`https://res.cloudinary.com/dnxc1lw18/video/upload/v1760964769/ss4_yvpblt.mp4`);
-  const [chatAudio, setChatAudio] = useState(`https://rsnemknhybirnaxoffur.supabase.co/storage/v1/object/public/Remotion%20Web%20App%20file%20bucket/other_audios/fakeconvo.mp3`);
+  const [bgVideo, setBgVideo] = useState(
+    `https://res.cloudinary.com/dnxc1lw18/video/upload/v1760964769/ss4_yvpblt.mp4`
+  );
+  const [chatAudio, setChatAudio] = useState(
+    `https://rsnemknhybirnaxoffur.supabase.co/storage/v1/object/public/Remotion%20Web%20App%20file%20bucket/other_audios/fakeconvo.mp3`
+  );
   const [serverAudio, setServerAudio] = useState("");
   const [musicAudio, setMusicAudio] = useState(
     `https://rsnemknhybirnaxoffur.supabase.co/storage/v1/object/public/Remotion%20Web%20App%20file%20bucket/bgmusics/bg10.mp3`
@@ -142,64 +148,29 @@ export const FakeTextConversationEditor: React.FC = () => {
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/faketextconvo`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatPath: "chats.json",
-          bgVideo,
-          chatAudio,
-          musicAudio,
-          musicBase: defaultvalues.musicBase,
-          musicWhileTalking: defaultvalues.musicWhileTalking,
-          duckAttackMs: defaultvalues.duckAttackMs,
-          duckReleaseMs: defaultvalues.duckReleaseMs,
-          timeShiftSec: defaultvalues.timeShiftSec,
-          fontFamily,
-          fontSize,
-          fontColor,
-          chatTheme,
-          avatars,
-          format,
-        }),
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 9,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
+    const inputProps = {
+      chatdata,
+      bgVideo,
+      chatAudio,
+      musicAudio,
+      musicBase: defaultvalues.musicBase,
+      musicWhileTalking: defaultvalues.musicWhileTalking,
+      duckAttackMs: defaultvalues.duckAttackMs,
+      duckReleaseMs: defaultvalues.duckReleaseMs,
+      timeShiftSec: defaultvalues.timeShiftSec,
+      fontFamily,
+      fontSize,
+      fontColor,
+      chatTheme,
+      avatars,
+    };
+    const response = await renderVideo(inputProps, 9, "ChatVideo", format);
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
+    if (response === "error") throw new Error("Rendering video failed");
 
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error}`);
-    } finally {
-      setIsExporting(false);
-    }
+    setExportUrl(response);
+    setIsExporting(false);
+    setShowModal(true);
   };
 
   const {
@@ -210,8 +181,8 @@ export const FakeTextConversationEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 9, 
+  } = useProjectSave2({
+    templateId: 9,
     buildProps: () => {
       return {
         chats,
@@ -220,7 +191,6 @@ export const FakeTextConversationEditor: React.FC = () => {
         chatdata,
         duration,
         serverAudio,
-        chatPath: "chats.json",
         bgVideo,
         chatAudio,
         musicAudio,
@@ -236,8 +206,6 @@ export const FakeTextConversationEditor: React.FC = () => {
         avatars,
       };
     },
-    videoEndpoint:`${backendPrefix}/generatevideo/faketextconvo`,
-
     filterRenderProps: (props) => {
       const {
         chats,
@@ -250,6 +218,7 @@ export const FakeTextConversationEditor: React.FC = () => {
       } = props;
       return renderProps;
     },
+    compositionId: "ChatVideo",
   });
 
   // 🟢 Load project if editing existing
@@ -295,7 +264,7 @@ export const FakeTextConversationEditor: React.FC = () => {
     loadingVideos,
     defaultVideos,
     getAllDefaultVideos,
-    defaultvidsloading
+    defaultvidsloading,
   } = userVideos();
 
   useEffect(() => {

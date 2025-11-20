@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 // import ColorLensIcon from "@mui/icons-material/ColorLens";
 import { fontFamilies } from "../../data/FontFamilies";
 import type { CurveLineTrendDataset } from "../../models/CurveLineTrend";
@@ -15,8 +15,18 @@ import { CurveLineTrendAnimationSelectionSection } from "../../components/ui/bat
 import { CurveLineTrendOutputsSection } from "../../components/ui/batchrendering/sections/curvelinetrend/BatchOutputs";
 import { useDatasetUpload } from "../../hooks/uploads/HandleDatasetsFileUpload";
 import { useDatasetsFetching } from "../../hooks/datafetching/DatasetFilesFetching";
-import { FiActivity, FiDatabase, FiGrid, FiImage, FiMenu, FiType, FiX } from "react-icons/fi";
+import {
+  FiActivity,
+  FiDatabase,
+  FiGrid,
+  FiImage,
+  FiMenu,
+  FiType,
+  FiX,
+} from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import { renderVideo } from "../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 export const CurveLineTrendBatchRendering: React.FC = () => {
   const { fetchUserDatasets, userDatasets } = useDatasetsFetching();
@@ -71,11 +81,14 @@ export const CurveLineTrendBatchRendering: React.FC = () => {
   const fetchAIDataset = async (quantity: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`${backendPrefix}/api/generate/curvelinedataset`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity }),
-      });
+      const res = await fetch(
+        `${backendPrefix}/api/generate/curvelinedataset`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quantity }),
+        }
+      );
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
@@ -94,61 +107,34 @@ export const CurveLineTrendBatchRendering: React.FC = () => {
     const dynamicduration = durationCalculatorForCurveLineAnimationSpeeds(
       combo.speed
     );
+    const inputProps = {
+      title: combo.cldata.title,
+      subtitle: combo.cldata.subtitle,
+      titleFontSize: curvelineDefaultdata.titleFontSize,
+      subtitleFontSize: curvelineDefaultdata.subtitleFontSize,
+      fontFamily: combo.font,
+      data: combo.cldata.data,
+      dataType: combo.cldata.dataType,
+      preset: combo.theme,
+      backgroundImage: "",
+      animationSpeed: combo.speed,
+      minimalMode: curvelineDefaultdata.minimalmode,
+      duration: dynamicduration,
+    };
     // const fontsizeindicator = titleAndSubtitleFontSizeIndicator(combo.bar.title);
     try {
-      const response = await fetch(`${backendPrefix}/generatevideo/curvelinetrend`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: {
-            title: combo.cldata.title,
-            subtitle: combo.cldata.subtitle,
-            titleFontSize: curvelineDefaultdata.titleFontSize,
-            subtitleFontSize: curvelineDefaultdata.subtitleFontSize,
-            fontFamily: combo.font,
-            data: combo.cldata.data,
-            dataType: combo.cldata.dataType,
-            preset: combo.theme,
-            backgroundImage: "",
-            animationSpeed: combo.speed,
-            minimalMode: curvelineDefaultdata.minimalmode,
-            duration: dynamicduration,
-          },
-          format: "mp4",
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 5,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
+      const response = await renderVideo(
+        inputProps,
+        5,
+        "CurveLineTrend",
+        "mp4"
+      );
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
@@ -252,7 +238,7 @@ export const CurveLineTrendBatchRendering: React.FC = () => {
     fetchUserDatasets();
   }, []);
 
-   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
     { id: "dataset", label: "Dataset", icon: <FiDatabase /> },
@@ -352,7 +338,10 @@ export const CurveLineTrendBatchRendering: React.FC = () => {
           >
             🎬 Curve Line Trend Batch Rendering
           </Typography>
-          <button onClick={() => setMobileOpen(false)} className="text-gray-600">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-600"
+          >
             <FiX size={20} />
           </button>
         </div>

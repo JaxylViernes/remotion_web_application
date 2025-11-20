@@ -12,11 +12,13 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { useFileUpload } from "../../../hooks/uploads/HandleImageUpload";
 import { useBackgroundImages } from "../../../hooks/datafetching/UserImagesAndOnlineImages";
 import { backendPrefix } from "../../../config";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 export const FactCardsEditor: React.FC = () => {
   const { id } = useParams();
@@ -120,62 +122,29 @@ export const FactCardsEditor: React.FC = () => {
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      let finalImageUrl = backgroundImage;
-      const response = await fetch(`${backendPrefix}/generatevideo/factstemplaterender`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          intro,
-          outro,
-          facts: factsArray,
-          backgroundImage: finalImageUrl,
-          fontSizeTitle: titleFontSize,
-          fontSizeSubtitle: subtitleFontSize,
-          fontFamilyTitle: titleFontFamily,
-          fontColorTitle: titleFontColor,
-          fontColorSubtitle: subtitleFontColor,
-          fontFamilySubtitle: subtitleFontFamily,
-          duration,
-          format,
-        }),
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 7,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
+    const inputProps = {
+      intro,
+      outro,
+      facts: factsArray,
+      backgroundImage,
+      fontSizeTitle: titleFontSize,
+      fontSizeSubtitle: subtitleFontSize,
+      fontFamilyTitle: titleFontFamily,
+      fontColorTitle: titleFontColor,
+      fontColorSubtitle: subtitleFontColor,
+      fontFamilySubtitle: subtitleFontFamily,
+      duration,
+    };
+    const response = await renderVideo(inputProps, 7, "GlassFactsVideo", format);
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error}`);
-    } finally {
-      setIsExporting(false);
+    if (response === "error") {
+      toast.error("There was an error exporting the video");
+    } else {
+      setExportUrl(response);
     }
+
+    setShowModal(true);
+    setIsExporting(false);
   };
 
   const {
@@ -186,7 +155,7 @@ export const FactCardsEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 7, // 👈 unique ID for Fact Cards
     buildProps: () => ({
       intro,
@@ -201,9 +170,8 @@ export const FactCardsEditor: React.FC = () => {
       fontFamilySubtitle: subtitleFontFamily,
       duration,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/factstemplaterender`,
+    compositionId: "GlassFactsVideo",
   });
-
 
   useEffect(() => {
     if (id) {

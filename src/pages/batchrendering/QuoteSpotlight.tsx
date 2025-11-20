@@ -23,6 +23,8 @@ import {
   FiX,
 } from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import { renderVideo } from "../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 // import { useFileUpload } from "../../hooks/uploads/handleimageupload";
 
 export const QuoteSpotlightBatchRendering: React.FC = () => {
@@ -127,61 +129,26 @@ export const QuoteSpotlightBatchRendering: React.FC = () => {
 
     try {
       let finalImageUrl = combo.background;
-      const origin = window.location.origin;
-      if (finalImageUrl.startsWith("/")) {
-        finalImageUrl = `${origin}${finalImageUrl}`;
-      }
-
-      const response = await fetch(
-        `${backendPrefix}/generatevideo/quotetemplatewchoices`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quote: combo.quote.text,
-            author: combo.quote.author,
-            imageurl: finalImageUrl,
-            fontsize: fontSizeIndicatorQuote(combo.quote.text.length),
-            fontcolor: combo.color,
-            fontfamily: combo.font,
-            format: "mp4",
-          }),
-        }
+      const inputProps = {
+        quote: combo.quote.text,
+        author: combo.quote.author,
+        imageurl: finalImageUrl,
+        fontsize: fontSizeIndicatorQuote(combo.quote.text.length),
+        fontcolor: combo.color,
+        fontfamily: combo.font,
+      };
+      const response = await renderVideo(
+        inputProps,
+        1,
+        "QuoteComposition",
+        "mp4"
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 1,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
