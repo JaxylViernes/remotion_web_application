@@ -20,9 +20,9 @@ import { TypographyPanelBarGraphTemplate } from "./sidenav_sections/Header";
 import { DataPanel } from "./sidenav_sections/DataEnrty";
 import { BarGraphControlsPanel } from "./sidenav_sections/BarGraphConfig";
 import { backendPrefix } from "../../../config";
-import { renderVideo } from "../../../utils/VideoRenderer";
 import toast from "react-hot-toast";
 import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import { renderVideoUsingLambda } from "../../../utils/lambdarendering";
 
 export const BarGraphEditor: React.FC = () => {
   const { id } = useParams();
@@ -146,7 +146,8 @@ export const BarGraphEditor: React.FC = () => {
       fontFamily,
       duration,
     };
-    const response = await renderVideo(inputProps, 3, "BarGraph", format);
+
+    const response = await renderVideoUsingLambda(inputProps, "BarGraph", format);
 
     if(response === "error"){
       toast.error("There was an error exporting the video");

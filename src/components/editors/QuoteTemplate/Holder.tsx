@@ -17,8 +17,9 @@ import { useFileUpload } from "../../../hooks/uploads/HandleImageUpload";
 import { useBackgroundImages } from "../../../hooks/datafetching/UserImagesAndOnlineImages";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
-import { renderVideo } from "../../../utils/VideoRenderer";
+// import { renderVideo } from "../../../utils/VideoRenderer";
 import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import { renderVideoUsingLambda } from "../../../utils/lambdarendering";
 
 export const QuoteTemplateEditor: React.FC = () => {
   const { id } = useParams();
@@ -189,7 +190,7 @@ export const QuoteTemplateEditor: React.FC = () => {
       backgroundImage,
     };
 
-    const exportResponse = await renderVideo(props, 1, "QuoteComposition", format);
+    const exportResponse = await renderVideoUsingLambda(props, "QuoteComposition", format);
 
     if(exportResponse === "error"){
       toast.error("There was an error exporting your video")
