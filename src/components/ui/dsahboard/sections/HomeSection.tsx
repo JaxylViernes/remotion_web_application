@@ -50,17 +50,14 @@ const ViralMotionCard: React.FC<ViralMotionCardProps> = ({ name, url, onClick })
         alt={name}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
-
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
       {/* Play Button - appears on hover */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20">
           <FiPlay className="text-white text-2xl ml-1" />
         </div>
       </div>
-
       {/* Title */}
       <div className="absolute bottom-3 left-3 right-3">
         <h4 className="text-white font-medium text-sm sm:text-base truncate">{name}</h4>
@@ -90,7 +87,6 @@ const VideoCarousel: React.FC<VideoCarouselProps> = ({ title, items, onItemClick
       <h2 className="text-1xl sm:text-2xl font-bold text-gray-900">
         {title}
       </h2>
-
       {/* Horizontal Scrolling Carousel */}
       <div className="relative flex items-center">
         {/* Scrollable Container */}
@@ -109,7 +105,6 @@ const VideoCarousel: React.FC<VideoCarouselProps> = ({ title, items, onItemClick
             />
           ))}
         </div>
-
         {/* Navigation Arrow - Fixed on right */}
         <button
           onClick={handleScrollRight}
@@ -150,6 +145,7 @@ interface HomeSectionProps {
   setNewProjectTab?: (value: number) => void;
   newProjectSearch?: string;
   setNewProjectSearch?: (value: string) => void;
+  onNavigate?: (section: "templates" | "files") => void;
 }
 
 export const HomeSection: React.FC<HomeSectionProps> = ({
@@ -161,6 +157,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
   setNewProjectTab,
   newProjectSearch = "",
   setNewProjectSearch,
+  onNavigate,
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [selectedDescription, setSelectedDescription] = useState<string>("");
@@ -175,6 +172,18 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
     setSelectedDescription("");
   };
 
+  const handleYourDesignsClick = () => {
+    if (onNavigate) {
+      onNavigate("files");
+    }
+  };
+
+  const handleTemplatesClick = () => {
+    if (onNavigate) {
+      onNavigate("templates");
+    }
+  };
+
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
       {/* === Canva Glow Background - Applied to Entire Homepage === */}
@@ -184,31 +193,26 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full
             bg-cyan-200 opacity-50 blur-[150px]"
         />
-
         {/* Aurora Glow Effect - Purple/Fuchsia Orb (Top Right) */}
         <div
           className="absolute -top-20 right-0 w-[450px] h-[450px] rounded-full
             bg-fuchsia-200 opacity-50 blur-[150px]"
         />
-
         {/* Aurora Glow Effect - Violet Orb (Center) */}
         <div
           className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full
             bg-violet-200 opacity-40 blur-[130px]"
         />
-
         {/* Aurora Glow Effect - Teal Orb (Bottom Left) */}
         <div
           className="absolute bottom-1/4 -left-20 w-[350px] h-[350px] rounded-full
             bg-teal-200 opacity-40 blur-[120px]"
         />
-
         {/* Aurora Glow Effect - Pink Orb (Bottom Right) */}
         <div
           className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full
             bg-pink-200 opacity-40 blur-[140px]"
         />
-
         {/* White base layer */}
         <div className="absolute inset-0 bg-white/60" />
       </div>
@@ -230,6 +234,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[400px] h-[280px] sm:h-[400px] rounded-full
               bg-violet-300 opacity-30 sm:opacity-50 blur-[100px] sm:blur-[120px] pointer-events-none"
           />
+
           {/* Hero Heading */}
           <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
             What will you create today?
@@ -253,6 +258,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3">
             {/* Your Designs Button */}
             <button
+              onClick={handleYourDesignsClick}
               className="px-2.5 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-gray-700
                 bg-white/70 backdrop-blur-xl border border-gray-200
                 rounded-full hover:bg-white hover:border-gray-300
@@ -265,6 +271,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
             {/* Templates Button */}
             <button
+              onClick={handleTemplatesClick}
               className="px-2.5 py-1.5 sm:px-5 sm:py-2.5 text-[10px] sm:text-xs font-semibold text-gray-700
                 bg-white/70 backdrop-blur-xl border border-gray-200
                 rounded-full hover:bg-white hover:border-gray-300
@@ -291,58 +298,58 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
         {/* === Existing Content Below Hero === */}
         <div className="px-2 sm:px-6 lg:px-4 space-y-5">
-        {/* === Templates Section === */}
-        <TemplatesSection onTry={handleOpenPreview} />
-        <TemplatePreviewDialog
-          open={!!selectedTemplate}
-          onClose={handleClosePreview}
-          selectedTemplate={selectedTemplate}
-          selectedDescription={selectedDescription}
-        />
+          {/* === Templates Section === */}
+          <TemplatesSection onTry={handleOpenPreview} />
+          <TemplatePreviewDialog
+            open={!!selectedTemplate}
+            onClose={handleClosePreview}
+            selectedTemplate={selectedTemplate}
+            selectedDescription={selectedDescription}
+          />
 
-        {/* === Discover Viralmotions Section === */}
-        <VideoCarousel
-          title="Discover Viralmotions"
-          items={discoverViralMotions}
-          onItemClick={handleOpenPreview}
-        />
+          {/* === Discover Viralmotions Section === */}
+          <VideoCarousel
+            title="Discover Viralmotions"
+            items={discoverViralMotions}
+            onItemClick={handleOpenPreview}
+          />
 
-        {/* === Most Trending 2025 Section === */}
-        <VideoCarousel
-          title="Most Trending 2025"
-          items={trendingViralMotions}
-          onItemClick={handleOpenPreview}
-        />
+          {/* === Most Trending 2025 Section === */}
+          <VideoCarousel
+            title="Most Trending 2025"
+            items={trendingViralMotions}
+            onItemClick={handleOpenPreview}
+          />
 
-        {/* Recently Created Templates */}
-        {projects.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Recently Created Templates
-              </h2>
+          {/* Recently Created Templates */}
+          {projects.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Recently Created Templates
+                </h2>
+              </div>
+              <p className="text-gray-500 text-sm">
+                Your most recent template projects, ready to edit or share.
+              </p>
+              <ShowcaseCarousel items={projects.slice(0, 5)} type="project" />
             </div>
-            <p className="text-gray-500 text-sm">
-              Your most recent template projects, ready to edit or share.
-            </p>
-            <ShowcaseCarousel items={projects.slice(0, 5)} type="project" />
-          </div>
-        )}
+          )}
 
-        {/* Recently Rendered Videos */}
-        {renders.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                Recently Rendered Videos
-              </h2>
+          {/* Recently Rendered Videos */}
+          {renders.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Recently Rendered Videos
+                </h2>
+              </div>
+              <p className="text-gray-500 text-sm">
+                Your latest video renders, ready to watch or download.
+              </p>
+              <ShowcaseCarousel items={renders.slice(0, 5)} type="render" />
             </div>
-            <p className="text-gray-500 text-sm">
-              Your latest video renders, ready to watch or download.
-            </p>
-            <ShowcaseCarousel items={renders.slice(0, 5)} type="render" />
-          </div>
-        )}
+          )}
         </div>
       </div>
 

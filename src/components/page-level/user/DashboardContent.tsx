@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DashboardSidebarNav } from "../../ui/navigations/DashboardSidenav";
 import { ProjectsSection } from "../../ui/dsahboard/sections/SavedTemplatesSection";
 // import { ChooseTemplateModal } from "../../ui/modals/ChooseTemplateModal";
@@ -14,6 +14,8 @@ import { ProfilePage } from "../../../pages/user/Profile";
 import { MyTemplatesSection } from "../../ui/dsahboard/sections/MyDesignSection";
 
 export const DashboardContent: React.FC = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const {
     fetchUserDatasets,
     userDatasets,
@@ -75,6 +77,18 @@ export const DashboardContent: React.FC = () => {
     fetchProfileDetails();
   }, []);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeSection]);
+
+  useEffect(() => {
+    fetchUploads();
+    fetchRenders();
+    fetchProjects();
+    fetchUserDatasets();
+    fetchProfileDetails();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* === Sidebar === */}
@@ -83,21 +97,24 @@ export const DashboardContent: React.FC = () => {
         onChange={setActiveSection}
         userInitials={username?.[0] ?? "U"}
         userPfp={userPfp}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
 
       <main
-        className="
-    md:ml-60
-    px-3
-    sm:px-4
-    md:px-8
-    py-4
-    pt-16 md:pt-4
-    min-h-screen
-    transition-all
-    duration-300
-  "
+        className={`
+          px-3
+          sm:px-4
+          md:px-8
+          py-4
+          pt-16 md:pt-4
+          min-h-screen
+          transition-all
+          duration-300
+          ${isCollapsed ? "md:ml-20" : "md:ml-64"}
+        `}
       >
+<<<<<<< HEAD
         {activeSection === "home" && (
           <HomeSection
             search={search}
@@ -114,6 +131,26 @@ export const DashboardContent: React.FC = () => {
             setNewProjectSearch={setNewProjectSearch}
           />
         )}
+=======
+        {/* HomeSection - with new project modal props */}
+      {activeSection === "home" && (
+        <HomeSection
+          search={search}
+          setSearch={setSearch}
+          projects={projects}
+          renders={renders}
+          datasets={userDatasets}
+          uploads={uploads}
+          newProjectOpen={newProjectOpen}
+          setNewProjectOpen={setNewProjectOpen}
+          newProjectTab={newProjectTab}
+          setNewProjectTab={setNewProjectTab}
+          newProjectSearch={newProjectSearch}
+          setNewProjectSearch={setNewProjectSearch}
+          onNavigate={setActiveSection}
+        />
+      )}
+>>>>>>> origin/inital_ui_1
 
         {activeSection === "templates" && (
           <MyTemplatesSection
@@ -128,6 +165,7 @@ export const DashboardContent: React.FC = () => {
           />
         )}
 
+        {/* ProjectsSection - with renders props added */}
         {activeSection === "files" && (
           <ProjectsSection
             loadingUploads={loadingUploads}
@@ -142,6 +180,11 @@ export const DashboardContent: React.FC = () => {
             setSelectedDatasets={setSelectedDatasets}
             userDatasets={userDatasets}
             handleDeleteDataset={handleDeleteDatasets}
+            renders={renders}
+            loadingRenders={loadingRenders}
+            selectedRenders={selectedRenders}
+            setSelectedRenders={setSelectedRenders}
+            handleDeleteRenders={handleDeleteRenders}
           />
         )}
 

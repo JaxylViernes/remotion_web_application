@@ -22,17 +22,41 @@ export const ShowcaseCarousel: React.FC<ShowcaseCarouselProps> = ({
     }
   };
 
+  // Pause autoplay on hover
+  const handleMouseEnter = () => {
+    if (swiperRef.current && swiperRef.current.autoplay) {
+      swiperRef.current.autoplay.stop();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (swiperRef.current && swiperRef.current.autoplay) {
+      swiperRef.current.autoplay.start();
+    }
+  };
+
   return (
-    <div className="relative w-full py-8">
+    <div 
+      className="relative w-full py-8"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Optional gradient background glow */}
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-sky-500 opacity-10 blur-3xl rounded-3xl"></div>
-
+      
       <Swiper
         onSwiper={(swiper) => (swiperRef.current = swiper)}
         effect="coverflow"
         grabCursor
         centeredSlides
         slidesPerView="auto"
+        loop={true}
+        autoplay={{
+          delay: 3000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
+        }}
+        speed={800}
         coverflowEffect={{
           rotate: 0,
           stretch: 0,
@@ -40,13 +64,23 @@ export const ShowcaseCarousel: React.FC<ShowcaseCarouselProps> = ({
           modifier: 2.5,
           slideShadows: false,
         }}
-        pagination={{ clickable: true }}
+        pagination={{ 
+          clickable: true,
+          dynamicBullets: true,
+        }}
         modules={[EffectCoverflow, Pagination]}
-        className="mySwiper relative z-10"
+        className="mySwiper relative z-10 pb-12"
+        style={{
+          '--swiper-pagination-color': '#a78bfa',
+          '--swiper-pagination-bullet-inactive-color': '#ffffff',
+          '--swiper-pagination-bullet-inactive-opacity': '0.4',
+          '--swiper-pagination-bullet-size': '10px',
+          '--swiper-pagination-bullet-horizontal-gap': '6px',
+        } as React.CSSProperties}
       >
         {items.map((item, index) => (
           <SwiperSlide
-            key={item.id}
+            key={`${item.id}-${index}`}
             onClick={() => handleSlideClick(index)}
             className="!w-[240px] sm:!w-[280px] md:!w-[320px] lg:!w-[340px] cursor-pointer"
           >
@@ -100,10 +134,8 @@ export const ShowcaseCarousel: React.FC<ShowcaseCarouselProps> = ({
                     No preview
                   </div>
                 )}
-
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-
                 {/* Category tag */}
                 <div className="absolute top-3 left-3 px-3 py-1 text-[10px] font-semibold uppercase rounded-full backdrop-blur-md bg-white/20 border border-white/30 text-white shadow-sm">
                   {type === "project" ? "Template" : "Render"}
@@ -131,6 +163,23 @@ export const ShowcaseCarousel: React.FC<ShowcaseCarouselProps> = ({
           </SwiperSlide>
         ))}
       </Swiper>
+
+      {/* Custom styled pagination CSS - add to your global CSS or style tag */}
+      <style>{`
+        .swiper-pagination {
+          bottom: 0 !important;
+        }
+        .swiper-pagination-bullet {
+          background: rgba(255, 255, 255, 0.5);
+          opacity: 1;
+          transition: all 0.3s ease;
+        }
+        .swiper-pagination-bullet-active {
+          background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+          transform: scale(1.2);
+          box-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
+        }
+      `}</style>
     </div>
   );
 };
