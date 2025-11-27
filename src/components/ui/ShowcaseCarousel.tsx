@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow, Pagination, Autoplay } from "swiper/modules";
 import { formatDateSafe } from "../../utils/DateFormatter";
@@ -51,7 +51,6 @@ export const ShowcaseCarousel: React.FC<ShowcaseCarouselProps> = ({
         centeredSlides
         slidesPerView="auto"
         loop={true}
-        loopedSlides={items.length}
         autoplay={{
           delay: 3000,
           disableOnInteraction: false,
