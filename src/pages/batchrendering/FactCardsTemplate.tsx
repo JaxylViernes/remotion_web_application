@@ -19,8 +19,19 @@ import { FactCardsBatchRenderingDatasetSection } from "../../components/ui/batch
 import { FactCardsBatchRenderingAnimationSelectionSection } from "../../components/ui/batchrendering/sections/factcards/AnimtionSelectionSection";
 import { useDatasetsFetching } from "../../hooks/datafetching/DatasetFilesFetching";
 import { useDatasetUpload } from "../../hooks/uploads/HandleDatasetsFileUpload";
-import { FiActivity, FiDatabase, FiDroplet, FiGrid, FiImage, FiMenu, FiType, FiX } from "react-icons/fi";
+import {
+  FiActivity,
+  FiDatabase,
+  FiDroplet,
+  FiGrid,
+  FiImage,
+  FiMenu,
+  FiType,
+  FiX,
+} from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import { renderVideo } from "../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 export const FactCardsBatchRendering: React.FC = () => {
   const { fetchUserDatasets, userDatasets } = useDatasetsFetching();
@@ -76,14 +87,17 @@ export const FactCardsBatchRendering: React.FC = () => {
     } else {
       setLoading(true);
       try {
-        const res = await fetch(`${backendPrefix}/api/generate/factcardsdataset`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            niches: selectedNiches,
-            quantity,
-          }),
-        });
+        const res = await fetch(
+          `${backendPrefix}/api/generate/factcardsdataset`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              niches: selectedNiches,
+              quantity,
+            }),
+          }
+        );
         if (!res.ok) {
           throw new Error(`Server error: ${res.status}`);
         }
@@ -103,64 +117,36 @@ export const FactCardsBatchRendering: React.FC = () => {
     // const fontsizeindicator = titleAndSubtitleFontSizeIndicator(combo.bar.title);
     try {
       let finalImageUrl = combo.bg;
-      if (finalImageUrl.startsWith("/")) {
-        finalImageUrl = `${window.location.origin}${finalImageUrl}`;
-      }
-      const response = await fetch(`${backendPrefix}/generatevideo/factstemplaterender`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          intro: combo.dataset.intro,
-          outro: combo.dataset.intro,
-          facts: combo.dataset.facts,
-          backgroundImage: finalImageUrl,
-          fontSizeTitle: cardTitleFontSizeIndicator(combo.dataset.intro.title),
-          fontSizeSubtitle: cardSubtitleFontSizeIndicator(
-            combo.dataset.intro.subtitle
-          ),
-          fontFamilyTitle: combo.font,
-          fontColorTitle: combo.fontColor,
-          fontColorSubtitle: combo.fontColor,
-          fontFamilySubtitle: combo.font,
-          duration: durationCalculatorforFactsCard(
-            combo.dataset.facts.length,
-            combo.pacing
-          ),
-          format: "mp4",
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 7,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
+      const inputProps = {
+        intro: combo.dataset.intro,
+        outro: combo.dataset.intro,
+        facts: combo.dataset.facts,
+        backgroundImage: finalImageUrl,
+        fontSizeTitle: cardTitleFontSizeIndicator(combo.dataset.intro.title),
+        fontSizeSubtitle: cardSubtitleFontSizeIndicator(
+          combo.dataset.intro.subtitle
+        ),
+        fontFamilyTitle: combo.font,
+        fontColorTitle: combo.fontColor,
+        fontColorSubtitle: combo.fontColor,
+        fontFamilySubtitle: combo.font,
+        duration: durationCalculatorforFactsCard(
+          combo.dataset.facts.length,
+          combo.pacing
+        ),
+      };
+      const response = await renderVideo(
+        inputProps,
+        7,
+        "GlassFactsVideo",
+        "mp4"
+      );
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
@@ -295,7 +281,7 @@ export const FactCardsBatchRendering: React.FC = () => {
     fetchUserDatasets();
   }, []);
 
- const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
     { id: "dataset", label: "Dataset", icon: <FiDatabase /> },
@@ -396,7 +382,10 @@ export const FactCardsBatchRendering: React.FC = () => {
           >
             🎬 Fact Cards Template Batch Rendering
           </Typography>
-          <button onClick={() => setMobileOpen(false)} className="text-gray-600">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-600"
+          >
             <FiX size={20} />
           </button>
         </div>

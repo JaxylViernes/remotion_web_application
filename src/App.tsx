@@ -21,15 +21,22 @@ import QuoteGenerator from "./trials/geminischematester.tsx";
 import QuoteTester from "./trials/quotesapitester.tsx";
 import { QuoteSpotlightBatchRendering } from "./pages/batchrendering/QuoteSpotlight.tsx";
 import { TextTypingTemplateBatchRendering } from "./pages/batchrendering/TextTyping.tsx";
+import { KineticEditor } from "./components/editors/KineticText/Holder.tsx";
+import { NeonFlickerEditor } from "./components/editors/NeonFlicker/Holder.tsx";
 import { BarGraphBatchRendering } from "./pages/batchrendering/BarGraph.tsx";
 import { CurveLineTrendBatchRendering } from "./pages/batchrendering/CurveLineTrend.tsx";
 import { KenBurnsSwipeBatchRendering } from "./pages/batchrendering/KenburnsStack.tsx";
 import { FactCardsBatchRendering } from "./pages/batchrendering/FactCardsTemplate.tsx";
 import { KpiFlipBatchRendering } from "./pages/batchrendering/KpilipCards.tsx";
+import { HeatmapEditor } from "./components/editors/HeatMap/Holder.tsx";
+import { FlipCardsEditor } from "./components/editors/FlipCards/Holder.tsx";
+import { LogoAnimationEditor } from "./components/editors/LogoAnimation/Holder.tsx";
+import { NeonTubeFlickerEditor } from "./components/editors/NeonTubeFlicker/Holder.tsx";
+import { DynamicTextEditor } from "./components/editors/RetroNeonText/Holder.tsx";
 import RequireAuth from "./pages/auth/AuthChecker.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword.tsx";
-import DynamicLayerEditor from "./components/editors/templates/DynamicLayerEditor.tsx";
-
+import GoogleLoading from "./pages/auth/GoogleLoading.tsx";
+import { AIToolsPanel } from "./components/ui/dsahboard/sections/tools/AIToolsPanel.tsx";
 
 function App() {
   return (
@@ -94,6 +101,40 @@ function App() {
         />
 
         <Route
+          path="/template/kinetictext"
+          element={
+            <RequireAuth>
+              <KineticEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/kinetictext"
+          element={
+            <RequireAuth>
+              <KineticEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/template/flipcards"
+          element={
+            <RequireAuth>
+              <FlipCardsEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/flipcards"
+          element={
+            <RequireAuth>
+              <FlipCardsEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
           path="/template/factcards"
           element={
             <RequireAuth>
@@ -144,6 +185,22 @@ function App() {
         />
 
         <Route
+          path="/template/retroneon"
+          element={
+            <RequireAuth>
+              <DynamicTextEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/retroneon"
+          element={
+            <RequireAuth>
+              <DynamicTextEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/template/kpiflipcards"
           element={
             <RequireAuth>
@@ -151,6 +208,7 @@ function App() {
             </RequireAuth>
           }
         />
+
         <Route
           path="/project/:id/kpiflipcards"
           element={
@@ -159,6 +217,7 @@ function App() {
             </RequireAuth>
           }
         />
+
         <Route
           path="/template/kpiflipcards/mode/batchrendering"
           element={
@@ -182,7 +241,8 @@ function App() {
               <KenBurnsEditor />
             </RequireAuth>
           }
-        /><Route
+        />
+        <Route
           path="/template/kenburnscarousel"
           element={
             <RequireAuth>
@@ -281,6 +341,77 @@ function App() {
         />
         <Route path="/editor/dynamic/" element={<DynamicLayerEditor />} />
 
+        <Route
+          path="/template/neonflicker"
+          element={
+            <RequireAuth>
+              <NeonFlickerEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/project/:id/neonflicker"
+          element={
+            <RequireAuth>
+              <NeonFlickerEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/template/logoanimation"
+          element={
+            <RequireAuth>
+              <LogoAnimationEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/project/:id/logoanimation"
+          element={
+            <RequireAuth>
+              <LogoAnimationEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/template/heatmap"
+          element={
+            <RequireAuth>
+              <HeatmapEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/heatmap"
+          element={
+            <RequireAuth>
+              <HeatmapEditor />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/template/neontube"
+          element={
+            <RequireAuth>
+              <NeonTubeFlickerEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project/:id/neontube"
+          element={
+            <RequireAuth>
+              <NeonTubeFlickerEditor />
+            </RequireAuth>
+          }
+        />
+        <Route path="/loading" element={<GoogleLoading />} />
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
@@ -297,9 +428,17 @@ function App() {
         />
         <Route path="/tester" element={<QuoteGenerator />} />
         <Route path="/qtester" element={<QuoteTester />} />
+        <Route
+          path="/tools/ai-image"
+          element={
+            <RequireAuth>
+              <AIToolsPanel />
+            </RequireAuth>
+          }
+        />
         {/* <Route path="/testpage" element={<QuoteTemplateEditor2 />} /> */}
       </Routes>
-       {/* 👇 Must be rendered globally */}
+      {/* 👇 Must be rendered globally */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -316,7 +455,6 @@ function App() {
         }}
       />
     </BrowserRouter>
-    
   );
 }
 

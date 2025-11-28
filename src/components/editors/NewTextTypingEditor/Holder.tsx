@@ -10,12 +10,14 @@ import { BackgroundSideNav } from "./sidenav_sections/Backgrounds";
 import { SoundSideNav } from "./sidenav_sections/Sounds";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
 import { useParams } from "react-router-dom";
 import { backendPrefix } from "../../../config";
-
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export const NewTypingEditor: React.FC = () => {
   const { id } = useParams();
@@ -35,7 +37,9 @@ export const NewTypingEditor: React.FC = () => {
   const [fontIndex, setFontIndex] = useState(1);
   const [backgroundIndex, setBackgroundIndex] = useState(10);
   const [soundIndex, setSoundIndex] = useState(1);
-  const [duration, setDuration] = useState(calculateDuration(defaultphrasedata));
+  const [duration, setDuration] = useState(
+    calculateDuration(defaultphrasedata)
+  );
 
   const [previewSize, setPreviewSize] = useState(1);
   const [showSafeMargins, setShowSafeMargins] = useState(true);
@@ -57,7 +61,7 @@ export const NewTypingEditor: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
   const messages = [
-        "⏳ Preparing your template...",
+    "⏳ Preparing your template...",
 
     "🙇 Sorry for the wait, still working on it...",
     "🚀 Almost there, thanks for your patience!",
@@ -177,57 +181,20 @@ export const NewTypingEditor: React.FC = () => {
 
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/newtexttypingrender`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phrase: phraseData,
-          backgroundIndex,
-          fontIndex,
-          audioIndex: soundIndex,
-          format,
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! ${response.status}, ${errorText}`);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 2,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    const inputProps = {
+      phrase: phraseData,
+      backgroundIndex,
+      fontIndex,
+      audioIndex: soundIndex,
+    };
+    const response = await renderVideo(inputProps, 2, "NewTexTyping", format);
+    if (response === "error") {
+      toast.error("There was an error rendering your video");
+    } else {
+      setExportUrl(response);
     }
+    setShowModal(true);
+    setIsExporting(false);
   };
 
   // 🟢 Hook for saving/updating projects
@@ -240,7 +207,7 @@ export const NewTypingEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 2, // 👈 unique ID for text typing template
     buildProps: () => ({
       phrase: phraseData,
@@ -249,7 +216,7 @@ export const NewTypingEditor: React.FC = () => {
       audioIndex: soundIndex,
       duration,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/newtexttypingrender`,
+    compositionId: 'NewTexTyping'
   });
 
   // 🟢 Persist state in localStorage
@@ -373,7 +340,10 @@ export const NewTypingEditor: React.FC = () => {
               />
             )}
             {activeSection === "sound" && (
-              <SoundSideNav setSoundIndex={setSoundIndex} soundIndex={soundIndex} />
+              <SoundSideNav
+                setSoundIndex={setSoundIndex}
+                soundIndex={soundIndex}
+              />
             )}
           </div>
         )}

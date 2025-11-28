@@ -15,8 +15,18 @@ import { KpiFlipCardsDatasetSection } from "../../components/ui/batchrendering/s
 import { KpiFlipCardsBatchOutputs } from "../../components/ui/batchrendering/sections/kpiflipcards/BatchOutputs";
 import { useDatasetsFetching } from "../../hooks/datafetching/DatasetFilesFetching";
 import { useDatasetUpload } from "../../hooks/uploads/HandleDatasetsFileUpload";
-import { FiDatabase, FiDroplet, FiGrid, FiImage, FiMenu, FiType, FiX } from "react-icons/fi";
+import {
+  FiDatabase,
+  FiDroplet,
+  FiGrid,
+  FiImage,
+  FiMenu,
+  FiType,
+  FiX,
+} from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import toast from "react-hot-toast";
+import { renderVideo } from "../../utils/VideoRenderer";
 
 export const KpiFlipBatchRendering: React.FC = () => {
   const { fetchUserDatasets, userDatasets } = useDatasetsFetching();
@@ -69,13 +79,16 @@ export const KpiFlipBatchRendering: React.FC = () => {
   const fetchAIDataset = async (quantity: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`${backendPrefix}/api/generate/kpiflipcardsdataset`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quantity,
-        }),
-      });
+      const res = await fetch(
+        `${backendPrefix}/api/generate/kpiflipcardsdataset`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quantity,
+          }),
+        }
+      );
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
@@ -94,70 +107,40 @@ export const KpiFlipBatchRendering: React.FC = () => {
     // const fontsizeindicator = titleAndSubtitleFontSizeIndicator(combo.bar.title);
     try {
       let finalImageUrl = combo.bg;
-      const response = await fetch(`${backendPrefix}/generatevideo/kpiflipcard`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          backgroundImage: finalImageUrl,
-          title: combo.dataset.title,
-          titleFontSize: kpiFlipTitleFontSizeIndicator(
-            combo.dataset.title.length
-          ),
-          titleFontColor: combo.fontColor,
-          titleFontFamily: combo.font,
-          subtitle: combo.dataset.subtitle,
-          subtitleFontSize: kpiFlipDefaultValues.subtitleFontSize,
-          subtitleFontColor: combo.fontColor,
-          subtitleFontFamily: combo.font,
-          cardsData: combo.dataset.cardsData,
-          cardWidth: kpiFlipDefaultValues.cardWidth,
-          cardHeight: kpiFlipDefaultValues.cardHeight,
-          cardBorderRadius: kpiFlipDefaultValues.cardBorderRadius,
-          cardBorderColor: combo.dataset.cardBorderColor,
-          cardLabelColor: combo.dataset.cardLabelColor,
-          cardLabelFontSize: combo.dataset.cardLabelFontSize,
-          cardContentFontFamily: combo.font,
-          cardGrid: kpiFlipDefaultValues.cardGrid,
-          delayStart: kpiFlipDefaultValues.delayStart,
-          delayStep: kpiFlipDefaultValues.delayStep,
-          cardColorBack: combo.dataset.cardColorBack,
-          cardColorFront: combo.dataset.cardColorFront,
-          valueFontSize: combo.dataset.valueFontSize,
-          format: "mp4",
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 4,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
+      const inputProps = {
+        backgroundImage: finalImageUrl,
+        title: combo.dataset.title,
+        titleFontSize: kpiFlipTitleFontSizeIndicator(
+          combo.dataset.title.length
+        ),
+        titleFontColor: combo.fontColor,
+        titleFontFamily: combo.font,
+        subtitle: combo.dataset.subtitle,
+        subtitleFontSize: kpiFlipDefaultValues.subtitleFontSize,
+        subtitleFontColor: combo.fontColor,
+        subtitleFontFamily: combo.font,
+        cardsData: combo.dataset.cardsData,
+        cardWidth: kpiFlipDefaultValues.cardWidth,
+        cardHeight: kpiFlipDefaultValues.cardHeight,
+        cardBorderRadius: kpiFlipDefaultValues.cardBorderRadius,
+        cardBorderColor: combo.dataset.cardBorderColor,
+        cardLabelColor: combo.dataset.cardLabelColor,
+        cardLabelFontSize: combo.dataset.cardLabelFontSize,
+        cardContentFontFamily: combo.font,
+        cardGrid: kpiFlipDefaultValues.cardGrid,
+        delayStart: kpiFlipDefaultValues.delayStart,
+        delayStep: kpiFlipDefaultValues.delayStep,
+        cardColorBack: combo.dataset.cardColorBack,
+        cardColorFront: combo.dataset.cardColorFront,
+        valueFontSize: combo.dataset.valueFontSize,
+      };
+      const response = await renderVideo(inputProps, 4, "KpiFlipCard", "mp4");
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
@@ -278,7 +261,7 @@ export const KpiFlipBatchRendering: React.FC = () => {
     fetchUserDatasets();
   }, []);
 
- const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
     { id: "dataset", label: "Dataset", icon: <FiDatabase /> },
@@ -379,7 +362,10 @@ export const KpiFlipBatchRendering: React.FC = () => {
           >
             🎬 KPI Flip Cards Template Batch Rendering
           </Typography>
-          <button onClick={() => setMobileOpen(false)} className="text-gray-600">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-600"
+          >
             <FiX size={20} />
           </button>
         </div>

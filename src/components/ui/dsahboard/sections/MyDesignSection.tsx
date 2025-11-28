@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { FiSearch, FiPlus, FiTrash2, FiX } from "react-icons/fi";
+import { FiSearch, FiTrash2, FiX } from "react-icons/fi";
 import { getTemplateRoute } from "../../../../utils/TemlplateNavigator";
 import { ChooseTemplateModal } from "../../modals/ChooseTemplateModal";
 import { useProjectHooks } from "../../../../hooks/dashboardhooks/ProjectHooks";
@@ -78,7 +78,7 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search your templates..."
-            className="w-full bg-white/60 backdrop-blur-md rounded-xl pl-10 pr-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+            className="w-full bg-white rounded-xl pl-10 pr-3 py-2.5 text-sm border border-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
           />
         </div>
       </div>
@@ -120,24 +120,11 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
 
           {/* === Grid always shown === */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
-            {/* Create a Design Card */}
-            <div
-              onClick={() => setNewProjectOpen(true)}
-              className="group relative border-2 border-dashed border-gray-300 hover:border-indigo-400 bg-white/60 backdrop-blur-lg rounded-2xl flex flex-col items-center justify-center h-60 cursor-pointer transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="bg-indigo-100 text-indigo-600 p-4 rounded-full group-hover:bg-indigo-600 group-hover:text-white transition">
-                <FiPlus size={28} />
-              </div>
-              <p className="mt-3 font-medium text-gray-700 group-hover:text-indigo-600 transition">
-                Create a Design
-              </p>
-            </div>
-
             {/* Project Cards */}
             {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                className="relative bg-white/70 backdrop-blur-md border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition transform hover:-translate-y-1 group cursor-pointer"
+                className="relative bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl transition transform hover:-translate-y-1 group cursor-pointer"
                 onMouseEnter={() => setHoveredId(project.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >

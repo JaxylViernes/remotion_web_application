@@ -17,6 +17,8 @@ import { useParams } from "react-router-dom";
 import isEqual from "lodash/isEqual";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
 import { backendPrefix } from "../../../config";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 const initialData = [
   { label: 2015, value: 100 },
@@ -33,7 +35,6 @@ const initialData = [
 
 export const CurveLineTrendEditor: React.FC = () => {
   const { id } = useParams();
-  const templateId = 5;
   const [projectId, setProjectId] = useState<number | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -85,10 +86,10 @@ export const CurveLineTrendEditor: React.FC = () => {
   const [duration, setDuration] = useState(13);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [panelWidth, setPanelWidth] = useState(defaultpanelwidth); 
+  const [panelWidth, setPanelWidth] = useState(defaultpanelwidth);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
@@ -146,14 +147,18 @@ export const CurveLineTrendEditor: React.FC = () => {
 
       setIsSaving(true);
       try {
-        const exportRes = await fetch(`${backendPrefix}/generatevideo/curvelinetrend`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: currentProps,
-            format: "mp4",
-          }),
-        });
+        const exportRes = await fetch(
+          `${backendPrefix}/generatevideo/render-video`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              inputProps: currentProps,
+              format: "mp4",
+              compositionId: "CurveLineTrend",
+            }),
+          }
+        );
 
         if (!exportRes.ok) {
           const t = await exportRes.text();
@@ -162,17 +167,20 @@ export const CurveLineTrendEditor: React.FC = () => {
         const exportResult = await exportRes.json();
         const projectVidUrl = exportResult.url;
 
-        const response = await fetch(`/projects/update/${projectId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            props: currentProps,
-            projectVidUrl,
-          }),
-        });
+        const response = await fetch(
+          `${backendPrefix}/projects/update/${projectId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              props: currentProps,
+              projectVidUrl,
+            }),
+          }
+        );
 
         if (!response.ok) {
           const payload = await response.json().catch(() => null);
@@ -207,14 +215,18 @@ export const CurveLineTrendEditor: React.FC = () => {
       setStatus("Saving design...");
       const currentProps = buildPropsObject();
 
-      const exportRes = await fetch(`${backendPrefix}/generatevideo/curvelinetrend`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: currentProps,
-          format: "mp4",
-        }),
-      });
+      const exportRes = await fetch(
+        `${backendPrefix}/generatevideo/render-video`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputProps: currentProps,
+            format: "mp4",
+            compositionId: "CurveLineTrend",
+          }),
+        }
+      );
 
       if (!exportRes.ok) {
         const t = await exportRes.text();
@@ -255,76 +267,36 @@ export const CurveLineTrendEditor: React.FC = () => {
       setStatus("Saved!");
     } catch (err: any) {
       console.error("saveNewProject error", err);
-      throw err; 
+      throw err;
     }
   };
 
   const handleExport = async (format: string) => {
+    const inputProps = {
+      title,
+      subtitle,
+      titleFontSize,
+      subtitleFontSize,
+      fontFamily,
+      data,
+      dataType,
+      preset,
+      backgroundImage,
+      animationSpeed,
+      minimalMode,
+      duration,
+    };
     setIsExporting(true);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/curvelinetrend`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: {
-            title,
-            subtitle,
-            titleFontSize,
-            subtitleFontSize,
-            fontFamily,
-            data,
-            dataType,
-            preset,
-            backgroundImage,
-            animationSpeed,
-            minimalMode,
-            duration,
-          },
-          format,
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
-      }
-      const result = await response.json();
-      setExportUrl(result.url);
-      const renderUrl = result.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error || "Please try again."}`);
-    } finally {
-      setIsExporting(false);
+    const response = await renderVideo(inputProps, 5, "CurveLineTrend", format);
+    if(response === "error"){
+      toast.error("There was an error exporting the video")  
+    }else{
+      setExportUrl(response);
     }
-  };
+
+    setShowModal(true);
+    setIsExporting(false);
+  }
 
   useEffect(() => {
     const currentProps = buildPropsObject();
@@ -419,7 +391,7 @@ export const CurveLineTrendEditor: React.FC = () => {
 
     const interval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % messages.length);
-    }, 10000); 
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [isLoading]);

@@ -21,12 +21,14 @@
     "@mui/system": "^7.3.2",
     "@remotion/google-fonts": "^4.0.340",
     "@remotion/player": "^4.0.340",
+    "@remotion/zod-types": "^4.0.375",
     "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.23.12",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
+    "nodemon": "^3.1.11",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
@@ -56,5 +58,18 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
-  }
+  },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TristanStephen18/remotion_web_application.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TristanStephen18/remotion_web_application/issues"
+  },
+  "homepage": "https://github.com/TristanStephen18/remotion_web_application#readme"
 }

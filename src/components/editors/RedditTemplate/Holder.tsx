@@ -12,12 +12,14 @@ import { ExportModal } from "../../ui/modals/ExportModal";
 import { TopNavWithSave } from "../../navigations/single_editors/WithSave";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
+// import { useProjectSave } from "../../../hooks/SaveProject";
 import { useParams } from "react-router-dom";
 import { useVideoUpload } from "../../../hooks/uploads/HandleVideoUploads";
 import { userVideos } from "../../../hooks/datafetching/UserVideos";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
+import { renderVideo } from "../../../utils/VideoRenderer";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
 
 export const RedditVideoEditor: React.FC = () => {
   const { id } = useParams();
@@ -182,58 +184,30 @@ export const RedditVideoEditor: React.FC = () => {
   // 🟢 Export Handler
   const handleExport = async (format: string) => {
     setIsExporting(true);
-    try {
-      const response = await fetch(`${backendPrefix}/generatevideo/redditvideo`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          voiceoverPath,
-          duration,
-          fontSize,
-          fontFamily,
-          fontColor,
-          sentenceBgColor,
-          backgroundVideo,
-          backgroundMusicPath,
-          format,
-        }),
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 10,
-            outputUrl: renderUrl,
-            type: format,
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      setExportUrl(data.url);
-      setShowModal(true);
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert(`Export failed: ${error}`);
-    } finally {
-      setIsExporting(false);
+    const inputProps = {
+      script: redditData,
+      voiceoverPath,
+      duration,
+      fontSize,
+      fontFamily,
+      fontColor,
+      sentenceBgColor,
+      backgroundVideo,
+      backgroundMusicPath,
+    };
+    const response = await renderVideo(
+      inputProps,
+      10,
+      "RedditNarration",
+      format
+    );
+    if (response === "error") {
+      toast.error("There was an error rendering your video");
+    } else {
+      setExportUrl(response);
     }
+    setIsExporting(false);
+    setShowModal(true);
   };
 
   const {
@@ -244,7 +218,7 @@ export const RedditVideoEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
+  } = useProjectSave2({
     templateId: 10, // unique ID for Reddit
     buildProps: () => ({
       // 🔹 Full editor state (saved to DB)
@@ -254,6 +228,7 @@ export const RedditVideoEditor: React.FC = () => {
       redditData,
       aiVoice,
       serverAudio,
+      script: redditData,
       voiceoverPath,
       duration,
       fontSize,
@@ -263,7 +238,7 @@ export const RedditVideoEditor: React.FC = () => {
       backgroundVideo,
       backgroundMusicPath,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/redditvideo`,
+    compositionId: "RedditNarration",
 
     // 👇 Filter before hitting the render API
     filterRenderProps: (props) => {
@@ -303,7 +278,8 @@ export const RedditVideoEditor: React.FC = () => {
           setRedditData(props.redditData || script);
           setAiVoice(props.aiVoice || "21m00Tcm4TlvDq8ikWAM");
           setVoiceoverPath(
-            props.serverAudio || `${backendPrefix}/soundeffects/reddit/voice.mp3`
+            props.serverAudio ||
+              `${backendPrefix}/soundeffects/reddit/voice.mp3`
           );
           setDuration(props.duration || Math.ceil(script.duration) + 2);
 
@@ -328,7 +304,7 @@ export const RedditVideoEditor: React.FC = () => {
     loadingVideos,
     defaultVideos,
     getAllDefaultVideos,
-    defaultvidsloading
+    defaultvidsloading,
   } = userVideos();
 
   useEffect(() => {
@@ -342,11 +318,11 @@ export const RedditVideoEditor: React.FC = () => {
 
   const handleVideoUpload = async (file: File) => {
     const result = await uploadVideo(file);
-    if(result){
+    if (result) {
       setBackgroundVideo(result.url);
       fetchUserVideos();
     }
-  }
+  };
 
   return (
     <div style={{ display: "flex", height: "100%", flex: 1 }}>

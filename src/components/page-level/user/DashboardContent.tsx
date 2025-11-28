@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DashboardSidebarNav } from "../../ui/navigations/DashboardSidenav";
 import { ProjectsSection } from "../../ui/dsahboard/sections/SavedTemplatesSection";
 // import { ChooseTemplateModal } from "../../ui/modals/ChooseTemplateModal";
@@ -12,8 +12,13 @@ import { useRendersHooks } from "../../../hooks/dashboardhooks/RendersHooks";
 import { useProfileHooks } from "../../../hooks/datafetching/ProfileData";
 import { ProfilePage } from "../../../pages/user/Profile";
 import { MyTemplatesSection } from "../../ui/dsahboard/sections/MyDesignSection";
+import { ToolsSection } from "../../ui/dsahboard/sections/ToolsSection";
+import type { DashboardSection } from "../../ui/navigations/DashboardSidenav";
 
 export const DashboardContent: React.FC = () => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [toolsKey, setToolsKey] = useState(0); // Add this state for resetting tools
+
   const {
     fetchUserDatasets,
     userDatasets,
@@ -36,6 +41,12 @@ export const DashboardContent: React.FC = () => {
     setHoveredId,
     setSelectedProjects,
     toggleProjectSelection,
+    newProjectOpen,
+    setNewProjectOpen,
+    newProjectTab,
+    setNewProjectTab,
+    newProjectSearch,
+    setNewProjectSearch,
   } = useProjectHooks();
 
   const {
@@ -61,6 +72,27 @@ export const DashboardContent: React.FC = () => {
   const { fetchProfileDetails, userData, userPfp, username } =
     useProfileHooks();
 
+  // Custom handler for section changes
+  const handleSectionChange = (section: DashboardSection) => {
+    // If clicking on Tools while already on Tools, reset it
+    if (section === "tools" && activeSection === "tools") {
+      setToolsKey(prev => prev + 1); // Increment key to force remount
+    }
+    setActiveSection(section);
+  };
+
+  useEffect(() => {
+    fetchUploads();
+    fetchRenders();
+    fetchProjects();
+    fetchUserDatasets();
+    fetchProfileDetails();
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeSection]);
+
   useEffect(() => {
     fetchUploads();
     fetchRenders();
@@ -74,24 +106,27 @@ export const DashboardContent: React.FC = () => {
       {/* === Sidebar === */}
       <DashboardSidebarNav
         active={activeSection}
-        onChange={setActiveSection}
+        onChange={handleSectionChange} // Use the new handler instead of setActiveSection
         userInitials={username?.[0] ?? "U"}
         userPfp={userPfp}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
 
       <main
-        className="
-    md:ml-60
-    px-3
-    sm:px-4
-    md:px-8
-    py-4
-    pt-16 md:pt-4
-    min-h-screen
-    transition-all
-    duration-300
-  "
+        className={`
+          px-3
+          sm:px-4
+          md:px-8
+          py-4
+          pt-16 md:pt-4
+          min-h-screen
+          transition-all
+          duration-300
+          ${isCollapsed ? "md:ml-20" : "md:ml-64"}
+        `}
       >
+        {/* HomeSection - with new project modal props */}
         {activeSection === "home" && (
           <HomeSection
             search={search}
@@ -100,6 +135,13 @@ export const DashboardContent: React.FC = () => {
             renders={renders}
             datasets={userDatasets}
             uploads={uploads}
+            newProjectOpen={newProjectOpen}
+            setNewProjectOpen={setNewProjectOpen}
+            newProjectTab={newProjectTab}
+            setNewProjectTab={setNewProjectTab}
+            newProjectSearch={newProjectSearch}
+            setNewProjectSearch={setNewProjectSearch}
+            onNavigate={setActiveSection}
           />
         )}
 
@@ -116,6 +158,7 @@ export const DashboardContent: React.FC = () => {
           />
         )}
 
+        {/* ProjectsSection - with renders props added */}
         {activeSection === "files" && (
           <ProjectsSection
             loadingUploads={loadingUploads}
@@ -130,6 +173,11 @@ export const DashboardContent: React.FC = () => {
             setSelectedDatasets={setSelectedDatasets}
             userDatasets={userDatasets}
             handleDeleteDataset={handleDeleteDatasets}
+            renders={renders}
+            loadingRenders={loadingRenders}
+            selectedRenders={selectedRenders}
+            setSelectedRenders={setSelectedRenders}
+            handleDeleteRenders={handleDeleteRenders}
           />
         )}
 
@@ -153,6 +201,8 @@ export const DashboardContent: React.FC = () => {
             fetchProfileDetails={fetchProfileDetails}
           />
         )}
+
+        {activeSection === "tools" && <ToolsSection key={toolsKey} />}
       </main>
     </div>
   );

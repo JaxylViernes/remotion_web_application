@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { fontFamilies } from "../../data/FontFamilies";
 import type { BarGraphDataset } from "../../models/BarGraph";
 import { barGraphConfig } from "../../data/DefaultValues";
@@ -27,6 +27,8 @@ import {
   FiX,
 } from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import { renderVideo } from "../../utils/VideoRenderer";
+import toast from "react-hot-toast";
 
 export const BarGraphBatchRendering: React.FC = () => {
   const { fetchUserDatasets, userDatasets } = useDatasetsFetching();
@@ -101,61 +103,36 @@ export const BarGraphBatchRendering: React.FC = () => {
     );
     try {
       let finalImageUrl = combo.bg;
-      const response = await fetch(`${backendPrefix}/generatevideo/bargraph`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: combo.bar.data,
-          title: combo.bar.title,
-          titleFontColor: barGraphConfig.titleFontColor,
-          backgroundImage: finalImageUrl,
-          accent: barGraphConfig.accent,
-          subtitle: combo.bar.subtitle,
-          currency: "",
-          titleFontSize: fontsizeindicator.titlefontsize,
-          subtitleFontSize: fontsizeindicator.subtitlefontsize,
-          subtitleColor: barGraphConfig.subtitleColor,
-          barHeight: barGraphConfig.barHeight,
-          barGap: barGraphConfig.barGap,
-          barLabelFontSize: barGraphConfig.barLabelFontSize,
-          barValueFontSize: barGraphConfig.barValueFontSize,
-          fontFamily: combo.font,
-          duration: calculateDurationBarGraph(combo.bar.data.length),
-          format: "mp4",
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 3,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
+      const inputProps = {
+        data: combo.bar.data,
+        title: combo.bar.title,
+        titleFontColor: barGraphConfig.titleFontColor,
+        backgroundImage: finalImageUrl,
+        accent: barGraphConfig.accent,
+        subtitle: combo.bar.subtitle,
+        currency: "",
+        titleFontSize: fontsizeindicator.titlefontsize,
+        subtitleFontSize: fontsizeindicator.subtitlefontsize,
+        subtitleColor: barGraphConfig.subtitleColor,
+        barHeight: barGraphConfig.barHeight,
+        barGap: barGraphConfig.barGap,
+        barLabelFontSize: barGraphConfig.barLabelFontSize,
+        barValueFontSize: barGraphConfig.barValueFontSize,
+        fontFamily: combo.font,
+        duration: calculateDurationBarGraph(combo.bar.data.length),
+      };
+      const response = await renderVideo(
+        inputProps,
+        3,
+        "BarGraph",
+        "mp4"
+      );
 
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });

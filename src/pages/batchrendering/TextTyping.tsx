@@ -15,13 +15,22 @@ import { TextTypingSoundSelectionSection } from "../../components/ui/batchrender
 import { TextTypingTemplateBatchOutputsSection } from "../../components/ui/batchrendering/sections/texttyping/BatchOutputs";
 import { useDatasetsFetching } from "../../hooks/datafetching/DatasetFilesFetching";
 import { useDatasetUpload } from "../../hooks/uploads/HandleDatasetsFileUpload";
-import { FiDatabase, FiGrid, FiImage, FiMenu, FiMusic, FiType, FiX } from "react-icons/fi";
+import {
+  FiDatabase,
+  FiGrid,
+  FiImage,
+  FiMenu,
+  FiMusic,
+  FiType,
+  FiX,
+} from "react-icons/fi";
 import { backendPrefix } from "../../config";
+import toast from "react-hot-toast";
+import { renderVideo } from "../../utils/VideoRenderer";
 
 export const TextTypingTemplateBatchRendering: React.FC = () => {
+  const { fetchUserDatasets, userDatasets } = useDatasetsFetching();
 
-    const {fetchUserDatasets, userDatasets} = useDatasetsFetching();
-  
   const [backgroundsSelected, setBackgroundSelected] = useState<number[]>([]);
   const [soundsSelected, setSoundSelected] = useState<number[]>([]);
   const [fontsSelected, setFontsSelected] = useState<number[]>([]);
@@ -93,11 +102,14 @@ export const TextTypingTemplateBatchRendering: React.FC = () => {
         setPhrasesData(mapped);
       } else if (datasetSource === "ai") {
         // ✅ Your provided AI function
-        const res = await fetch(`${backendPrefix}/api/generate/texttypingdataset`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quantity: datasetQuantity }),
-        });
+        const res = await fetch(
+          `${backendPrefix}/api/generate/texttypingdataset`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: datasetQuantity }),
+          }
+        );
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
         const data = await res.json();
@@ -154,53 +166,20 @@ export const TextTypingTemplateBatchRendering: React.FC = () => {
 
   const handleExportForCombination = async (combo: any, index: number) => {
     updateCombination(index, { status: "exporting" });
-
+    const inputProps = {
+      phrase: combo.phrase,
+      backgroundIndex: combo.backgroundIndex,
+      fontIndex: combo.fontIndex,
+      audioIndex: combo.soundIndex,
+    };
     try {
-      const response = await fetch(`${backendPrefix}/generatevideo/newtexttypingrender`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phrase: combo.phrase,
-          backgroundIndex: combo.backgroundIndex,
-          fontIndex: combo.fontIndex,
-          audioIndex: combo.soundIndex,
-          format: "mp4",
-        }),
-      });
+      const response = await renderVideo(inputProps, 2, "NewTexTyping", "mp4");
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
+      if (response === "error") {
+        toast.error("There was an error encountered while rendering");
+      } else {
+        updateCombination(index, { status: "ready", exportUrl: response });
       }
-
-      const data = await response.json();
-      const renderUrl = data.url;
-      if (renderUrl) {
-        const saveResponse = await fetch(`${backendPrefix}/renders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            templateId: 2,
-            outputUrl: renderUrl,
-            type: "mp4",
-          }),
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error(
-            `Failed to save upload: ${
-              saveResponse.status
-            } ${await saveResponse.text()}`
-          );
-        }
-
-        const saveData = await saveResponse.json();
-        console.log("✅ Render saved to DB:", saveData);
-      }
-      updateCombination(index, { status: "ready", exportUrl: data.url });
     } catch (err) {
       console.error("Export failed:", err);
       updateCombination(index, { status: "error" });
@@ -241,13 +220,13 @@ export const TextTypingTemplateBatchRendering: React.FC = () => {
     setPhrasesData((prev) => prev.filter((_, i) => i !== index));
   };
 
-   const { uploadFile} = useDatasetUpload({
-    template: "texttyping"
+  const { uploadFile } = useDatasetUpload({
+    template: "texttyping",
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchUserDatasets();
-  },[])
+  }, []);
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -258,7 +237,6 @@ export const TextTypingTemplateBatchRendering: React.FC = () => {
     { id: "sound", label: "Sound", icon: <FiMusic /> },
     { id: "outputs", label: "Batch Outputs", icon: <FiGrid /> },
   ] as const;
-
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-800 overflow-hidden">
@@ -351,7 +329,10 @@ export const TextTypingTemplateBatchRendering: React.FC = () => {
           >
             🎬 Text Typing Template Batch Rendering
           </Typography>
-          <button onClick={() => setMobileOpen(false)} className="text-gray-600">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="text-gray-600"
+          >
             <FiX size={20} />
           </button>
         </div>

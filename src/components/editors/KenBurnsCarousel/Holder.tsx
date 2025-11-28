@@ -364,17 +364,21 @@ import { ProportionsPanel } from "./sidenav_sections/Proportions";
 import { ExportModal } from "../../ui/modals/ExportModal";
 import { SaveProjectModal } from "../../ui/modals/SaveModal";
 import { LoadingOverlay } from "../../ui/modals/LoadingProjectModal";
-import { useProjectSave } from "../../../hooks/SaveProject";
+import { useParams } from "react-router-dom";
 import { backendPrefix } from "../../../config";
-
-type EditorTabType = "images" | "proportions" | "settings" | "tools";
+import { useProjectSave2 } from "../../../hooks/saveProjectVersion2";
+import toast from "react-hot-toast";
+import { renderVideo } from "../../../utils/VideoRenderer";
 
 export const KenBurnsEditor: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   // 🟢 Core States
-  const [templateName, setTemplateName] = useState("Ken Burns Swipe Template");
+  const [templateName, setTemplateName] = useState(
+    "🎬 Ken Burns Swipe Template"
+  );
+  const [previewSize, setPreviewSize] = useState(1);
   const [images, setImages] = useState<string[]>([
     "https://res.cloudinary.com/dnxc1lw18/image/upload/v1761129583/landscape-placeholder_vmykjj.svg",
   ]);
@@ -454,59 +458,29 @@ export const KenBurnsEditor: React.FC = () => {
 
   // 🟢 Export Handler
   const handleExport = async (format: string) => {
+    const inputProps = {
+      images,
+      cardHeightRatio,
+      cardWidthRatio,
+      duration,
+    };
     if (images.length <= 1) {
       alert("This template does not allow one image only");
     } else {
       setIsExporting(true);
-      try {
-        const response = await fetch(
-          `${backendPrefix}/generatevideo/kenburnsswipe`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              images,
-              cardHeightRatio,
-              cardWidthRatio,
-              duration,
-              format,
-            }),
-          }
-        );
-        if (!response.ok) throw new Error(await response.text());
-        const data = await response.json();
-        const renderUrl = data.url;
-        if (renderUrl) {
-          const saveResponse = await fetch(`${backendPrefix}/renders`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({
-              templateId: 8,
-              outputUrl: renderUrl,
-              type: format,
-            }),
-          });
-
-          if (!saveResponse.ok) {
-            throw new Error(
-              `Failed to save upload: ${saveResponse.status} ${await saveResponse.text()}`
-            );
-          }
-
-          const saveData = await saveResponse.json();
-          console.log("✅ Render saved to DB:", saveData);
-        }
-        setExportUrl(data.url);
-        setShowModal(true);
-      } catch (error) {
-        console.error("Export failed:", error);
-        alert(`Export failed: ${error}`);
-      } finally {
-        setIsExporting(false);
+      const response = await renderVideo(
+        inputProps,
+        8,
+        "KenBurnsCarousel",
+        format
+      );
+      if (response === "error") {
+        toast.error("There was an error rendering your video");
+      } else {
+        setExportUrl(response);
       }
+      setIsExporting(false);
+      setShowModal(true);
     }
   };
 
@@ -519,15 +493,15 @@ export const KenBurnsEditor: React.FC = () => {
     handleSave,
     saveNewProject,
     lastSavedProps,
-  } = useProjectSave({
-    templateId: 8,
+  } = useProjectSave2({
+    templateId: 8, // 👈 unique ID for Ken Burns
     buildProps: () => ({
       images,
       duration,
       cardWidthRatio,
       cardHeightRatio,
     }),
-    videoEndpoint: `${backendPrefix}/generatevideo/kenburnsswipe`,
+    compositionId: "KenBurnsCarousel",
   });
 
   // 🟢 Load project if editing existing
