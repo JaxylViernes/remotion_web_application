@@ -260,7 +260,7 @@ export const RemixShortsModal: React.FC<RemixShortsModalProps> = ({
     },
   };
 
-  const selectedStyleData = REMIX_STYLES.find((s) => s.id === selectedStyle);
+  // const selectedStyleData = REMIX_STYLES.find((s) => s.id === selectedStyle);
 
   return (
     <div style={styles.overlay} onClick={onClose}>

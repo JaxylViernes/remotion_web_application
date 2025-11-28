@@ -194,7 +194,7 @@ const TextLayerComponent: React.FC<{
   fps: number;
   width: number;
   height: number;
-}> = ({ layer, relativeFrame, fps, width, height }) => {
+}> = ({ layer, relativeFrame, fps, height }) => {
   const entrance = getEntranceAnimation(layer, relativeFrame, fps);
   const scaledFontSize = (layer.fontSize / 100) * height;
   const words = layer.content.split(" ");
@@ -323,7 +323,7 @@ const AudioLayerComponent: React.FC<{
   layer: AudioLayer;
   relativeFrame: number;
   fps: number;
-}> = ({ layer, relativeFrame, fps }) => {
+}> = ({ layer, relativeFrame }) => {
   const duration = layer.endFrame - layer.startFrame;
   
   let volume = layer.volume;

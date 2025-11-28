@@ -75,8 +75,6 @@ interface SidenavProps {
 }
 
 export const FakeTextVideoSideNavigation: React.FC<SidenavProps> = ({
-  collapsed,
-  setCollapsed,
   activeSection,
   setActiveSection,
 }) => {

@@ -88,7 +88,6 @@ export const Timeline: React.FC<TimelineProps> = ({
   onReorderTracks,
 }) => {
   const [zoom, setZoom] = useState(1);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const trackAreaRef = useRef<HTMLDivElement>(null);
   const isDraggingPlayhead = useRef(false);
   
@@ -314,6 +313,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         startY: e.clientY,
         startIndex: index,
         currentIndex: index,
+        isDragging: true
       });
       onTrackSelect?.(track.id);
     },
@@ -1027,7 +1027,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                       {!track.locked && (
                         <div
                           style={{ ...styles.trackClipHandle, left: 0 }}
-                          onMouseDown={(e) => handleTrackMouseDown(e, track, "resize-left")}
+                          onMouseDown={(e) => handleTrackMouseDown(e, track, "resize-left", 1)}
                         >
                           <div style={styles.trackClipHandleBar} />
                         </div>
@@ -1047,7 +1047,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                       {!track.locked && (
                         <div
                           style={{ ...styles.trackClipHandle, right: 0 }}
-                          onMouseDown={(e) => handleTrackMouseDown(e, track, "resize-right")}
+                          onMouseDown={(e) => handleTrackMouseDown(e, track, "resize-right", 1)}
                         >
                           <div style={styles.trackClipHandleBar} />
                         </div>

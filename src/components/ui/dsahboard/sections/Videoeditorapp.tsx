@@ -36,7 +36,7 @@ interface Track {
 const Template: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('subtitles');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(7.4);
+  const currentTime = 7.4;
   const [zoom, setZoom] = useState(50);
   const [projectName] = useState('streamer video');
 
@@ -385,7 +385,7 @@ const Template: React.FC = () => {
             />
 
             {/* Tracks */}
-            {tracks.map((track, index) => (
+            {tracks.map((track) => (
               <div key={track.id} className="flex items-center h-12 border-b border-gray-100">
                 {/* Track Label */}
                 <div className="w-[120px] px-4 flex items-center gap-2 shrink-0">

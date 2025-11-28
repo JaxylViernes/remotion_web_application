@@ -2,7 +2,7 @@
 
 
 
-import React, { useState, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useRef, useEffect, type MouseEvent } from 'react';
 import { Film, Upload, Type, Volume2, FileVideo, Scissors, Play, Pause, SkipBack, SkipForward, Maximize2, type LucideIcon } from 'lucide-react';
 
 interface Tool {

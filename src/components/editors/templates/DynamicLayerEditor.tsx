@@ -1983,7 +1983,7 @@
 //                   <button
 //                     style={styles.viewAssetsButton}
 //                     onClick={() => {
-//                       toast.info("View Assets - Coming soon");
+//                       toast.success("View Assets - Coming soon");
 //                     }}
 //                   >
 //                     <EditorIcons.Image />
@@ -2004,7 +2004,7 @@
 //                     <h3 style={styles.videoSectionTitle}>Background Videos</h3>
 //                     <button
 //                       style={styles.viewMoreLink}
-//                       onClick={() => toast.info("View more - Coming soon")}
+//                       onClick={() => toast.success("View more - Coming soon")}
 //                     >
 //                       View more
 //                     </button>
@@ -2073,7 +2073,7 @@
 //                     <h3 style={styles.videoSectionTitle}>Visual Effects</h3>
 //                     <button
 //                       style={styles.viewMoreLink}
-//                       onClick={() => toast.info("View more - Coming soon")}
+//                       onClick={() => toast.success("View more - Coming soon")}
 //                     >
 //                       View more
 //                     </button>
@@ -3302,7 +3302,6 @@ import {
 
 // Your existing hooks - update paths as needed
 import { useProjectSave } from "../../../hooks/SaveProject";
-import { useFileUpload } from "../../../hooks/uploads/HandleImageUpload";
 import { renderVideo } from "../../../utils/VideoRenderer";
 import { backendPrefix } from "../../../config";
 
@@ -3314,16 +3313,16 @@ import type { TimelineTrack } from "../components/Timeline";
 
 
 // AI Tool Modals ✨
-import { VoiceoverModal } from "../../ui/modals/VoiceoverModal";
 import { RedditPostModal } from "../../ui/modals/RedditPostModal";
 import { MagicCropModal } from "../../ui/modals/MagicCropModal";
 import { EmojiPickerModal } from "../../ui/modals/EmojiPickerModal";
 import { RemixShortsModal } from "../../ui/modals/RemixShortsModal";
-import { AIImageModal } from "../../ui/modals/AIImagemodal";
 import { VEOGeneratorModal } from "../../ui/modals/VEOGenaratorModal";
-import { YoutubeDownloaderModal } from "../../ui/modals/Youtubedownloadermodal";
-import { EnhanceSpeechModal } from "../../ui/modals/Enhancespeechmodal";
-import { RemoveBackgroundModal } from "../../ui/modals/Removebackgroundmodal";
+import { VoiceoverModal } from "../../ui/modals/VoiceOverModal";
+import { AIImageModal } from "../../ui/modals/AIImageModal";
+import { RemoveBackgroundModal } from "../../ui/modals/RemoveBackgroundModal";
+import { EnhanceSpeechModal } from "../../ui/modals/EnhanceSpeechModal";
+import { YoutubeDownloaderModal } from "../../ui/modals/YoutubeDownloaderModal";
 
 
 
@@ -3735,7 +3734,7 @@ function useHistory(initialLayers: Layer[]) {
 
 export const DynamicLayerEditor: React.FC = () => {
   const { id } = useParams();
-  const { isUploading, uploadedUrl, uploadFile } = useFileUpload({ type: "image" });
+  // const { isUploading, uploadedUrl, uploadFile } = useFileUpload({ type: "image" });
 
   // ============================================================================
   // STATE WITH HISTORY
@@ -3993,7 +3992,6 @@ const handleYoutubeDownload = useCallback((data: {
   videoUrl: string;
   title: string;
   duration: number;
-  format: string;
 }) => {
   // Calculate layer duration based on video duration (in seconds)
   const durationInFrames = Math.round(data.duration * FPS);
@@ -4002,7 +4000,7 @@ const handleYoutubeDownload = useCallback((data: {
   const newLayer: VideoLayer = {
     id: generateId(),
     type: "video",
-    name: `${data.title} (${data.format.toUpperCase()})`,
+    name: `${data.title}`,
     visible: true,
     locked: false,
     startFrame: currentFrame,
@@ -4514,10 +4512,8 @@ const handleVEOGenerate = useCallback((data: {
   // ============================================================================
 
   const {
-    isSaving,
     showSaveModal,
     setShowSaveModal,
-    handleSave,
     saveNewProject,
     lastSavedProps,
     setProjectId,
@@ -6002,7 +5998,7 @@ const handleVEOGenerate = useCallback((data: {
                   <button
                     style={styles.viewAssetsButton}
                     onClick={() => {
-                      toast.info("View Assets - Coming soon");
+                      toast.success("View Assets - Coming soon");
                     }}
                   >
                     <EditorIcons.Image />
@@ -6023,7 +6019,7 @@ const handleVEOGenerate = useCallback((data: {
                     <h3 style={styles.videoSectionTitle}>Background Videos</h3>
                     <button
                       style={styles.viewMoreLink}
-                      onClick={() => toast.info("View more - Coming soon")}
+                      onClick={() => toast.success("View more - Coming soon")}
                     >
                       View more
                     </button>
@@ -6092,7 +6088,7 @@ const handleVEOGenerate = useCallback((data: {
                     <h3 style={styles.videoSectionTitle}>Visual Effects</h3>
                     <button
                       style={styles.viewMoreLink}
-                      onClick={() => toast.info("View more - Coming soon")}
+                      onClick={() => toast.success("View more - Coming soon")}
                     >
                       View more
                     </button>

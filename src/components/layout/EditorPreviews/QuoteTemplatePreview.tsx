@@ -883,9 +883,6 @@ const RemotionQuotePlayer = forwardRef<RemotionPlayerHandle, RemotionQuotePlayer
       onFrameUpdate,
       onPlayingChange,
       tracks,
-      currentTime,
-      showQuote,
-      showAuthor,
     },
     ref
   ) => {
