@@ -339,6 +339,7 @@ function App() {
             </RequireAuth>
           }
         />
+        <Route path="/editor/dynamic/" element={<DynamicLayerEditor />} />
 
         <Route
           path="/template/neonflicker"
