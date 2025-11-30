@@ -182,7 +182,7 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
                     }}
                     className="w-full py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 transition"
                   >
-                    🚀 Open Project
+                    🚀 Open Templates
                   </button>
                 </div>
               </div>

@@ -96,10 +96,6 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => 
       <h2 className="text-1xl sm:text-2xl font-bold text-gray-900">
         Explore templates
       </h2>
-  <>
-  {console.log("TEMPLATES:", allTemplates)}
-  </>
-      
       {/* === Colorful Category Cards with Canva Glow === */}
       <div className="relative overflow-hidden rounded-2xl p-2 sm:p-3">
         {/* Smooth Canva Glow Background */}
