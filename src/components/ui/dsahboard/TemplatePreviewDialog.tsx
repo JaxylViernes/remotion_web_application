@@ -13,6 +13,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { TemplateNavigator } from "../../../utils/TemplateNavigator";
 import { templateUrlFinder } from "../../../data/DashboardCardsData";
+import { TEMPLATE_NAME_TO_ID } from "../../../utils/simpleTemplateRegistry";
 
 interface TemplatePreviewDialogProps {
   open: boolean;
@@ -27,7 +28,10 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   selectedTemplate,
   selectedDescription,
 }) => {
-  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
+  const [videoDimensions, setVideoDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -42,13 +46,15 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
     };
 
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    return () => video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    return () =>
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
   }, [selectedTemplate]);
 
   // Calculate aspect ratio
-  const aspectRatio = videoDimensions.width && videoDimensions.height
-    ? videoDimensions.width / videoDimensions.height
-    : 9 / 16; // Default to portrait (1080x1920)
+  const aspectRatio =
+    videoDimensions.width && videoDimensions.height
+      ? videoDimensions.width / videoDimensions.height
+      : 9 / 16; // Default to portrait (1080x1920)
 
   const isPortrait = aspectRatio < 1;
 
@@ -111,9 +117,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
             <Box
               sx={{
                 position: "relative",
-                width: isPortrait
-                  ? { xs: "100%", md: "auto" }
-                  : "100%",
+                width: isPortrait ? { xs: "100%", md: "auto" } : "100%",
                 height: isPortrait
                   ? { xs: `calc(100vw / ${aspectRatio})`, md: "100%" }
                   : { xs: "auto", md: "100%" },
@@ -165,13 +169,15 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
               </Typography>
             </Box>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              <Chip 
-                label={`${videoDimensions.width || 1080}×${videoDimensions.height || 1920}`} 
-                size="small" 
+              <Chip
+                label={`${videoDimensions.width || 1080}×${
+                  videoDimensions.height || 1920
+                }`}
+                size="small"
               />
-              <Chip 
-                label={isPortrait ? "Portrait" : "Landscape"} 
-                size="small" 
+              <Chip
+                label={isPortrait ? "Portrait" : "Landscape"}
+                size="small"
               />
             </Stack>
             <Box sx={{ mt: 2 }}>
@@ -179,8 +185,17 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                 variant="contained"
                 onClick={() => {
                   console.log(selectedTemplate);
-                  const location = TemplateNavigator(selectedTemplate || "user");
-                  window.open(location);
+                  const templateId =
+                    TEMPLATE_NAME_TO_ID[selectedTemplate || ""];
+                  if (templateId) {
+                    const location = `/editor?template=${templateId}`;
+                    window.open(location, "_blank");
+                  } else {
+                    const location = TemplateNavigator(
+                      selectedTemplate || "user"
+                    );
+                    window.open(location, "_blank");
+                  }
                   onClose();
                 }}
                 fullWidth
@@ -188,7 +203,8 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                   borderRadius: "12px",
                   textTransform: "uppercase",
                   fontWeight: 800,
-                  background: "linear-gradient(90deg, #d81b60 0%, #42a5f5 100%)",
+                  background:
+                    "linear-gradient(90deg, #d81b60 0%, #42a5f5 100%)",
                   boxShadow: "0 8px 20px rgba(68, 91, 173, 0.12)",
                   py: 1.3,
                 }}

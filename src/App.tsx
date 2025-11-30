@@ -37,8 +37,8 @@ import RequireAuth from "./pages/auth/AuthChecker.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword.tsx";
 import GoogleLoading from "./pages/auth/GoogleLoading.tsx";
 import { AIToolsPanel } from "./components/ui/dsahboard/sections/tools/AIToolsPanel.tsx";
-import DynamicLayerEditor from "./components/editors/templates/DynamicLayerEditor.tsx";
 import { LandingPage } from "./pages/LandingPage.tsx";
+import DynamicLayerEditor from "./components/editors/DynamicLayerEditor.tsx";
 
 function App() {
   return (
@@ -341,7 +341,6 @@ function App() {
             </RequireAuth>
           }
         />
-        <Route path="/editor/dynamic/" element={<DynamicLayerEditor />} />
 
         <Route
           path="/template/neonflicker"
@@ -426,6 +425,14 @@ function App() {
           element={
             <RequireAuth>
               <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/editor"
+          element={
+            <RequireAuth>
+              <DynamicLayerEditor />
             </RequireAuth>
           }
         />

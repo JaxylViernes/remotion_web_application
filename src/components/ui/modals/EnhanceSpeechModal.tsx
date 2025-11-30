@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { enhanceAudio } from "../../../services/audioApi";
 
 interface EnhanceSpeechModalProps {
   isOpen: boolean;
@@ -8,8 +9,12 @@ interface EnhanceSpeechModalProps {
     audioUrl: string;
     denoiseLevel: number;
     enhanceClarity: boolean;
+    removeEcho: boolean;
+    transcript?: string;
+    confidence?: number;
   }) => void;
   selectedLayerId: string | null;
+  currentAudioUrl?: string;
 }
 
 export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
@@ -17,11 +22,14 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
   onClose,
   onEnhance,
   selectedLayerId,
+  currentAudioUrl,
 }) => {
   const [denoiseLevel, setDenoiseLevel] = useState(7);
   const [enhanceClarity, setEnhanceClarity] = useState(true);
   const [removeEcho, setRemoveEcho] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
@@ -87,6 +95,41 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       fontSize: "13px",
       marginBottom: "20px",
     },
+    infoBox: {
+      padding: "12px 16px",
+      backgroundColor: "rgba(59, 130, 246, 0.1)",
+      border: "1px solid rgba(59, 130, 246, 0.3)",
+      borderRadius: "8px",
+      color: "#3b82f6",
+      fontSize: "12px",
+      marginBottom: "20px",
+      lineHeight: "1.5",
+    },
+    progressContainer: {
+      marginBottom: "20px",
+      padding: "16px",
+      backgroundColor: "#0f0f0f",
+      borderRadius: "8px",
+    },
+    progressBar: {
+      width: "100%",
+      height: "8px",
+      backgroundColor: "rgba(255,255,255,0.1)",
+      borderRadius: "4px",
+      overflow: "hidden",
+      marginBottom: "8px",
+    },
+    progressFill: {
+      height: "100%",
+      background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)",
+      transition: "width 0.3s ease",
+    },
+    progressText: {
+      fontSize: "13px",
+      color: "#888",
+      textAlign: "center" as const,
+      margin: 0,
+    },
     sliderContainer: {
       display: "flex",
       alignItems: "center",
@@ -107,6 +150,12 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       color: "#14b8a6",
       minWidth: "30px",
       textAlign: "center" as const,
+    },
+    hint: {
+      fontSize: "12px",
+      color: "#888",
+      marginTop: "8px",
+      margin: "8px 0 0 0",
     },
     toggleContainer: {
       display: "flex",
@@ -186,25 +235,81 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       return;
     }
 
+    if (!currentAudioUrl) {
+      toast.error("No audio file found for this layer");
+      return;
+    }
+
     setIsEnhancing(true);
+    setProgress(0);
+
     try {
-      // Simulate API call - replace with your actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Mock enhanced audio URL - replace with actual API response
-      const mockEnhancedUrl = `https://example.com/enhanced-audio-${Date.now()}.mp3`;
-      
-      onEnhance({
-        audioUrl: mockEnhancedUrl,
+      // Step 1: Download audio
+      setStatusMessage("📥 Preparing audio...");
+      setProgress(10);
+
+      const audioBlob = await fetch(currentAudioUrl).then((r) => r.blob());
+
+      // Step 2: Upload to Auphonic
+      setStatusMessage("📤 Uploading to Auphonic...");
+      setProgress(20);
+
+      // Step 3: Creating production
+      setStatusMessage("📋 Creating enhancement job...");
+      setProgress(30);
+
+      // Step 4: Processing (this takes longest)
+      setStatusMessage("🎙️ Auphonic is processing your audio...");
+      setProgress(40);
+
+      const result = await enhanceAudio(audioBlob, {
         denoiseLevel,
         enhanceClarity,
+        removeEcho,
       });
-      toast.success("Speech enhanced successfully!");
+
+      // Step 5: Finalizing
+      setStatusMessage("✨ Downloading enhanced audio...");
+      setProgress(90);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setProgress(100);
+
+      onEnhance({
+        audioUrl: result.audioUrl,
+        denoiseLevel,
+        enhanceClarity,
+        removeEcho,
+      });
+
+      toast.success(
+        "✅ Audio enhanced successfully!\n🎵 Noise removed & clarity improved",
+        { duration: 4000 }
+      );
+
       onClose();
-    } catch (error) {
-      toast.error("Failed to enhance speech");
+    } catch (error: any) {
+      console.error("Enhancement error:", error);
+      
+      // Better error messages
+      let errorMessage = "Failed to enhance speech";
+      
+      if (error.message.includes('Cannot connect')) {
+        errorMessage = "Backend server not responding. Check if it's running.";
+      } else if (error.message.includes('credits')) {
+        errorMessage = "Out of Auphonic credits. Upgrade or wait for monthly reset.";
+      } else if (error.message.includes('timeout')) {
+        errorMessage = "Enhancement timeout. Try with a shorter audio file.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setIsEnhancing(false);
+      setProgress(0);
+      setStatusMessage("");
     }
   };
 
@@ -214,8 +319,10 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <h2 style={styles.title}>Enhance Speech</h2>
-          <p style={styles.subtitle}>Remove noise and improve audio clarity</p>
+          <h2 style={styles.title}>🎙️ Enhance Speech with AI</h2>
+          <p style={styles.subtitle}>
+            Powered by Auphonic - Professional audio enhancement
+          </p>
         </div>
 
         <div style={styles.content}>
@@ -225,8 +332,34 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
             </div>
           )}
 
+          {/* Info about Auphonic */}
+          {!isEnhancing && (
+            <div style={styles.infoBox}>
+              ℹ️ <strong>What happens:</strong> Your audio will be processed with professional-grade 
+              noise reduction, loudness normalization, and clarity enhancement.
+              <br />
+              ⏱️ Processing takes 20-60 seconds depending on file length.
+            </div>
+          )}
+
+          {isEnhancing && (
+            <div style={styles.progressContainer}>
+              <div style={styles.progressBar}>
+                <div
+                  style={{
+                    ...styles.progressFill,
+                    width: `${progress}%`,
+                  }}
+                />
+              </div>
+              <p style={styles.progressText}>
+                {statusMessage} {progress}%
+              </p>
+            </div>
+          )}
+
           <div style={styles.section}>
-            <label style={styles.label}>Noise Reduction Level</label>
+            <label style={styles.label}>Noise Reduction Intensity</label>
             <div style={styles.sliderContainer}>
               <input
                 type="range"
@@ -239,13 +372,25 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
               />
               <span style={styles.sliderValue}>{denoiseLevel}</span>
             </div>
+            <p style={styles.hint}>
+              {denoiseLevel < 3 && "🟢 Light - Subtle noise removal"}
+              {denoiseLevel >= 3 &&
+                denoiseLevel < 7 &&
+                "🟡 Medium - Balanced enhancement"}
+              {denoiseLevel >= 7 && "🔴 Strong - Aggressive noise removal"}
+            </p>
           </div>
 
           <div style={styles.section}>
             <label style={styles.label}>Enhancement Options</label>
-            
+
             <div style={styles.toggleContainer}>
-              <span style={styles.toggleLabel}>Enhance Clarity</span>
+              <div>
+                <span style={styles.toggleLabel}>🎤 Loudness Normalization</span>
+                <p style={{ fontSize: "11px", color: "#666", margin: "2px 0 0 0" }}>
+                  Auto-balance volume levels for consistency
+                </p>
+              </div>
               <button
                 style={{
                   ...styles.toggle,
@@ -264,7 +409,12 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
             </div>
 
             <div style={styles.toggleContainer}>
-              <span style={styles.toggleLabel}>Remove Echo</span>
+              <div>
+                <span style={styles.toggleLabel}>🔊 Audio Filtering</span>
+                <p style={{ fontSize: "11px", color: "#666", margin: "2px 0 0 0" }}>
+                  Remove echo, reverb, and room reflections
+                </p>
+              </div>
               <button
                 style={{
                   ...styles.toggle,
@@ -282,6 +432,20 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Credit Usage Info */}
+          {!isEnhancing && (
+            <div style={{
+              padding: "10px 12px",
+              backgroundColor: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              borderRadius: "6px",
+              fontSize: "11px",
+              color: "#f59e0b",
+            }}>
+              💳 Using Auphonic free tier (2 hours/month)
+            </div>
+          )}
         </div>
 
         <div style={styles.footer}>
@@ -295,12 +459,14 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
           <button
             style={{
               ...styles.button,
-              ...(isEnhancing || !selectedLayerId ? styles.enhancingButton : styles.enhanceButton),
+              ...(isEnhancing || !selectedLayerId
+                ? styles.enhancingButton
+                : styles.enhanceButton),
             }}
             onClick={handleEnhance}
             disabled={isEnhancing || !selectedLayerId}
           >
-            {isEnhancing ? "Enhancing..." : "Enhance Speech"}
+            {isEnhancing ? `⏳ ${progress}%` : "🚀 Enhance Audio"}
           </button>
         </div>
       </div>
