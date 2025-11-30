@@ -38,6 +38,7 @@ import ForgotPasswordPage from "./pages/auth/ForgotPassword.tsx";
 import GoogleLoading from "./pages/auth/GoogleLoading.tsx";
 import { AIToolsPanel } from "./components/ui/dsahboard/sections/tools/AIToolsPanel.tsx";
 import DynamicLayerEditor from "./components/editors/templates/DynamicLayerEditor.tsx";
+import { LandingPage } from "./pages/LandingPage.tsx";
 
 function App() {
   return (
@@ -416,7 +417,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LandingPage />} />
 
         <Route path="/signup" element={<SignupPage />} />
         <Route
