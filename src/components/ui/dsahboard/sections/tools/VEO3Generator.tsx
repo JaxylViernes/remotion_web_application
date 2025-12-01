@@ -50,6 +50,7 @@ export const VEO3Generator: React.FC = () => {
   }, [generations]);
 
   const fetchGenerations = async () => {
+    console.log(loadingGenerations);
     try {
       setLoadingGenerations(true);
       const response = await veo3Service.getGenerations(10, 0);
