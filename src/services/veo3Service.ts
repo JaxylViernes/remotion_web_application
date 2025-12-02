@@ -1,5 +1,5 @@
+// src/services/veo3Service.ts
 import axios from "axios";
-
 const API_BASE_URL = "http://localhost:3000";
 
 export interface VEO3Generation {
@@ -13,6 +13,8 @@ export interface VEO3Generation {
   thumbnailUrl: string | null;
   errorMessage: string | null;
   createdAt: string;
+  referenceImageUrl?: string | null;
+  referenceType?: string | null; 
 }
 
 export interface VEO3GenerateRequest {
@@ -20,15 +22,43 @@ export interface VEO3GenerateRequest {
   model: string;
   duration: string;
   aspectRatio: string;
+  referenceImage?: File | null;
+  referenceType?: 'ASSET' | 'STYLE'; 
 }
 
 class VEO3Service {
   async generateVideo(data: VEO3GenerateRequest) {
     const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (data.referenceImage) {
+      const formData = new FormData();
+      formData.append("prompt", data.prompt);
+      formData.append("model", data.model);
+      formData.append("duration", data.duration);
+      formData.append("aspectRatio", data.aspectRatio);
+      formData.append("referenceImage", data.referenceImage);
+      formData.append("referenceType", data.referenceType || 'ASSET'); 
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/veo3/generate`,
+        formData,
+        { headers }
+      );
+      return response.data;
+    }
+
     const response = await axios.post(
       `${API_BASE_URL}/api/veo3/generate`,
-      data,
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        prompt: data.prompt,
+        model: data.model,
+        duration: data.duration,
+        aspectRatio: data.aspectRatio,
+      },
+      { headers: { ...headers, "Content-Type": "application/json" } }
     );
     return response.data;
   }
