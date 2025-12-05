@@ -147,7 +147,7 @@ export const BarGraphEditor: React.FC = () => {
       duration,
     };
 
-    const response = await renderVideoUsingLambda(inputProps, "BarGraph", format);
+    const response = await renderVideoUsingLambda(inputProps, format);
 
     if(response === "error"){
       toast.error("There was an error exporting the video");

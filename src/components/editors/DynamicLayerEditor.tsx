@@ -982,7 +982,7 @@ import {
 
 // Hooks
 import { useProjectSave } from "../../hooks/SaveProject";
-import { renderVideo } from "../../utils/VideoRenderer";
+// import { renderVideo } from "../../utils/VideoRenderer";
 
 // UI Components
 import { ExportModal } from "../ui/modals/ExportModal";
@@ -1011,6 +1011,7 @@ import {
   getTemplate,
   type TemplateDefinition,
 } from "../../utils/simpleTemplateRegistry";
+import { renderVideoUsingLambda } from "../../utils/lambdarendering";
 
 // ============================================================================
 // ICONS & STYLES
@@ -2451,19 +2452,12 @@ const DynamicLayerEditor: React.FC = () => {
       setIsExporting(true);
       try {
         const layersToRender = getProcessedLayers(layers);
-        const videoUrl = await renderVideo(
-          {
+        const inputProps = {
+          config: {
             layers: layersToRender,
-            currentFrame: 0,
-            templateId: template?.id,
-            ...(template?.layersToProps
-              ? template.layersToProps(layersToRender)
-              : {}),
-          },
-          template?.id || 1,
-          template?.compositionId || "DynamicLayerComposition",
-          format
-        );
+          }
+        }
+        const videoUrl = await renderVideoUsingLambda(inputProps, format);
         setExportUrl(videoUrl);
         toast.success("Video exported!");
       } catch (error) {

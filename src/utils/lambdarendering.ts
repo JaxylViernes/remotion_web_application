@@ -2,7 +2,6 @@ import { backendPrefix } from "../config";
 
 export const renderVideoUsingLambda = async (
   inputProps: any,
-  compositionId: string,
   format: string
 ) => {
   try {
@@ -15,7 +14,6 @@ export const renderVideoUsingLambda = async (
         },
         body: JSON.stringify({
           inputProps,
-          compositionId,
           format,
         }),
       }
@@ -23,7 +21,7 @@ export const renderVideoUsingLambda = async (
     if(!response.ok) throw new Error( `HTTP error! status: ${response.status}`);
 
     const data = await response.json();
-    return data.url;
+    return data.url as string;
   } catch (error: any) {
     console.error("Error encountered while rendering the video", error.message);
     return "error";
