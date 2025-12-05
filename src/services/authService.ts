@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
+import { backendPrefix } from "../config";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 interface AuthResponse {
   success: boolean;
@@ -41,7 +41,7 @@ class TokenManager {
 
   async refreshAccessToken() {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+      const response = await fetch(`${backendPrefix}/auth/refresh-token`, {
         method: "POST",
         credentials: "include", // ✅ Send cookies
       });
@@ -72,7 +72,7 @@ export const tokenManager = new TokenManager();
 // ✅ Signup
 export const signup = async (email: string, password: string, name: string): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+    const response = await fetch(`${backendPrefix}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -95,7 +95,7 @@ export const signup = async (email: string, password: string, name: string): Pro
 // ✅ Login
 export const login = async (email: string, password: string): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${backendPrefix}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // ✅ CRITICAL: Send/receive cookies
@@ -134,7 +134,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
 // ✅ Verify 2FA
 export const verify2FA = async (tempToken: string, code: string): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-2fa`, {
+    const response = await fetch(`${backendPrefix}/auth/verify-2fa`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -164,7 +164,7 @@ export const logout = async (): Promise<void> => {
   try {
     const token = localStorage.getItem("token");
 
-    await fetch(`${API_BASE_URL}/auth/logout`, {
+    await fetch(`${backendPrefix}/auth/logout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -194,7 +194,7 @@ export const getCurrentUser = async () => {
       return null;
     }
 
-    const response = await fetch(`${API_BASE_URL}/auth`, {
+    const response = await fetch(`${backendPrefix}/auth`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -216,7 +216,7 @@ export const getCurrentUser = async () => {
 // ✅ Google login
 export const googleLogin = async (email: string): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
+    const response = await fetch(`${backendPrefix}/auth/google-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -244,7 +244,7 @@ export const googleLogin = async (email: string): Promise<AuthResponse> => {
 // ✅ Send OTP
 export const sendOTP = async (email: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+    const response = await fetch(`${backendPrefix}/auth/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -261,7 +261,7 @@ export const sendOTP = async (email: string) => {
 // ✅ Verify OTP
 export const verifyOTP = async (email: string, otp: string, otpToken: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+    const response = await fetch(`${backendPrefix}/auth/verify-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -282,7 +282,7 @@ export const resetPassword = async (
   resetToken: string
 ) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    const response = await fetch(`${backendPrefix}/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
