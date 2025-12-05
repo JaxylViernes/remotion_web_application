@@ -2241,7 +2241,7 @@ const DynamicLayerEditor: React.FC = () => {
             layers: layersToRender,
           }
         }
-        const videoUrl = await renderVideoUsingLambda(inputProps, format);
+        const videoUrl = await renderVideoUsingLambda(inputProps, template?.id as number,format);
         setExportUrl(videoUrl);
         toast.success("Video exported!");
       } catch (error) {

@@ -1,6 +1,6 @@
 import axios from "axios";
+import { backendPrefix } from "../config";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 export interface YouTubeVideoInfo {
   id: string;
@@ -52,7 +52,7 @@ class YouTubeService {
    */
   async getVideoInfo(url: string): Promise<YouTubeAPIResponse> {
     const response = await axios.post(
-      `${API_BASE_URL}/api/youtube-v2/info`,
+      `${backendPrefix}/api/youtube-v2/info`,
       { url }
     );
     return response.data;
@@ -64,7 +64,7 @@ class YouTubeService {
   async downloadVideo(url: string, quality: string): Promise<YouTubeAPIResponse> {
     const token = localStorage.getItem("token");
     const response = await axios.post(
-      `${API_BASE_URL}/api/youtube-v2/download`,
+      `${backendPrefix}/api/youtube-v2/download`,
       { url, quality },
       {
         headers: {
@@ -81,7 +81,7 @@ class YouTubeService {
   async getDownloads(limit = 20, offset = 0): Promise<YouTubeAPIResponse> {
     const token = localStorage.getItem("token");
     const response = await axios.get(
-      `${API_BASE_URL}/api/youtube-v2/downloads?limit=${limit}&offset=${offset}`,
+      `${backendPrefix}/api/youtube-v2/downloads?limit=${limit}&offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,7 +97,7 @@ class YouTubeService {
   async getDownloadById(id: string): Promise<YouTubeAPIResponse> {
     const token = localStorage.getItem("token");
     const response = await axios.get(
-      `${API_BASE_URL}/api/youtube-v2/downloads/${id}`,
+      `${backendPrefix}/api/youtube-v2/downloads/${id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -113,7 +113,7 @@ class YouTubeService {
   async deleteDownload(id: string): Promise<YouTubeAPIResponse> {
     const token = localStorage.getItem("token");
     const response = await axios.delete(
-      `${API_BASE_URL}/api/youtube-v2/downloads/${id}`,
+      `${backendPrefix}/api/youtube-v2/downloads/${id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

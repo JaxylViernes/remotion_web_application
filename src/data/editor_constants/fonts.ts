@@ -31,7 +31,6 @@ export const FONTS = [
   { label: "Oswald", value: "Oswald, sans-serif", category: "display" },
   { label: "Permanent Marker", value: "Permanent Marker, cursive", category: "display" },
   { label: "Bangers", value: "Bangers, cursive", category: "display" },
-  { label: "Fredoka One", value: "Fredoka One, cursive", category: "display" },
   { label: "Dancing Script", value: "Dancing Script, cursive", category: "script" },
   { label: "Pacifico", value: "Pacifico, cursive", category: "script" },
   { label: "Great Vibes", value: "Great Vibes, cursive", category: "script" },
