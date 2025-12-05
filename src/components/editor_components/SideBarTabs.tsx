@@ -33,6 +33,15 @@ const StyleIcon = () => (
   </svg>
 );
 
+const CollageIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+
 const BackArrowIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 12H5" />
@@ -159,6 +168,7 @@ export const SidebarTabs: React.FC<SidebarTabsProps> = ({
       {templateId === 9 && renderButton("chat" as any, "Chat", ChatIcon)}
       {templateId === 30 && renderButton("watch" as any, "Watch", WatchIcon)}
       {templateId === 8 && renderButton("carousel" as any, "Blur Style", StyleIcon)}
+      {templateId === 19 && renderButton("collage" as any, "Collage", CollageIcon)}
       
       {renderButton("tools", "Tools", EditorIcons.Tools)}
 

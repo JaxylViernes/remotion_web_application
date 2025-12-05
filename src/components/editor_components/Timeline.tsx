@@ -47,7 +47,13 @@ const formatTime = (frames: number, fps: number): string => {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = Math.floor(totalSeconds % 60);
   const remainingFrames = Math.floor(frames % fps);
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}:${remainingFrames.toString().padStart(2, "0")}`;
+  
+  // Simplified format: only show what's needed
+  if (minutes > 0) {
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  } else {
+    return `0:${seconds.toString().padStart(2, "0")}`;
+  }
 };
 
 const getTrackIcon = (type: TimelineTrack["type"]) => {
@@ -396,15 +402,36 @@ export const Timeline: React.FC<TimelineProps> = ({
     onTracksChange?.(updatedTracks);
   }, [tracks, onTracksChange]);
 
-  // Time Markers
+  // Time Markers - improved with intelligent intervals
   const timeMarkers = useMemo(() => {
-    const markers: { frame: number; label: string }[] = [];
-    const step = Math.max(1, Math.floor(totalFrames / 20));
-    for (let f = 0; f <= totalFrames; f += step) {
-      markers.push({ frame: f, label: formatTime(f, fps) });
+    const markers: { frame: number; label: string; isMajor: boolean }[] = [];
+    
+    // Calculate intelligent intervals based on zoom and total duration
+    const pixelsPerSecond = (timelineWidth / totalFrames) * fps;
+    
+    // Major markers every 1-5 seconds depending on zoom
+    let majorInterval: number;
+    if (pixelsPerSecond > 100) {
+      majorInterval = fps; // Every 1 second when zoomed in
+    } else if (pixelsPerSecond > 40) {
+      majorInterval = fps * 2; // Every 2 seconds
+    } else if (pixelsPerSecond > 20) {
+      majorInterval = fps * 5; // Every 5 seconds
+    } else {
+      majorInterval = fps * 10; // Every 10 seconds when zoomed out
     }
+    
+    // Add markers at major intervals
+    for (let f = 0; f <= totalFrames; f += majorInterval) {
+      markers.push({ 
+        frame: f, 
+        label: formatTime(f, fps),
+        isMajor: true 
+      });
+    }
+    
     return markers;
-  }, [totalFrames, fps]);
+  }, [totalFrames, fps, timelineWidth, zoom]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -443,9 +470,36 @@ export const Timeline: React.FC<TimelineProps> = ({
     rulerRow: { display: "flex", borderBottom: `1px solid ${colors.borderLight}`, backgroundColor: colors.bgPrimary },
     rulerSpacer: { width: "180px", flexShrink: 0, backgroundColor: colors.bgSecondary },
     rulerContent: { flex: 1, overflow: "hidden", position: "relative" },
-    ruler: { position: "relative", height: "32px", backgroundColor: colors.bgPrimary },
-    rulerInner: { position: "relative", height: "100%" },
-    rulerMarker: { position: "absolute", top: "4px", transform: "translateX(-50%)", fontSize: "11px", color: colors.textMuted, whiteSpace: "nowrap" },
+    ruler: { position: "relative", height: "32px", backgroundColor: colors.bgPrimary, borderBottom: `1px solid ${colors.borderLight}` },
+    rulerInner: { position: "relative", height: "100%", borderLeft: `1px solid ${colors.borderLight}` },
+    rulerMarker: { 
+      position: "absolute", 
+      top: "0px", 
+      transform: "translateX(-50%)", 
+      fontSize: "11px", 
+      fontWeight: 500,
+      color: colors.textSecondary,
+      whiteSpace: "nowrap",
+      padding: "2px 6px",
+      backgroundColor: colors.bgPrimary,
+      borderRadius: "3px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "2px"
+    },
+    rulerTick: {
+      position: "absolute",
+      bottom: 0,
+      width: "1px",
+      backgroundColor: colors.borderLight,
+      height: "8px"
+    },
+    rulerTickMajor: {
+      height: "12px",
+      backgroundColor: colors.textMuted,
+      width: "2px"
+    },
     contentWrapper: { flex: 1, display: "flex", overflow: "hidden" },
     trackLabels: { width: "180px", flexShrink: 0, overflow: "hidden", backgroundColor: colors.bgSecondary, borderRight: `1px solid ${colors.borderLight}` },
     trackLabel: { 
@@ -551,7 +605,31 @@ export const Timeline: React.FC<TimelineProps> = ({
         <div style={styles.rulerRow}>
           <div style={styles.rulerSpacer} />
           <div style={styles.rulerContent} ref={rulerRef}>
-            <div style={styles.ruler}><div style={{ ...styles.rulerInner, width: `${timelineWidth}px` }}>{timeMarkers.map(({ frame, label }) => (<div key={frame} style={{ ...styles.rulerMarker, left: `${frameToPixel(frame)}px` }}>{label}</div>))}</div></div>
+            <div style={styles.ruler}>
+              <div style={{ ...styles.rulerInner, width: `${timelineWidth}px` }}>
+                {timeMarkers.map(({ frame, label, isMajor }) => (
+                  <React.Fragment key={frame}>
+                    {/* Tick mark */}
+                    <div 
+                      style={{ 
+                        ...styles.rulerTick, 
+                        ...(isMajor ? styles.rulerTickMajor : {}),
+                        left: `${frameToPixel(frame)}px` 
+                      }} 
+                    />
+                    {/* Time label */}
+                    <div 
+                      style={{ 
+                        ...styles.rulerMarker, 
+                        left: `${frameToPixel(frame)}px` 
+                      }}
+                    >
+                      {label}
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

@@ -10,12 +10,16 @@ import toast from "react-hot-toast";
 import { useTheme } from "../../contexts/ThemeContext";
 import { ThemeToggle } from "../../components/ui/theme/ThemeToggle";
 
-
 // Editor Components
 import DynamicLayerComposition from "../remotion_compositions/DynamicLayerComposition";
 
 // Sidebar
 import { SidebarTabs } from "../editor_components/SideBarTabs";
+
+import {
+  CollagePanel,
+  type CollageLayout,
+} from "../editor_components/CollagePanel";
 
 // AI Tool Modals
 import { VoiceoverModal } from "../ui/modals/VoiceOverModal";
@@ -77,9 +81,6 @@ import {
   getTemplate,
   type TemplateDefinition,
 } from "../../utils/simpleTemplateRegistry";
-
-
-
 
 // ============================================================================
 // ICONS & STYLES
@@ -678,9 +679,7 @@ const CompositionDurationControls: React.FC<{
         +10s
       </button>
 
-      <span style={styles.info}>
-        Max: {(maxLayerFrame / fps).toFixed(1)}s
-      </span>
+      <span style={styles.info}>Max: {(maxLayerFrame / fps).toFixed(1)}s</span>
     </div>
   );
 };
@@ -710,12 +709,11 @@ const DynamicLayerEditor: React.FC = () => {
       setDuration(10);
       return;
     }
-    
-    const maxEndFrame = Math.max(...layers.map(layer => layer.endFrame));
-    
+
+    const maxEndFrame = Math.max(...layers.map((layer) => layer.endFrame));
 
     const requiredDuration = Math.ceil(maxEndFrame / FPS) + 1;
-    
+
     // Update to fit exactly (minimum 5 seconds)
     setDuration(Math.max(requiredDuration, 5));
   }, [layers, FPS]);
@@ -728,7 +726,9 @@ const DynamicLayerEditor: React.FC = () => {
   const [copiedLayer, setCopiedLayer] = useState<Layer | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>(null);
 
-  const [replacingVideoLayerId, setReplacingVideoLayerId] = useState<string | null>(null);
+  const [replacingVideoLayerId, setReplacingVideoLayerId] = useState<
+    string | null
+  >(null);
 
   // Modals & Gallery State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -756,9 +756,14 @@ const DynamicLayerEditor: React.FC = () => {
     "cinema"
   );
 
+  // Collage State
+  const [selectedCollageLayout, setSelectedCollageLayout] =
+    useState<CollageLayout | null>(null);
 
   const [replacingLayerId, setReplacingLayerId] = useState<string | null>(null);
-  const [replacingLayerType, setReplacingLayerType] = useState<'image' | 'video' | 'audio' | null>(null);
+  const [replacingLayerType, setReplacingLayerType] = useState<
+    "image" | "video" | "audio" | null
+  >(null);
 
   const previewRef = useRef<RemotionPreviewHandle>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -784,7 +789,6 @@ const DynamicLayerEditor: React.FC = () => {
   const hasLoadedTemplate = useRef(false);
   const isPanelOpen = activeTab !== null;
 
-
   // Themed grid styles
   const gridStyles = {
     container: {
@@ -795,10 +799,10 @@ const DynamicLayerEditor: React.FC = () => {
       overflowY: "auto" as const,
       height: "100%",
     },
-    section: { 
-      display: "flex", 
-      flexDirection: "column" as const, 
-      gap: "10px" 
+    section: {
+      display: "flex",
+      flexDirection: "column" as const,
+      gap: "10px",
     },
     sectionTitle: {
       fontSize: "11px",
@@ -808,10 +812,10 @@ const DynamicLayerEditor: React.FC = () => {
       letterSpacing: "0.05em",
       paddingLeft: "4px",
     },
-    grid: { 
-      display: "grid", 
-      gridTemplateColumns: "repeat(2, 1fr)", 
-      gap: "10px" 
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(2, 1fr)",
+      gap: "10px",
     },
     card: {
       display: "flex",
@@ -1293,6 +1297,207 @@ const DynamicLayerEditor: React.FC = () => {
     [layers, currentFrame, pushState]
   );
 
+  // ============================================================================
+  // COLLAGE HANDLERS
+  // ============================================================================
+
+ const handleCollageLayoutSelect = useCallback((layout: CollageLayout) => {
+  setSelectedCollageLayout(layout);
+  
+  // Sample images to cycle through
+  const sampleImages = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=1600&fit=crop', // Mountain landscape
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=1600&fit=crop', // Nature scene
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=1600&fit=crop', // Beach sunset
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=1600&fit=crop', // Beach view
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&h=1600&fit=crop', // Ocean
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&h=1600&fit=crop', // Lake
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=1600&fit=crop', // Forest
+    'https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=1200&h=1600&fit=crop', // Sunset
+    'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=1600&fit=crop', // Mountain peak
+  ];
+  
+  // Animation options for variety
+  const animations = ['fade', 'slideUp', 'scale', 'zoomPunch'];
+  
+  // Timing configuration
+  const collageEndFrame = 90;     // Collage shows for 3 seconds
+  const photoStartFrame = 90;     // Individual photos start at 3 seconds
+  const photoDuration = 60;       // Each photo shows for 2 seconds
+  
+  // 1. CREATE COLLAGE SLOT LAYERS (with aesthetic enhancements)
+  const collageLayers: Layer[] = layout.slots.map((slot, index) => {
+    const layerId = generateId();
+    const animation = animations[index % animations.length];
+    
+    const imageLayer: ImageLayer = {
+      id: layerId,
+      name: `Collage Slot ${index + 1}`,
+      visible: true,
+      locked: false,
+      type: 'image',
+      startFrame: 0,
+      endFrame: totalFrames,  
+      position: { 
+        x: slot.x + (slot.width / 2),
+        y: slot.y + (slot.height / 2)
+      },
+      size: { 
+        width: slot.width,
+        height: slot.height
+      },
+      rotation: slot.rotation || 0,
+      opacity: 1,
+      animation: {
+        entrance: animation as 'fade' | 'slideUp' | 'slideDown' | 'scale' | 'zoomPunch',
+        entranceDuration: 30
+      },
+      src: sampleImages[index % sampleImages.length],
+      objectFit: 'cover',
+      // Enhanced aesthetic filters
+      filter: slot.shadow 
+        ? 'drop-shadow(0px 12px 32px rgba(0, 0, 0, 0.6)) brightness(1.05) contrast(1.05)' 
+        : 'brightness(1.05) contrast(1.05)',
+    };
+    
+    return imageLayer;
+  });
+  
+  // 2. CREATE FULLSCREEN TRAILING INDIVIDUAL PHOTO LAYERS (aesthetic designs)
+  const trailingPhotoLayers: ImageLayer[] = [];
+  const individualAnimations = ['zoomPunch', 'scale', 'fade'];
+  
+  for (let i = 0; i < 6; i++) {
+    const photoId = generateId();
+    trailingPhotoLayers.push({
+      id: photoId,
+      name: `Individual Photo ${i + 1}`,
+      visible: true,
+      locked: false,
+      type: 'image',
+      startFrame: photoStartFrame + (i * photoDuration),
+      endFrame: photoStartFrame + ((i + 1) * photoDuration),
+      position: { x: 50, y: 50 },  // Center
+      size: { width: 100, height: 100 },  // FULLSCREEN
+      rotation: 0,
+      opacity: 1,
+      animation: {
+        entrance: individualAnimations[i % individualAnimations.length] as 'fade' | 'scale' | 'zoomPunch',
+        entranceDuration: 25
+      },
+      src: sampleImages[(layout.slots.length + i) % sampleImages.length],
+      objectFit: 'cover',
+      // Aesthetic enhancement filters
+      filter: 'brightness(1.08) contrast(1.1) saturate(1.15)',
+    });
+  }
+  
+  // 3. CREATE AESTHETIC TEXT OVERLAY (only during collage section)
+  const textLayer: TextLayer = {
+    id: generateId(),
+    name: 'Collage Title',
+    visible: true,
+    locked: false,
+    type: 'text',
+    startFrame: 0,
+    endFrame: totalFrames,  
+    position: { x: 50, y: 10 },  // Top center
+    size: { width: 85, height: 12 },
+    rotation: 0,
+    opacity: 1,
+    animation: {
+      entrance: 'slideDown',
+      entranceDuration: 30
+    },
+    content: layout.name.toUpperCase(),  // Uppercase for style
+    fontFamily: 'Poppins',
+    fontSize: 7,
+    fontColor: '#ffffff',
+    fontWeight: '800',
+    fontStyle: 'normal',
+    textAlign: 'center',
+    lineHeight: 1.3,
+    letterSpacing: 3,  // Wide letter spacing for aesthetic
+    textTransform: 'uppercase',
+    textOutline: true,
+    outlineColor: '#000000',
+    textShadow: true,
+    shadowColor: '#000000',
+    shadowX: 0,
+    shadowY: 4,
+    shadowBlur: 12,
+  };
+  
+  // 4. CREATE SUBTLE GRADIENT OVERLAY (only during collage for depth)
+  const gradientOverlay: ImageLayer = {
+    id: generateId(),
+    name: 'Gradient Overlay',
+    visible: true,
+    locked: true,
+    type: 'image',
+    startFrame: 0,
+    endFrame: collageEndFrame,  // Only during collage
+    position: { x: 50, y: 50 },
+    size: { width: 100, height: 100 },
+    rotation: 0,
+    opacity: 0.15,  // Subtle overlay
+    // Black gradient from top (for text readability)
+    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOCIvPjxzdG9wIG9mZnNldD0iNDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwODAiIGhlaWdodD0iMTkyMCIgZmlsbD0idXJsKCNncmFkKSIvPjwvc3ZnPg==',
+    objectFit: 'cover',
+    isBackground: false,
+  };
+  
+  // 5. CREATE BOTTOM VIGNETTE FOR INDIVIDUAL PHOTOS (for aesthetic depth)
+  const bottomVignette: ImageLayer = {
+    id: generateId(),
+    name: 'Bottom Vignette',
+    visible: true,
+    locked: true,
+    type: 'image',
+    startFrame: photoStartFrame,
+    endFrame: totalFrames,  // During all individual photos
+    position: { x: 50, y: 50 },
+    size: { width: 100, height: 100 },
+    rotation: 0,
+    opacity: 0.25,  // Subtle vignette
+    // Dark edges vignette
+    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxyYWRpYWxHcmFkaWVudCBpZD0idmlnIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI3MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOSIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDgwIiBoZWlnaHQ9IjE5MjAiIGZpbGw9InVybCgjdmlnKSIvPjwvc3ZnPg==',
+    objectFit: 'cover',
+    isBackground: false,
+  };
+  
+  // 6. COMBINE ALL LAYERS IN PROPER ORDER
+  const allLayers: Layer[] = [
+    ...collageLayers,           // Collage slots (appear first)
+    gradientOverlay,            // Gradient for collage section
+    textLayer,                  // Text overlay (only during collage)
+    ...trailingPhotoLayers,     // Individual fullscreen photos
+    bottomVignette,             // Vignette for individual photos
+  ];
+  
+  // Remove ALL old layers and add new composition
+  console.log('=== CREATING AESTHETIC COLLAGE COMPOSITION ===');
+  console.log('Removing all', layers.length, 'existing layers');
+  console.log('Adding', collageLayers.length, 'collage slots (0-3s)');
+  console.log('Adding', trailingPhotoLayers.length, 'fullscreen photos (3-15s)');
+  console.log('Adding text layer (0-3s only)');
+  console.log('Adding aesthetic overlays');
+  
+  pushState(allLayers);
+  
+  // Clear selection
+  setSelectedLayerId(null);
+  setEditingLayerId(null);
+  
+  // Force cursor back to default
+  document.body.style.cursor = 'default';
+  setTimeout(() => {
+    document.body.style.cursor = 'default';
+  }, 0);
+  
+  toast.success(`✨ Applied ${layout.name} with aesthetic design!`);
+}, [layers, pushState, totalFrames, setSelectedLayerId, setEditingLayerId]);
+
   // --- TOOLS HANDLERS ---
   const handleRemoveBackground = useCallback(
     (processedImageUrl: string) => {
@@ -1563,162 +1768,20 @@ const DynamicLayerEditor: React.FC = () => {
     addTextLayer();
   }, [addTextLayer]);
 
-
-const addMediaToCanvas = useCallback(
-  (media: any) => {
-    const mediaSource =
-      media.type === "image" ||
-      media.type === "video" ||
-      media.type === "audio"
-        ? media.url
-        : media.data;
-    if (!mediaSource) {
-      toast.error("No source URL found");
-      return;
-    }
-    const newId = generateId();
-    let newLayer: any;
-    if (media.type?.startsWith("image")) {
-      newLayer = {
-        id: newId,
-        type: "image",
-        name: media.name || "Image",
-        visible: true,
-        locked: false,
-        startFrame: currentFrame,
-        endFrame: Math.min(currentFrame + 300, totalFrames),
-        position: { x: 50, y: 50 },
-        size: { width: 40, height: 25 },
-        rotation: 0,
-        opacity: 1,
-        src: mediaSource,
-        isBackground: false,
-        objectFit: "contain",
-      };
-    } else if (media.type?.startsWith("video")) {
-      newLayer = {
-        id: newId,
-        type: "video",
-        name: media.name || "Video",
-        visible: true,
-        locked: false,
-        startFrame: currentFrame,
-        endFrame: Math.min(currentFrame + 300, totalFrames),
-        position: { x: 50, y: 50 },
-        size: { width: 60, height: 45 },
-        rotation: 0,
-        opacity: 1,
-        src: mediaSource,
-        volume: 0.8,
-        loop: false,
-        playbackRate: 1,
-        objectFit: "contain",
-        filter: "",
-        fadeIn: 0,
-        fadeOut: 0,
-        animation: { entrance: "fade", entranceDuration: 30 },
-      };
-    } else if (media.type?.startsWith("audio")) {
-      newLayer = {
-        id: newId,
-        type: "audio",
-        name: media.name || "Audio",
-        visible: true,
-        locked: false,
-        startFrame: currentFrame,
-        endFrame: Math.min(currentFrame + 300, totalFrames),
-        position: { x: 50, y: 50 },
-        size: { width: 100, height: 10 },
-        rotation: 0,
-        opacity: 1,
-        src: mediaSource,
-        volume: 1,
-        loop: false,
-        fadeIn: 0,
-        fadeOut: 0,
-      };
-    }
-    if (newLayer) {
-      // ✅ Keep it simple - this is for single file operations only
-      pushState([...(layers || []), newLayer]);
-      selectLayerAndCloseTab(newLayer.id);
-      toast.success(`Added ${media.name}`);
-    }
-  },
-  [currentFrame, totalFrames, layers, pushState, selectLayerAndCloseTab]
-);
-
-
-  // Replace your handleMediaConfirm function with this version:
-
-const handleMediaConfirm = useCallback(
-  (mediaOrArray: any) => {
-    console.log('📥 handleMediaConfirm called', { 
-      mediaOrArray, 
-      isArray: Array.isArray(mediaOrArray),
-      replacingLayerId, 
-      replacingLayerType 
-    });
-    
-    // Handle single media (replace mode)
-    if (!Array.isArray(mediaOrArray)) {
-      const media = mediaOrArray;
-      
-      // Handle replace mode
-      if (media.replaceMode && replacingLayerId) {
-        const mediaSource = media.url || media.data;
-        if (!mediaSource) {
-          toast.error("No source URL found");
-          return;
-        }
-        
-        updateLayer(replacingLayerId, { src: mediaSource } as Partial<Layer>);
-        toast.success(`${replacingLayerType} replaced successfully`);
-        setReplacingLayerId(null);
-        setReplacingLayerType(null);
-        setIsMediaGalleryOpen(false);
-        return;
-      }
-      
-      // Single file add
-      addMediaToCanvas(media);
-      setProjectAssets((prev) => {
-        const exists = prev.find(
-          (p) => p.name === media.name && p.type === media.type
-        );
-        if (exists) return prev;
-        return [...prev, media];
-      });
-      setIsMediaGalleryOpen(false);
-      return;
-    }
-    
-    // Handle multiple files (array)
-    const mediaArray = mediaOrArray;
-    console.log('📦 Processing multiple files:', mediaArray.length);
-    console.log('📦 Current layers count:', layers.length);
-    
-    // Create all layers at once with offset positions
-    const newLayers: Layer[] = [];
-    
-    mediaArray.forEach((media, index) => {
-      const mediaSource = media.type === "image" || media.type === "video" || media.type === "audio"
-        ? media.url
-        : media.data;
-        
+  const addMediaToCanvas = useCallback(
+    (media: any) => {
+      const mediaSource =
+        media.type === "image" ||
+        media.type === "video" ||
+        media.type === "audio"
+          ? media.url
+          : media.data;
       if (!mediaSource) {
-        console.warn('⚠️ Skipping file with no source:', media.name);
+        toast.error("No source URL found");
         return;
       }
-      
       const newId = generateId();
-      
-      // Calculate offset position for each layer
-      const offsetX = 50 + (index * 5);
-      const offsetY = 50 + (index * 5);
-      
       let newLayer: any;
-      
       if (media.type?.startsWith("image")) {
         newLayer = {
           id: newId,
@@ -1728,15 +1791,13 @@ const handleMediaConfirm = useCallback(
           locked: false,
           startFrame: currentFrame,
           endFrame: Math.min(currentFrame + 300, totalFrames),
-          position: { x: offsetX, y: offsetY },
+          position: { x: 50, y: 50 },
           size: { width: 40, height: 25 },
           rotation: 0,
           opacity: 1,
           src: mediaSource,
           isBackground: false,
           objectFit: "contain",
-          filter: "none",
-          animation: { entrance: "fade", entranceDuration: 30 },
         };
       } else if (media.type?.startsWith("video")) {
         newLayer = {
@@ -1747,7 +1808,7 @@ const handleMediaConfirm = useCallback(
           locked: false,
           startFrame: currentFrame,
           endFrame: Math.min(currentFrame + 300, totalFrames),
-          position: { x: offsetX, y: offsetY },
+          position: { x: 50, y: 50 },
           size: { width: 60, height: 45 },
           rotation: 0,
           opacity: 1,
@@ -1781,62 +1842,248 @@ const handleMediaConfirm = useCallback(
           fadeOut: 0,
         };
       }
-      
       if (newLayer) {
-        console.log(`✅ Created layer ${index + 1}:`, newLayer.name, newLayer.id);
-        newLayers.push(newLayer);
+        // ✅ Keep it simple - this is for single file operations only
+        pushState([...(layers || []), newLayer]);
+        selectLayerAndCloseTab(newLayer.id);
+        toast.success(`Added ${media.name}`);
       }
-    });
-    
-    console.log('📊 Total new layers created:', newLayers.length);
-    console.log('📊 Layer IDs:', newLayers.map(l => l.id));
-    
-    // Add all layers at once
-    if (newLayers.length > 0) {
-      const currentLayers = layers || [];
-      const combinedLayers = [...currentLayers, ...newLayers];
-      
-      console.log('🔄 Pushing state with', combinedLayers.length, 'total layers');
-      console.log('🔄 Before:', currentLayers.length, 'After:', combinedLayers.length);
-      
-      pushState(combinedLayers);
-      
-      // Select the last added layer
-      selectLayerAndCloseTab(newLayers[newLayers.length - 1].id);
-      toast.success(`Added ${newLayers.length} ${newLayers.length === 1 ? 'item' : 'items'}`);
-    } else {
-      console.error('❌ No layers were created!');
-    }
-    
-    // Add all to project assets
-    setProjectAssets((prev) => {
-      const newAssets = mediaArray.filter(media => 
-        !prev.find(p => p.name === media.name && p.type === media.type)
+    },
+    [currentFrame, totalFrames, layers, pushState, selectLayerAndCloseTab]
+  );
+
+  // Replace your handleMediaConfirm function with this version:
+
+  const handleMediaConfirm = useCallback(
+    (mediaOrArray: any) => {
+      console.log("📥 handleMediaConfirm called", {
+        mediaOrArray,
+        isArray: Array.isArray(mediaOrArray),
+        replacingLayerId,
+        replacingLayerType,
+      });
+
+      // Handle single media (replace mode)
+      if (!Array.isArray(mediaOrArray)) {
+        const media = mediaOrArray;
+
+        // Handle replace mode
+        if (media.replaceMode && replacingLayerId) {
+          const mediaSource = media.url || media.data;
+          if (!mediaSource) {
+            toast.error("No source URL found");
+            return;
+          }
+
+          updateLayer(replacingLayerId, { src: mediaSource } as Partial<Layer>);
+          toast.success(`${replacingLayerType} replaced successfully`);
+          setReplacingLayerId(null);
+          setReplacingLayerType(null);
+          setIsMediaGalleryOpen(false);
+          return;
+        }
+
+        // Single file add
+        addMediaToCanvas(media);
+        setProjectAssets((prev) => {
+          const exists = prev.find(
+            (p) => p.name === media.name && p.type === media.type
+          );
+          if (exists) return prev;
+          return [...prev, media];
+        });
+        setIsMediaGalleryOpen(false);
+        return;
+      }
+
+      // Handle multiple files (array)
+      const mediaArray = mediaOrArray;
+      console.log("📦 Processing multiple files:", mediaArray.length);
+      console.log("📦 Current layers count:", layers.length);
+
+      // Create all layers at once with offset positions
+      const newLayers: Layer[] = [];
+
+      mediaArray.forEach((media, index) => {
+        const mediaSource =
+          media.type === "image" ||
+          media.type === "video" ||
+          media.type === "audio"
+            ? media.url
+            : media.data;
+
+        if (!mediaSource) {
+          console.warn("⚠️ Skipping file with no source:", media.name);
+          return;
+        }
+
+        const newId = generateId();
+
+        // Calculate offset position for each layer
+        const offsetX = 50 + index * 5;
+        const offsetY = 50 + index * 5;
+
+        let newLayer: any;
+
+        if (media.type?.startsWith("image")) {
+          newLayer = {
+            id: newId,
+            type: "image",
+            name: media.name || "Image",
+            visible: true,
+            locked: false,
+            startFrame: currentFrame,
+            endFrame: Math.min(currentFrame + 300, totalFrames),
+            position: { x: offsetX, y: offsetY },
+            size: { width: 40, height: 25 },
+            rotation: 0,
+            opacity: 1,
+            src: mediaSource,
+            isBackground: false,
+            objectFit: "contain",
+            filter: "none",
+            animation: { entrance: "fade", entranceDuration: 30 },
+          };
+        } else if (media.type?.startsWith("video")) {
+          newLayer = {
+            id: newId,
+            type: "video",
+            name: media.name || "Video",
+            visible: true,
+            locked: false,
+            startFrame: currentFrame,
+            endFrame: Math.min(currentFrame + 300, totalFrames),
+            position: { x: offsetX, y: offsetY },
+            size: { width: 60, height: 45 },
+            rotation: 0,
+            opacity: 1,
+            src: mediaSource,
+            volume: 0.8,
+            loop: false,
+            playbackRate: 1,
+            objectFit: "contain",
+            filter: "",
+            fadeIn: 0,
+            fadeOut: 0,
+            animation: { entrance: "fade", entranceDuration: 30 },
+          };
+        } else if (media.type?.startsWith("audio")) {
+          newLayer = {
+            id: newId,
+            type: "audio",
+            name: media.name || "Audio",
+            visible: true,
+            locked: false,
+            startFrame: currentFrame,
+            endFrame: Math.min(currentFrame + 300, totalFrames),
+            position: { x: 50, y: 50 },
+            size: { width: 100, height: 10 },
+            rotation: 0,
+            opacity: 1,
+            src: mediaSource,
+            volume: 1,
+            loop: false,
+            fadeIn: 0,
+            fadeOut: 0,
+          };
+        }
+
+        if (newLayer) {
+          console.log(
+            `✅ Created layer ${index + 1}:`,
+            newLayer.name,
+            newLayer.id
+          );
+          newLayers.push(newLayer);
+        }
+      });
+
+      console.log("📊 Total new layers created:", newLayers.length);
+      console.log(
+        "📊 Layer IDs:",
+        newLayers.map((l) => l.id)
       );
-      console.log('💾 Adding to project assets:', newAssets.length, 'new items');
-      return [...prev, ...newAssets];
-    });
-    
-    setIsMediaGalleryOpen(false);
-  },
-  [addMediaToCanvas, replacingLayerId, replacingLayerType, updateLayer, layers, currentFrame, totalFrames, pushState, selectLayerAndCloseTab]
-);
 
+      // Add all layers at once
+      if (newLayers.length > 0) {
+        const currentLayers = layers || [];
+        const combinedLayers = [...currentLayers, ...newLayers];
 
-  const openMediaGallery = useCallback((tab: string, replaceLayerId?: string, replaceType?: 'image' | 'video' | 'audio') => {
-  console.log('🔄 openMediaGallery', { tab, replaceLayerId, replaceType });
-  
-  if (replaceLayerId && replaceType) {
-    setReplacingLayerId(replaceLayerId);
-    setReplacingLayerType(replaceType);
-  } else {
-    setReplacingLayerId(null);
-    setReplacingLayerType(null);
-  }
-  
-  setMediaGalleryActiveTab(tab as any);
-  setIsMediaGalleryOpen(true);
-}, []);
+        console.log(
+          "🔄 Pushing state with",
+          combinedLayers.length,
+          "total layers"
+        );
+        console.log(
+          "🔄 Before:",
+          currentLayers.length,
+          "After:",
+          combinedLayers.length
+        );
+
+        pushState(combinedLayers);
+
+        // Select the last added layer
+        selectLayerAndCloseTab(newLayers[newLayers.length - 1].id);
+        toast.success(
+          `Added ${newLayers.length} ${
+            newLayers.length === 1 ? "item" : "items"
+          }`
+        );
+      } else {
+        console.error("❌ No layers were created!");
+      }
+
+      // Add all to project assets
+      setProjectAssets((prev) => {
+        const newAssets = mediaArray.filter(
+          (media) =>
+            !prev.find((p) => p.name === media.name && p.type === media.type)
+        );
+        console.log(
+          "💾 Adding to project assets:",
+          newAssets.length,
+          "new items"
+        );
+        return [...prev, ...newAssets];
+      });
+
+      setIsMediaGalleryOpen(false);
+    },
+    [
+      addMediaToCanvas,
+      replacingLayerId,
+      replacingLayerType,
+      updateLayer,
+      layers,
+      currentFrame,
+      totalFrames,
+      pushState,
+      selectLayerAndCloseTab,
+    ]
+  );
+
+  const openMediaGallery = useCallback(
+    (
+      tab: string,
+      replaceLayerId?: string,
+      replaceType?: "image" | "video" | "audio"
+    ) => {
+      console.log("🔄 openMediaGallery", { tab, replaceLayerId, replaceType });
+
+      if (replaceLayerId && replaceType) {
+        setReplacingLayerId(replaceLayerId);
+        setReplacingLayerType(replaceType);
+      } else {
+        setReplacingLayerId(null);
+        setReplacingLayerType(null);
+      }
+
+      setMediaGalleryActiveTab(tab as any);
+      setIsMediaGalleryOpen(true);
+    },
+    []
+  );
 
   // ==========================================
   // TIMELINE TRACKS (Reversed Logic)
@@ -2159,10 +2406,12 @@ const handleMediaConfirm = useCallback(
 
   return (
     <>
-      <div style={{
-        ...editorStyles.container,
-        backgroundColor: colors.bgPrimary,
-      }}>
+      <div
+        style={{
+          ...editorStyles.container,
+          backgroundColor: colors.bgPrimary,
+        }}
+      >
         {isLoading && <LoadingOverlay message="Loading project..." />}
 
         {/* --- LEFT SIDEBAR --- */}
@@ -2177,25 +2426,23 @@ const handleMediaConfirm = useCallback(
           templateId={template?.id}
         />
 
-     
-
         {/* --- LAYERS PANEL --- */}
         <div
           style={{
             ...editorStyles.layersPanel,
-            backgroundColor: colors.bgPrimary,  // ← ADD THIS LINE
-            ...(isPanelOpen
-              ? {}
-              : editorStyles.layersPanelClosed),
+            backgroundColor: colors.bgPrimary, // ← ADD THIS LINE
+            ...(isPanelOpen ? {} : editorStyles.layersPanelClosed),
           }}
         >
           {isPanelOpen && (
             <>
-              <div style={{
-                ...editorStyles.layersPanelHeader,
-                backgroundColor: colors.bgSecondary,
-                borderBottom: `1px solid ${colors.border}`,
-              }}>
+              <div
+                style={{
+                  ...editorStyles.layersPanelHeader,
+                  backgroundColor: colors.bgSecondary,
+                  borderBottom: `1px solid ${colors.border}`,
+                }}
+              >
                 {activeTab === "watch" && watchCategory !== "main" ? (
                   <button
                     onClick={() => setWatchCategory("main")}
@@ -2212,10 +2459,12 @@ const handleMediaConfirm = useCallback(
                     <Icons.ChevronLeft /> Back
                   </button>
                 ) : (
-                  <span style={{
-                    ...editorStyles.layersPanelTitle,
-                    color: colors.textPrimary,
-                  }}>
+                  <span
+                    style={{
+                      ...editorStyles.layersPanelTitle,
+                      color: colors.textPrimary,
+                    }}
+                  >
                     {activeTab === "chat"
                       ? "Chat Settings"
                       : activeTab === "watch"
@@ -2555,6 +2804,14 @@ const handleMediaConfirm = useCallback(
                 </div>
               )}
 
+              {/* --- PHOTO COLLAGE PANEL (TEMPLATE 19) --- */}
+              {activeTab === "collage" && template?.id === 19 && (
+                <CollagePanel
+                  onLayoutSelect={handleCollageLayoutSelect}
+                  selectedLayoutId={selectedCollageLayout?.id}
+                />
+              )}
+
               {/* Layout Panel */}
               {activeTab === "layout" && template?.id === 6 && (
                 <div style={gridStyles.container}>
@@ -2668,12 +2925,14 @@ const handleMediaConfirm = useCallback(
 
         {/* --- EDIT PANEL --- */}
         <div
-            style={{
-              ...editorStyles.editPanel,
-              backgroundColor: colors.bgPrimary,  // ← ADD THIS
-              ...(showEditPanel && !isPanelOpen ? {} : editorStyles.editPanelHidden),
-            }}
-          >
+          style={{
+            ...editorStyles.editPanel,
+            backgroundColor: colors.bgPrimary, // ← ADD THIS
+            ...(showEditPanel && !isPanelOpen
+              ? {}
+              : editorStyles.editPanelHidden),
+          }}
+        >
           {showEditPanel && (
             <>
               <div
@@ -2684,10 +2943,12 @@ const handleMediaConfirm = useCallback(
                   justifyContent: "space-between",
                 }}
               >
-                <span style={{
-                  ...editorStyles.editPanelTitle,
-                  color: colors.textPrimary,
-                }}>
+                <span
+                  style={{
+                    ...editorStyles.editPanelTitle,
+                    color: colors.textPrimary,
+                  }}
+                >
                   {selectedTextLayer && "Edit Text"}
                   {selectedAudioLayer && "Edit Audio"}
                   {selectedVideoLayer && "Edit Video"}
@@ -2708,40 +2969,59 @@ const handleMediaConfirm = useCallback(
                 />
               )}
               {selectedAudioLayer && (
-  <AudioEditor
-    layer={selectedAudioLayer}
-    onUpdate={updateLayer}
-    onDelete={deleteLayer}
-    totalFrames={totalFrames}
-    onReplace={() => openMediaGallery('audio', selectedAudioLayer.id, 'audio')}
-  />
-)}
+                <AudioEditor
+                  layer={selectedAudioLayer}
+                  onUpdate={updateLayer}
+                  onDelete={deleteLayer}
+                  totalFrames={totalFrames}
+                  onReplace={() =>
+                    openMediaGallery("audio", selectedAudioLayer.id, "audio")
+                  }
+                />
+              )}
               {selectedLayer && isImageLayer(selectedLayer) && (
-  <ImageEditor
-    layer={selectedLayer}
-    totalFrames={totalFrames}
-    onUpdate={updateLayer}
-    onDelete={deleteLayer}
-    onReplace={() => openMediaGallery('media', selectedLayer.id, 'image')}
-  />
-)}
-             {selectedVideoLayer && (
-  <VideoEditor
-    layer={selectedVideoLayer}
-    totalFrames={totalFrames}
-    onUpdate={updateLayer}
-    onDelete={deleteLayer}
-    onReplace={() => openMediaGallery('video', selectedVideoLayer.id, 'video')}
-  />
-)}
+                <ImageEditor
+                  layer={selectedLayer}
+                  totalFrames={totalFrames}
+                  onUpdate={updateLayer}
+                  onDelete={deleteLayer}
+                  onReplace={() =>
+                    openMediaGallery("media", selectedLayer.id, "image")
+                  }
+                />
+              )}
+              {selectedVideoLayer && (
+                <VideoEditor
+                  layer={selectedVideoLayer}
+                  totalFrames={totalFrames}
+                  onUpdate={updateLayer}
+                  onDelete={deleteLayer}
+                  onReplace={() =>
+                    openMediaGallery("video", selectedVideoLayer.id, "video")
+                  }
+                />
+              )}
             </>
           )}
         </div>
 
         {/* --- MAIN AREA --- */}
-        <div style={{...editorStyles.mainArea, backgroundColor: colors.bgPrimary}}>
-          <div style={{...editorStyles.header, backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}`}}>
-            <span style={{...editorStyles.headerTitle, color: colors.textPrimary}}>
+        <div
+          style={{
+            ...editorStyles.mainArea,
+            backgroundColor: colors.bgPrimary,
+          }}
+        >
+          <div
+            style={{
+              ...editorStyles.header,
+              backgroundColor: colors.bgSecondary,
+              borderBottom: `1px solid ${colors.border}`,
+            }}
+          >
+            <span
+              style={{ ...editorStyles.headerTitle, color: colors.textPrimary }}
+            >
               {projectTitle || template?.displayName || "Video Editor"}
             </span>
             <div style={editorStyles.headerButtonsRight}>
@@ -2767,41 +3047,49 @@ const handleMediaConfirm = useCallback(
             </div>
           </div>
 
-          <div style={{...editorStyles.previewArea, backgroundColor: colors.bgPrimary}} ref={previewContainerRef}>
-            <div style={editorStyles.previewWrapper}>
-              <RemotionPreview
-                key={`preview-${layers.length}-${layers
-                  .map((l) => l.id)
-                  .join(",")}`}
-                ref={previewRef}
-                component={template?.composition || DynamicLayerComposition}
-                inputProps={previewInputProps}
-                durationInFrames={totalFrames}
-                fps={FPS}
-                onFrameUpdate={handlePreviewFrameUpdate}
-                onPlayingChange={(playing) => setIsPlaying(playing)}
-                containerWidth="100%"
-                containerHeight="100%"
-                phoneFrameWidth={`${previewDimensions.width}px`}
-                phoneFrameHeight={`${previewDimensions.height}px`}
-              />
-              {/* Disable overlay for Ken Burns (ID 8) */}
-              {template?.id !== 8 && (
-                <DynamicPreviewOverlay
-                  layers={layers}
-                  currentFrame={currentFrame}
-                  selectedLayerId={selectedLayerId}
-                  editingLayerId={editingLayerId}
-                  onSelectLayer={selectLayerAndCloseTab}
-                  onLayerUpdate={updateLayer}
-                  containerWidth={previewDimensions.width}
-                  containerHeight={previewDimensions.height}
-                  onEditingLayerChange={setEditingLayerId}
-                  isPlaying={isPlaying}
-                  onPlayingChange={setIsPlaying}
-                />
-              )}
-            </div>
+          <div
+            style={{
+              ...editorStyles.previewArea,
+              backgroundColor: colors.bgPrimary,
+            }}
+            ref={previewContainerRef}
+          >
+           <div style={editorStyles.previewWrapper}>
+  <div style={{ position: 'relative', display: 'inline-block' }}>
+    <RemotionPreview
+      key={`preview-${layers.length}-${layers
+        .map((l) => l.id)
+        .join(",")}`}
+      ref={previewRef}
+      component={template?.composition || DynamicLayerComposition}
+      inputProps={previewInputProps}
+      durationInFrames={totalFrames}
+      fps={FPS}
+      onFrameUpdate={handlePreviewFrameUpdate}
+      onPlayingChange={(playing) => setIsPlaying(playing)}
+      containerWidth="100%"
+      containerHeight="100%"
+      phoneFrameWidth={`${previewDimensions.width}px`}
+      phoneFrameHeight={`${previewDimensions.height}px`}
+    />
+    
+    {template?.id !== 8 &&  (
+      <DynamicPreviewOverlay
+        layers={layers}
+        currentFrame={currentFrame}
+        selectedLayerId={selectedLayerId}
+        editingLayerId={editingLayerId}
+        onSelectLayer={selectLayerAndCloseTab}
+        onLayerUpdate={updateLayer}
+        containerWidth={previewDimensions.width}
+        containerHeight={previewDimensions.height}
+        onEditingLayerChange={setEditingLayerId}
+        isPlaying={isPlaying}
+        onPlayingChange={setIsPlaying}
+      />
+    )}
+  </div>
+</div>
           </div>
 
           <Timeline
@@ -2845,7 +3133,7 @@ const handleMediaConfirm = useCallback(
         type="file"
         accept="video/*"
         style={{ display: "none" }}
-         onChange={(e) => {
+        onChange={(e) => {
           if (replacingVideoLayerId) {
             handleVideoReplaceUpload(e);
           } else {
@@ -2936,20 +3224,20 @@ const handleMediaConfirm = useCallback(
           onSave={handleSaveProject}
         />
       )}
-     {isMediaGalleryOpen && (
-  <MediaGalleryModal
-    isOpen={isMediaGalleryOpen}
-    onClose={() => {
-      setIsMediaGalleryOpen(false);
-      setReplacingLayerId(null);
-      setReplacingLayerType(null);
-    }}
-    onConfirm={handleMediaConfirm}
-    activeTab={mediaGalleryActiveTab}
-    replaceMode={!!replacingLayerId}
-    replaceLayerId={replacingLayerId || undefined}
-  />
-)}
+      {isMediaGalleryOpen && (
+        <MediaGalleryModal
+          isOpen={isMediaGalleryOpen}
+          onClose={() => {
+            setIsMediaGalleryOpen(false);
+            setReplacingLayerId(null);
+            setReplacingLayerType(null);
+          }}
+          onConfirm={handleMediaConfirm}
+          activeTab={mediaGalleryActiveTab}
+          replaceMode={!!replacingLayerId}
+          replaceLayerId={replacingLayerId || undefined}
+        />
+      )}
 
       {/* Modals */}
       <VoiceoverModal

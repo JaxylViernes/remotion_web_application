@@ -61,16 +61,17 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
   const { width: actualWidth, height: actualHeight } = dimensions;
 
   const visibleLayers = layers
-    .map((layer, index) => ({ layer, originalIndex: index }))
-    .filter(({ layer }) => {
-      if ((layer as ImageLayer).isBackground) return false;
-      if (!layer.visible) return false;
-      if (layer.type === 'audio') return false; 
-      if (!layer.position) return false; 
-      return currentFrame >= layer.startFrame && currentFrame <= layer.endFrame;
-    })
-    .sort((a, b) => b.originalIndex - a.originalIndex)
-    .map(({ layer }) => layer);
+  .map((layer, index) => ({ layer, originalIndex: index }))
+  .filter(({ layer }) => {
+    if ((layer as ImageLayer).isBackground) return false;
+    if (!layer.visible) return false;
+    if (layer.locked) return false;  // ✅ FILTER OUT LOCKED LAYERS
+    if (layer.type === 'audio') return false; 
+    if (!layer.position) return false; 
+    return currentFrame >= layer.startFrame && currentFrame <= layer.endFrame;
+  })
+  .sort((a, b) => b.originalIndex - a.originalIndex)
+  .map(({ layer }) => layer);
 
   // Helper: Get visual center of element in pixels
   const getElementCenter = (layer: Layer) => {
