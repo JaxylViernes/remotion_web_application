@@ -36,7 +36,6 @@ import RequireAuth from "./pages/auth/AuthChecker.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword.tsx";
 import GoogleLoading from "./pages/auth/GoogleLoading.tsx";
 import { AIToolsPanel } from "./components/ui/dsahboard/sections/tools/AIToolsPanel.tsx";
-import  LandingPage  from "./pages/LandingPage.tsx";
 import DynamicLayerEditor from "./components/editors/DynamicLayerEditor.tsx";
 import LoginLoading from "./pages/auth/LoginLoader.tsx";
 import VideoTemplatesPage from "./pages/features/VideoTemplatesPage.tsx"
@@ -75,6 +74,7 @@ const ConditionalFooter = () => {
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./styles/theme.css";
+import ViralMotionLanding from "./pages/LandingPage.tsx";
 
 function App() {
   return (
@@ -457,7 +457,7 @@ function App() {
         <Route path="/initializing-login" element={<LoginLoading />} />
 
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<ViralMotionLanding />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/templates" element={<VideoTemplatesPage />} />
         <Route path="/templates/fake-text-conversation" element={<FakeTextConversationPage />} />
