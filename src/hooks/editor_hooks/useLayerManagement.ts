@@ -9,6 +9,7 @@ import {
   isImageLayer,
 } from "../../components/remotion_compositions/DynamicLayerComposition";
 import { generateId } from "../../utils/layerHelper";
+// import { FPS } from "../constants";
 
 interface UseLayerManagementProps {
   layers: Layer[];
@@ -193,22 +194,22 @@ export const useLayerManagement = ({
     [currentFrame, totalFrames, layers, pushState, setSelectedLayerId, setActiveTab]
   );
 
-  const updateLayer = useCallback(
-    (layerId: string, updates: Partial<Layer>) => {
-      console.log('🔍 updateLayer called:', { layerId, updates });
-      
-      const newLayers = layers.map((layer): Layer => {
-        if (layer.id !== layerId) return layer;
-        const updated = { ...layer, ...updates } as Layer;
-        console.log('  ↳ Layer updated:', layer.name, updated);
-        return updated;
-      });
-      
-      console.log('🔍 Pushing new state with', newLayers.length, 'layers');
-      pushState(newLayers);
-    },
-    [layers, pushState]
-  );
+ const updateLayer = useCallback(
+  (layerId: string, updates: Partial<Layer>) => {
+    console.log('📝 updateLayer called:', { layerId, updates });
+    
+    const newLayers = layers.map((layer): Layer => {
+      if (layer.id !== layerId) return layer;
+      const updated = { ...layer, ...updates } as Layer;
+      console.log('  ↳ Layer updated:', layer.name, updated);
+      return updated;
+    });
+    
+    console.log('📝 Pushing new state with', newLayers.length, 'layers');
+    pushState(newLayers);
+  },
+  [layers, pushState]
+);
 
   const deleteLayer = useCallback(
     (layerId: string) => {
@@ -225,70 +226,143 @@ export const useLayerManagement = ({
     [layers, pushState, setSelectedLayerId]
   );
 
-  /**
-   * Reorder a layer in the stack
-   * @param layerId - ID of the layer to move
-   * @param direction - Direction to move: "up" (forward one), "down" (back one), "top" (to front), "bottom" (to back)
-   */
-  const reorderLayer = useCallback(
-    (layerId: string, direction: "up" | "down" | "top" | "bottom") => {
-      const currentIndex = layers.findIndex((l) => l.id === layerId);
-      if (currentIndex === -1) return;
-
-      let newLayers = [...layers];
-      const [movedLayer] = newLayers.splice(currentIndex, 1);
-
-      switch (direction) {
-        case "up":
-          // Move forward one position (higher z-index)
-          if (currentIndex > 0) {
-            newLayers.splice(currentIndex - 1, 0, movedLayer);
-            toast.success("Layer moved up");
-          }
-          break;
-        case "down":
-          // Move back one position (lower z-index)
-          if (currentIndex < layers.length - 1) {
-            newLayers.splice(currentIndex + 1, 0, movedLayer);
-            toast.success("Layer moved down");
-          }
-          break;
-        case "top":
-          // Move to front (highest z-index)
-          newLayers.unshift(movedLayer);
-          toast.success("Layer moved to top");
-          break;
-        case "bottom":
-          // Move to back (lowest z-index)
-          newLayers.push(movedLayer);
-          toast.success("Layer moved to bottom");
-          break;
+  const splitLayer = useCallback(
+    (layerId: string, frame: number) => {
+      const layer = layers.find((l) => l.id === layerId);
+      
+      if (!layer) {
+        toast.error("Layer not found");
+        return;
       }
 
+      // Check if layer is locked
+      if (layer.locked) {
+        toast.error("Cannot split locked layer");
+        return;
+      }
+
+      // Check if frame is within layer bounds
+      if (frame <= layer.startFrame || frame >= layer.endFrame) {
+        toast.error("Split point must be within layer duration");
+        return;
+      }
+
+      // Check if it's a background layer
+      if (isImageLayer(layer) && layer.isBackground) {
+        toast.error("Cannot split background layer");
+        return;
+      }
+
+      // Create the first part (from start to split point)
+      const firstPart: Layer = {
+        ...layer,
+        id: generateId(),
+        name: `${layer.name} (1)`,
+        endFrame: frame,
+      };
+
+      // Create the second part (from split point to end)
+      const secondPart: Layer = {
+        ...layer,
+        id: generateId(),
+        name: `${layer.name} (2)`,
+        startFrame: frame,
+      };
+
+      // Replace the original layer with the two new parts
+      const newLayers = layers.map((l) => {
+        if (l.id === layerId) {
+          return firstPart;
+        }
+        return l;
+      });
+
+      // Insert the second part right after the first
+      const originalIndex = layers.findIndex((l) => l.id === layerId);
+      newLayers.splice(originalIndex + 1, 0, secondPart);
+
       pushState(newLayers);
+      setSelectedLayerId(secondPart.id);
+      toast.success("Layer split successfully");
+    },
+    [layers, pushState, setSelectedLayerId]
+  );
+
+  const reorderLayers = useCallback(
+    (startIndex: number, endIndex: number) => {
+      console.log('🎯 reorderLayers called:', { startIndex, endIndex, totalLayers: layers.length });
+      
+      // Prevent reordering if indices are invalid
+      if (
+        startIndex < 0 ||
+        endIndex < 0 ||
+        startIndex >= layers.length ||
+        endIndex >= layers.length ||
+        startIndex === endIndex
+      ) {
+        console.log('❌ Invalid indices, returning:', {
+          startIndex,
+          endIndex,
+          layersLength: layers.length,
+          reason: startIndex < 0 || endIndex < 0 ? 'negative' :
+                  startIndex >= layers.length || endIndex >= layers.length ? 'out of bounds' :
+                  'same index'
+        });
+        return;
+      }
+
+      // Check if the layer being moved is locked
+      const layerToMove = layers[startIndex];
+      console.log('  Layer to move:', layerToMove?.name, 'locked:', layerToMove?.locked);
+      
+      if (layerToMove.locked) {
+        console.log('  ❌ Layer is locked');
+        toast.error("Cannot reorder locked layer");
+        return;
+      }
+
+      // Check if it's a background layer
+      if (isImageLayer(layerToMove) && layerToMove.isBackground) {
+        console.log('  ❌ Layer is background');
+        toast.error("Cannot reorder background layer");
+        return;
+      }
+
+      // Create new array with reordered layers
+      const newLayers = [...layers];
+      const [removed] = newLayers.splice(startIndex, 1);
+      newLayers.splice(endIndex, 0, removed);
+
+      console.log('  ✅ Reordering complete');
+      console.log('  Old order:', layers.map(l => l.name));
+      console.log('  New order:', newLayers.map(l => l.name));
+      console.log('  Calling pushState with', newLayers.length, 'layers');
+      
+      pushState(newLayers);
+      
+      console.log('  ✅ pushState called');
     },
     [layers, pushState]
   );
 
-  /**
-   * Move a layer from one index to another
-   * @param fromIndex - Current index of the layer
-   * @param toIndex - Target index for the layer
-   */
-  const moveLayerToIndex = useCallback(
-    (fromIndex: number, toIndex: number) => {
-      if (fromIndex === toIndex || fromIndex < 0 || fromIndex >= layers.length || toIndex < 0 || toIndex >= layers.length) {
-        return;
+  const moveLayerUp = useCallback(
+    (layerId: string) => {
+      const index = layers.findIndex((l) => l.id === layerId);
+      if (index > 0) {
+        reorderLayers(index, index - 1);
       }
-
-      const newLayers = [...layers];
-      const [movedLayer] = newLayers.splice(fromIndex, 1);
-      newLayers.splice(toIndex, 0, movedLayer);
-      
-      pushState(newLayers);
-      toast.success("Layer reordered");
     },
-    [layers, pushState]
+    [layers, reorderLayers]
+  );
+
+  const moveLayerDown = useCallback(
+    (layerId: string) => {
+      const index = layers.findIndex((l) => l.id === layerId);
+      if (index < layers.length - 1) {
+        reorderLayers(index, index + 1);
+      }
+    },
+    [layers, reorderLayers]
   );
 
   return {
@@ -304,7 +378,9 @@ export const useLayerManagement = ({
     handleVideoUpload,
     updateLayer,
     deleteLayer,
-    reorderLayer,
-    moveLayerToIndex,
+    splitLayer,
+    reorderLayers,
+    moveLayerUp,
+    moveLayerDown,
   };
 };

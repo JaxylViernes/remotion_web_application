@@ -15,20 +15,23 @@ export const useHistoryState = (initialLayers: Layer[]) => {
       return;
     }
 
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(newLayers);
-      if (newHistory.length > MAX_HISTORY_SIZE) {
-        return newHistory.slice(newHistory.length - MAX_HISTORY_SIZE);
-      }
-      return newHistory;
-    });
-    setHistoryIndex((prev) => {
-      const newIndex = prev + 1;
-      return newIndex >= MAX_HISTORY_SIZE ? MAX_HISTORY_SIZE - 1 : newIndex;
-    });
+    // Clear any redo history when making a new change
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newLayers);
+    
+    let finalHistory = newHistory;
+    let finalIndex = newHistory.length - 1;
+    
+    // Trim history if it exceeds max size
+    if (newHistory.length > MAX_HISTORY_SIZE) {
+      finalHistory = newHistory.slice(newHistory.length - MAX_HISTORY_SIZE);
+      finalIndex = MAX_HISTORY_SIZE - 1;
+    }
+    
+    setHistory(finalHistory);
+    setHistoryIndex(finalIndex);
     setLayers(newLayers);
-  }, [historyIndex]);
+  }, [historyIndex, history]);
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
@@ -52,6 +55,7 @@ export const useHistoryState = (initialLayers: Layer[]) => {
     setLayers(newLayers);
     setHistory([newLayers]);
     setHistoryIndex(0);
+    isUndoRedoAction.current = false;
   }, []);
 
   const canUndo = historyIndex > 0;

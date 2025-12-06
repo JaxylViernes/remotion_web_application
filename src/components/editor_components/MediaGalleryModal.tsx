@@ -732,7 +732,8 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
     giphyContainer: {
       display: 'flex',
       flexDirection: 'column' as const,
-      height: '100%',
+      flex: 1,
+      minHeight: 0, // Important: allows flex child to shrink
     },
     giphySearch: {
       padding: '20px',
