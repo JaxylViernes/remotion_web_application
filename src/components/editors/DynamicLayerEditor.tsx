@@ -946,6 +946,7 @@ const DynamicLayerEditor: React.FC = () => {
   handleVideoUpload,
   updateLayer,
   deleteLayer,
+  reorderLayers
 } = useLayerManagement({
     layers,
     currentFrame,
