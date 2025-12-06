@@ -1772,24 +1772,38 @@ const DynamicLayerEditor: React.FC = () => {
   }, [addTextLayer]);
 
   const addMediaToCanvas = useCallback(
-    (media: any) => {
-      const mediaSource =
-        media.type === "image" ||
-        media.type === "video" ||
-        media.type === "audio"
-          ? media.url
-          : media.data;
-      if (!mediaSource) {
-        toast.error("No source URL found");
-        return;
-      }
-      const newId = generateId();
-      let newLayer: any;
-      if (media.type?.startsWith("image")) {
-        newLayer = {
-          id: newId,
-          type: "image",
-          name: media.name || "Image",
+  (media: any) => {
+    // ✨ ADD: Log what we're adding
+    console.log('🎨 addMediaToCanvas called with:', { 
+      name: media.name, 
+      type: media.type,
+      isGif: media.isGif,
+      hasUrl: !!media.url,
+      url: media.url 
+    });
+    
+    const mediaSource =
+      media.type === "image" ||
+      media.type === "video" ||
+      media.type === "audio"
+        ? media.url
+        : media.data;
+    if (!mediaSource) {
+      toast.error("No source URL found");
+      return;
+    }
+    const newId = generateId();
+    let newLayer: any;
+    if (media.type?.startsWith("image")) {
+      // ✨ ADD: Detect if it's a GIF
+      const isGif = media.isGif || mediaSource.toLowerCase().endsWith('.gif');
+      console.log(`🖼️ Creating image layer (${isGif ? 'GIF' : 'static image'}):`, media.name);
+      
+      newLayer = {
+        id: newId,
+        type: "image",
+        name: media.name || (isGif ? "GIF" : "Image"), // ✨ Better naming
+        // ... rest of layer properties
           visible: true,
           locked: false,
           startFrame: currentFrame,
@@ -2117,27 +2131,16 @@ const DynamicLayerEditor: React.FC = () => {
     [selectLayerAndCloseTab]
   );
 
-  const handleReorderTracks = useCallback(
+const handleReorderTracks = useCallback(
   (fromIndex: number, toIndex: number) => {
-    console.log('🔄 REORDER:', { from: fromIndex, to: toIndex, total: layers.length });
+    // Timeline displays in reverse, so convert indices
+    const actualFromIndex = layers.length - 1 - fromIndex;
+    const actualToIndex = layers.length - 1 - toIndex;
     
-    if (fromIndex === toIndex) {
-      console.log('❌ Same index, skipping');
-      return;
-    }
-    
-    // Timeline shows layers in reverse (newest on top)
-    const reversedLayers = [...layers].reverse();
-    const [movedLayer] = reversedLayers.splice(fromIndex, 1);
-    reversedLayers.splice(toIndex, 0, movedLayer);
-    const newLayers = reversedLayers.reverse();
-    
-    console.log('✅ New order:', newLayers.map(l => l.name));
-    
-    pushState(newLayers);
-    toast.success(`Moved ${movedLayer.name}`);
+    // Use the validated reorderLayers function
+    reorderLayers(actualFromIndex, actualToIndex);
   },
-  [layers, pushState]
+  [layers, reorderLayers]
 );
 
   const handleTracksChange = useCallback(
