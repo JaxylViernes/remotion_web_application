@@ -1,7 +1,4 @@
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 interface AIImageModalProps {
@@ -19,6 +16,42 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
   const [style, setStyle] = useState("realistic");
   const [aspectRatio, setAspectRatio] = useState("9:16");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Theme-based colors
+  const isDark = theme === "dark";
+  const colors = {
+    overlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isDark ? "#1a1a1a" : "#ffffff",
+    inputBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    subtitleColor: isDark ? "#888" : "#666",
+    textColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    mutedText: isDark ? "#888" : "#666",
+    infoBg: isDark ? "rgba(236, 72, 153, 0.1)" : "rgba(236, 72, 153, 0.08)",
+    infoBorder: isDark ? "rgba(236, 72, 153, 0.3)" : "rgba(236, 72, 153, 0.2)",
+    cancelButtonBg: isDark ? "transparent" : "#f5f5f5",
+    cancelButtonColor: isDark ? "#888" : "#666",
+    cancelButtonBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
@@ -27,15 +60,16 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
       padding: "20px",
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "16px",
       width: "100%",
       maxWidth: "500px",
@@ -43,16 +77,17 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       padding: "24px 24px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      borderBottom: `1px solid ${colors.border}`,
     },
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       margin: "0 0 8px 0",
       display: "flex",
       alignItems: "center",
@@ -60,7 +95,7 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
     },
     subtitle: {
       fontSize: "13px",
-      color: "#888",
+      color: colors.subtitleColor,
       margin: 0,
     },
     content: {
@@ -75,33 +110,34 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.textColor,
       marginBottom: "8px",
     },
     textarea: {
       width: "100%",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.textColor,
       fontSize: "14px",
       fontFamily: "inherit",
       resize: "vertical" as const,
       minHeight: "100px",
       outline: "none",
-      transition: "border-color 0.2s",
+      transition: "border-color 0.2s, background-color 0.3s ease",
     },
     select: {
       width: "100%",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.textColor,
       fontSize: "14px",
       outline: "none",
       cursor: "pointer",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     styleGrid: {
       display: "grid",
@@ -110,10 +146,10 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
     },
     styleButton: {
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#888",
+      color: colors.mutedText,
       fontSize: "13px",
       fontWeight: "500",
       cursor: "pointer",
@@ -127,7 +163,7 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
     },
     footer: {
       padding: "16px 24px",
-      borderTop: "1px solid rgba(255,255,255,0.1)",
+      borderTop: `1px solid ${colors.border}`,
       display: "flex",
       gap: "12px",
       justifyContent: "flex-end",
@@ -143,9 +179,9 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       outline: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonColor,
     },
     generateButton: {
       background: "linear-gradient(135deg, #ec4899 0%, #d946ef 100%)",
@@ -157,8 +193,8 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       opacity: 0.6,
     },
     infoBox: {
-      backgroundColor: "rgba(236, 72, 153, 0.1)",
-      border: "1px solid rgba(236, 72, 153, 0.3)",
+      backgroundColor: colors.infoBg,
+      border: `1px solid ${colors.infoBorder}`,
       borderRadius: "8px",
       padding: "12px",
       marginBottom: "20px",
@@ -167,6 +203,7 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
       display: "flex",
       alignItems: "flex-start",
       gap: "8px",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     loadingSpinner: {
       display: "inline-block",
@@ -299,7 +336,7 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
                 (e.target.style.borderColor = "#ec4899")
               }
               onBlur={(e) =>
-                (e.target.style.borderColor = "rgba(255,255,255,0.1)")
+                (e.target.style.borderColor = colors.border)
               }
             />
           </div>
@@ -346,7 +383,7 @@ export const AIImageModal: React.FC<AIImageModalProps> = ({
           </div>
 
           {/* Character count */}
-          <div style={{ fontSize: "12px", color: "#666", textAlign: "right" }}>
+          <div style={{ fontSize: "12px", color: colors.mutedText, textAlign: "right" }}>
             {prompt.length} characters
           </div>
         </div>

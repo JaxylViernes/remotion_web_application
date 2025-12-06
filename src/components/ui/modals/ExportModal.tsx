@@ -11,7 +11,30 @@ export const ExportModal: React.FC<{
   onExport: (format: string) => void;
 }> = ({ setShowExport, isExporting, exportUrl, onExport }) => {
   const [format, setFormat] = useState("mp4"); 
-  const [previewFormat, setPreviewFormat] = useState<string | null>(null); 
+  const [previewFormat, setPreviewFormat] = useState<string | null>(null);
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    // Set initial theme
+    updateTheme();
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener("storage", updateTheme);
+
+    // Optional: Poll for changes in the same tab (if your coworker updates without triggering storage event)
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (exportUrl) {
@@ -26,6 +49,14 @@ export const ExportModal: React.FC<{
     onExport(format);
   };
 
+  // Theme-based styles
+  const isDark = theme === "dark";
+  const bgColor = isDark ? "#1e1e1e" : "#fff";
+  const textColor = isDark ? "#e0e0e0" : "#000";
+  const secondaryTextColor = isDark ? "#b0b0b0" : "#666";
+  const borderColor = isDark ? "#444" : "#ccc";
+  const previewBg = isDark ? "#2a2a2a" : "#f9f9f9";
+  const selectBg = isDark ? "#2a2a2a" : "#fff";
 
   return (
     <>
@@ -44,13 +75,16 @@ export const ExportModal: React.FC<{
           top: "60px",
           right: "40px",
           width: "360px",
-          background: "#fff",
-          boxShadow: "0px 4px 20px rgba(0,0,0,0.2)",
+          background: bgColor,
+          boxShadow: isDark 
+            ? "0px 4px 20px rgba(0,0,0,0.6)" 
+            : "0px 4px 20px rgba(0,0,0,0.2)",
           borderRadius: "10px",
           zIndex: 2000,
           padding: "1.5rem",
           display: "flex",
           flexDirection: "column",
+          transition: "background 0.3s ease, box-shadow 0.3s ease",
         }}
       >
         <div
@@ -61,18 +95,18 @@ export const ExportModal: React.FC<{
             marginBottom: "1rem",
           }}
         >
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" fontWeight={600} style={{ color: textColor }}>
             Export Project
           </Typography>
           <CloseIcon
             onClick={() => setShowExport(false)}
-            style={{ cursor: "pointer", color: "#666" }}
+            style={{ cursor: "pointer", color: secondaryTextColor }}
           />
         </div>
 
         <Typography
           variant="body2"
-          style={{ marginBottom: "0.5rem", fontWeight: 500 }}
+          style={{ marginBottom: "0.5rem", fontWeight: 500, color: textColor }}
         >
           Choose format:
         </Typography>
@@ -84,7 +118,10 @@ export const ExportModal: React.FC<{
             padding: "0.5rem",
             marginBottom: "1rem",
             borderRadius: "6px",
-            border: "1px solid #ccc",
+            border: `1px solid ${borderColor}`,
+            background: selectBg,
+            color: textColor,
+            transition: "background 0.3s ease, border-color 0.3s ease",
           }}
         >
           <option value="mp4">MP4 (Video)</option>
@@ -133,10 +170,11 @@ export const ExportModal: React.FC<{
               maxHeight: 100,
               borderRadius: "6px",
               overflow: "hidden",
-              background: "#f9f9f9",
+              background: previewBg,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              transition: "background 0.3s ease",
             }}
           >
             {isExporting ? (
@@ -168,11 +206,11 @@ export const ExportModal: React.FC<{
             ) : (
               <Typography
                 variant="body2"
-                color="text.secondary"
                 style={{
                   textAlign: "center",
                   padding: "0.5rem",
                   fontSize: "0.85rem",
+                  color: secondaryTextColor,
                 }}
               >
                 📹 Your export will appear here

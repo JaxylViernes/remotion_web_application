@@ -323,7 +323,6 @@
 //     </div>
 //   );
 // };
-
 import React, { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
@@ -364,6 +363,49 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(null);
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Theme-based colors
+  const isDark = theme === "dark";
+  const colors = {
+    overlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isDark ? "#1a1a1a" : "#ffffff",
+    headerBg: isDark 
+      ? "linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)"
+      : "linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)",
+    inputBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    subtitleColor: isDark ? "#888" : "#666",
+    textColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    mutedText: isDark ? "#888" : "#666",
+    badgeBg: isDark ? "rgba(168, 85, 247, 0.2)" : "rgba(168, 85, 247, 0.15)",
+    infoBg: isDark ? "rgba(168, 85, 247, 0.1)" : "rgba(168, 85, 247, 0.08)",
+    infoBorder: isDark ? "rgba(168, 85, 247, 0.3)" : "rgba(168, 85, 247, 0.2)",
+    statusBoxBg: isDark ? "rgba(168, 85, 247, 0.05)" : "rgba(168, 85, 247, 0.03)",
+    statusBoxBorder: isDark ? "rgba(168, 85, 247, 0.2)" : "rgba(168, 85, 247, 0.15)",
+    progressBarBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    cancelButtonBg: isDark ? "transparent" : "#f5f5f5",
+    cancelButtonColor: isDark ? "#888" : "#666",
+    cancelButtonBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
@@ -372,15 +414,16 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
       padding: "20px",
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "16px",
       width: "100%",
       maxWidth: "520px",
@@ -388,17 +431,19 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       padding: "24px 24px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
-      background: "linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)",
+      borderBottom: `1px solid ${colors.border}`,
+      background: colors.headerBg,
+      transition: "background 0.3s ease, border-color 0.3s ease",
     },
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       margin: "0 0 8px 0",
       display: "flex",
       alignItems: "center",
@@ -408,14 +453,15 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       fontSize: "10px",
       fontWeight: "700",
       color: "#a855f7",
-      backgroundColor: "rgba(168, 85, 247, 0.2)",
+      backgroundColor: colors.badgeBg,
       padding: "4px 8px",
       borderRadius: "4px",
       textTransform: "uppercase" as const,
+      transition: "background-color 0.3s ease",
     },
     subtitle: {
       fontSize: "13px",
-      color: "#888",
+      color: colors.subtitleColor,
       margin: 0,
     },
     content: {
@@ -430,21 +476,22 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.textColor,
       marginBottom: "8px",
     },
     textarea: {
       width: "100%",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.textColor,
       fontSize: "14px",
       fontFamily: "inherit",
       resize: "vertical" as const,
       minHeight: "100px",
       outline: "none",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     styleGrid: {
       display: "grid",
@@ -453,10 +500,10 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
     },
     styleButton: {
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#888",
+      color: colors.mutedText,
       fontSize: "13px",
       fontWeight: "500",
       cursor: "pointer",
@@ -478,9 +525,10 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       height: "4px",
       borderRadius: "2px",
       appearance: "none" as const,
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.progressBarBg,
       cursor: "pointer",
       outline: "none",
+      transition: "background-color 0.3s ease",
     },
     sliderValue: {
       fontSize: "13px",
@@ -491,38 +539,41 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
     },
     infoBox: {
       padding: "12px 16px",
-      backgroundColor: "rgba(168, 85, 247, 0.1)",
-      border: "1px solid rgba(168, 85, 247, 0.3)",
+      backgroundColor: colors.infoBg,
+      border: `1px solid ${colors.infoBorder}`,
       borderRadius: "8px",
       color: "#a855f7",
       fontSize: "12px",
       lineHeight: "1.5",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     statusBox: {
       padding: "16px",
-      backgroundColor: "rgba(168, 85, 247, 0.05)",
-      border: "1px solid rgba(168, 85, 247, 0.2)",
+      backgroundColor: colors.statusBoxBg,
+      border: `1px solid ${colors.statusBoxBorder}`,
       borderRadius: "8px",
       marginBottom: "20px",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     statusTitle: {
       fontSize: "13px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.textColor,
       marginBottom: "8px",
     },
     statusText: {
       fontSize: "12px",
-      color: "#888",
+      color: colors.mutedText,
       marginBottom: "12px",
     },
     progressBar: {
       width: "100%",
       height: "4px",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.progressBarBg,
       borderRadius: "2px",
       overflow: "hidden",
       marginBottom: "8px",
+      transition: "background-color 0.3s ease",
     },
     progressFill: {
       height: "100%",
@@ -536,10 +587,11 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
     },
     footer: {
       padding: "16px 24px",
-      borderTop: "1px solid rgba(255,255,255,0.1)",
+      borderTop: `1px solid ${colors.border}`,
       display: "flex",
       gap: "12px",
       justifyContent: "flex-end",
+      transition: "border-color 0.3s ease",
     },
     button: {
       padding: "12px 24px",
@@ -552,9 +604,9 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
       outline: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonColor,
     },
     generateButton: {
       background: "linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)",

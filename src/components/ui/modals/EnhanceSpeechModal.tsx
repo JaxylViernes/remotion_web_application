@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { enhanceAudio } from "../../../services/audioApi";
 
@@ -30,6 +30,52 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Theme-based colors
+  const isDark = theme === "dark";
+  const colors = {
+    overlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isDark ? "#1a1a1a" : "#ffffff",
+    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    subtitleColor: isDark ? "#888" : "#666",
+    labelColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    hintColor: isDark ? "#888" : "#666",
+    warningBg: isDark ? "rgba(20, 184, 166, 0.1)" : "rgba(20, 184, 166, 0.08)",
+    warningBorder: isDark ? "rgba(20, 184, 166, 0.3)" : "rgba(20, 184, 166, 0.2)",
+    infoBg: isDark ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+    infoBorder: isDark ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)",
+    progressContainerBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    progressBarBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    progressText: isDark ? "#888" : "#666",
+    sliderBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    toggleContainerBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    toggleLabel: isDark ? "#e5e5e5" : "#1a1a1a",
+    toggleBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
+    creditBg: isDark ? "rgba(245, 158, 11, 0.1)" : "rgba(245, 158, 11, 0.08)",
+    creditBorder: isDark ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.2)",
+    cancelButtonBg: isDark ? "transparent" : "#f5f5f5",
+    cancelButtonText: isDark ? "#888" : "#666",
+    cancelButtonBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
@@ -38,15 +84,16 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
       padding: "20px",
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "16px",
       width: "100%",
       maxWidth: "480px",
@@ -54,21 +101,23 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       padding: "24px 24px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      borderBottom: `1px solid ${colors.border}`,
+      transition: "border-color 0.3s ease",
     },
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       margin: "0 0 8px 0",
     },
     subtitle: {
       fontSize: "13px",
-      color: "#888",
+      color: colors.subtitleColor,
       margin: 0,
     },
     content: {
@@ -83,41 +132,45 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.labelColor,
       marginBottom: "8px",
     },
     warning: {
       padding: "12px 16px",
-      backgroundColor: "rgba(20, 184, 166, 0.1)",
-      border: "1px solid rgba(20, 184, 166, 0.3)",
+      backgroundColor: colors.warningBg,
+      border: `1px solid ${colors.warningBorder}`,
       borderRadius: "8px",
       color: "#14b8a6",
       fontSize: "13px",
       marginBottom: "20px",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     infoBox: {
       padding: "12px 16px",
-      backgroundColor: "rgba(59, 130, 246, 0.1)",
-      border: "1px solid rgba(59, 130, 246, 0.3)",
+      backgroundColor: colors.infoBg,
+      border: `1px solid ${colors.infoBorder}`,
       borderRadius: "8px",
       color: "#3b82f6",
       fontSize: "12px",
       marginBottom: "20px",
       lineHeight: "1.5",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     progressContainer: {
       marginBottom: "20px",
       padding: "16px",
-      backgroundColor: "#0f0f0f",
+      backgroundColor: colors.progressContainerBg,
       borderRadius: "8px",
+      transition: "background-color 0.3s ease",
     },
     progressBar: {
       width: "100%",
       height: "8px",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.progressBarBg,
       borderRadius: "4px",
       overflow: "hidden",
       marginBottom: "8px",
+      transition: "background-color 0.3s ease",
     },
     progressFill: {
       height: "100%",
@@ -126,7 +179,7 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
     },
     progressText: {
       fontSize: "13px",
-      color: "#888",
+      color: colors.progressText,
       textAlign: "center" as const,
       margin: 0,
     },
@@ -140,9 +193,10 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       height: "4px",
       borderRadius: "2px",
       appearance: "none" as const,
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.sliderBg,
       cursor: "pointer",
       outline: "none",
+      transition: "background-color 0.3s ease",
     },
     sliderValue: {
       fontSize: "13px",
@@ -153,7 +207,7 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
     },
     hint: {
       fontSize: "12px",
-      color: "#888",
+      color: colors.hintColor,
       marginTop: "8px",
       margin: "8px 0 0 0",
     },
@@ -162,19 +216,20 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
       padding: "12px 16px",
-      backgroundColor: "#0f0f0f",
+      backgroundColor: colors.toggleContainerBg,
       borderRadius: "8px",
       marginBottom: "12px",
+      transition: "background-color 0.3s ease",
     },
     toggleLabel: {
       fontSize: "14px",
-      color: "#e5e5e5",
+      color: colors.toggleLabel,
     },
     toggle: {
       width: "44px",
       height: "24px",
       borderRadius: "12px",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.toggleBg,
       border: "none",
       cursor: "pointer",
       position: "relative" as const,
@@ -198,10 +253,11 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
     },
     footer: {
       padding: "16px 24px",
-      borderTop: "1px solid rgba(255,255,255,0.1)",
+      borderTop: `1px solid ${colors.border}`,
       display: "flex",
       gap: "12px",
       justifyContent: "flex-end",
+      transition: "border-color 0.3s ease",
     },
     button: {
       padding: "12px 24px",
@@ -214,9 +270,9 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
       outline: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonText,
     },
     enhanceButton: {
       background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)",
@@ -387,7 +443,7 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
             <div style={styles.toggleContainer}>
               <div>
                 <span style={styles.toggleLabel}>🎤 Loudness Normalization</span>
-                <p style={{ fontSize: "11px", color: "#666", margin: "2px 0 0 0" }}>
+                <p style={{ fontSize: "11px", color: colors.hintColor, margin: "2px 0 0 0" }}>
                   Auto-balance volume levels for consistency
                 </p>
               </div>
@@ -411,7 +467,7 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
             <div style={styles.toggleContainer}>
               <div>
                 <span style={styles.toggleLabel}>🔊 Audio Filtering</span>
-                <p style={{ fontSize: "11px", color: "#666", margin: "2px 0 0 0" }}>
+                <p style={{ fontSize: "11px", color: colors.hintColor, margin: "2px 0 0 0" }}>
                   Remove echo, reverb, and room reflections
                 </p>
               </div>
@@ -437,11 +493,12 @@ export const EnhanceSpeechModal: React.FC<EnhanceSpeechModalProps> = ({
           {!isEnhancing && (
             <div style={{
               padding: "10px 12px",
-              backgroundColor: "rgba(245, 158, 11, 0.1)",
-              border: "1px solid rgba(245, 158, 11, 0.3)",
+              backgroundColor: colors.creditBg,
+              border: `1px solid ${colors.creditBorder}`,
               borderRadius: "6px",
               fontSize: "11px",
               color: "#f59e0b",
+              transition: "background-color 0.3s ease, border-color 0.3s ease",
             }}>
               💳 Using Auphonic free tier (2 hours/month)
             </div>

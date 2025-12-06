@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import toast from "react-hot-toast";
 
 interface EmojiPickerModalProps {
   isOpen: boolean;
@@ -60,19 +59,20 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState("😀 Smileys");
   const [selectedSize, setSelectedSize] = useState("medium");
 
+  const theme = localStorage.getItem("editor-theme") || "dark";
+  const isLight = theme === "light";
+
   const filteredEmojis = useMemo(() => {
     if (!searchTerm) {
       return EMOJI_CATEGORIES[selectedCategory as keyof typeof EMOJI_CATEGORIES] || [];
     }
 
-    // Simple search across all emojis
     const allEmojis = Object.values(EMOJI_CATEGORIES).flat();
     return allEmojis;
   }, [searchTerm, selectedCategory]);
 
   const handleEmojiSelect = (emoji: string) => {
     onSelect(emoji);
-    toast.success(`Added ${emoji} emoji`);
     onClose();
   };
 
@@ -85,14 +85,14 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: isLight ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.75)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: isLight ? "#ffffff" : "#1a1a1a",
       borderRadius: "12px",
       padding: "24px",
       width: "90%",
@@ -100,7 +100,8 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
       maxHeight: "90vh",
       display: "flex",
       flexDirection: "column" as const,
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
+      boxShadow: isLight ? "0 10px 40px rgba(0,0,0,0.1)" : "0 10px 40px rgba(0,0,0,0.5)",
     },
     header: {
       display: "flex",
@@ -111,7 +112,7 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: isLight ? "#1a1a1a" : "#e5e5e5",
       display: "flex",
       alignItems: "center",
       gap: "10px",
@@ -119,7 +120,7 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     closeButton: {
       background: "none",
       border: "none",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "24px",
       cursor: "pointer",
       padding: "4px",
@@ -134,10 +135,10 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     searchBox: {
       width: "100%",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: isLight ? "#1a1a1a" : "#e5e5e5",
       fontSize: "14px",
       outline: "none",
       marginBottom: "16px",
@@ -151,10 +152,10 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     },
     categoryTab: {
       padding: "8px 16px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "13px",
       fontWeight: "600",
       cursor: "pointer",
@@ -178,8 +179,8 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     emojiButton: {
       width: "50px",
       height: "50px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
       fontSize: "28px",
       cursor: "pointer",
@@ -191,12 +192,12 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     sizeSection: {
       marginTop: "auto",
       paddingTop: "16px",
-      borderTop: "1px solid rgba(255,255,255,0.1)",
+      borderTop: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
     },
     sizeLabel: {
       fontSize: "13px",
       fontWeight: "600",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       marginBottom: "8px",
     },
     sizeButtons: {
@@ -206,10 +207,10 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
     sizeButton: {
       flex: 1,
       padding: "10px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "13px",
       fontWeight: "600",
       cursor: "pointer",
@@ -238,7 +239,7 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
           <button
             style={styles.closeButton}
             onClick={onClose}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.1)")}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
             ×
@@ -282,7 +283,7 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.backgroundColor = "#0f0f0f";
+                e.currentTarget.style.backgroundColor = isLight ? "#f5f5f5" : "#0f0f0f";
               }}
             >
               {emoji}
@@ -314,7 +315,7 @@ export const EmojiPickerModal: React.FC<EmojiPickerModalProps> = ({
           width: 8px;
         }
         .emoji-grid::-webkit-scrollbar-track {
-          background: #0f0f0f;
+          background: ${isLight ? "#f5f5f5" : "#0f0f0f"};
           border-radius: 4px;
         }
         .emoji-grid::-webkit-scrollbar-thumb {

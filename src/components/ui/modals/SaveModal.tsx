@@ -39,6 +39,29 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [messageIndex, setMessageIndex] = useState(0);
   const [mode, setMode] = useState<Mode>("editing");
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    // Set initial theme
+    updateTheme();
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener("storage", updateTheme);
+
+    // Poll for changes in the same tab
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -86,6 +109,12 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
     }
   };
 
+  // Theme-based styles
+  const isDark = theme === "dark";
+  const bgColor = isDark ? "#1e1e1e" : "#fff";
+  const textColor = isDark ? "#e0e0e0" : "rgba(0, 0, 0, 0.87)";
+  const secondaryTextColor = isDark ? "#b0b0b0" : "rgba(0, 0, 0, 0.6)";
+
   return (
     <Dialog
       open={open}
@@ -98,6 +127,8 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
           padding: 0,
           minWidth: 360,
           maxWidth: 480,
+          backgroundColor: bgColor,
+          transition: "background-color 0.3s ease",
         },
       }}
     >
@@ -107,6 +138,7 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
           fontWeight: 700,
           textAlign: "center",
           pb: 0,
+          color: textColor,
         }}
       >
         {mode === "success"
@@ -127,13 +159,28 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
             error={!!errorMessage}
             helperText={errorMessage ?? "Give your design a descriptive name"}
             autoFocus
+            sx={{
+              "& .MuiInputBase-root": {
+                color: textColor,
+                backgroundColor: isDark ? "#2a2a2a" : "#fff",
+              },
+              "& .MuiInputLabel-root": {
+                color: secondaryTextColor,
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: isDark ? "#444" : "rgba(0, 0, 0, 0.23)",
+              },
+              "& .MuiFormHelperText-root": {
+                color: errorMessage ? undefined : secondaryTextColor,
+              },
+            }}
           />
         )}
 
         {mode === "saving" && (
           <Box mt={2} display="flex" alignItems="center" gap={1}>
             <CircularProgress size={18} />
-            <Typography variant="body2" color="text.primary">
+            <Typography variant="body2" sx={{ color: textColor }}>
               {status}
             </Typography>
           </Box>
@@ -157,7 +204,11 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
           <>
             <Button
               onClick={onClose}
-              sx={{ borderRadius: 1, textTransform: "none" }}
+              sx={{ 
+                borderRadius: 1, 
+                textTransform: "none",
+                color: textColor,
+              }}
             >
               Cancel
             </Button>
@@ -170,7 +221,14 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
             </Button>
           </>
         ) : mode === "saving" ? (
-          <Button disabled variant="outlined" sx={{ borderRadius: 1 }}>
+          <Button 
+            disabled 
+            variant="outlined" 
+            sx={{ 
+              borderRadius: 1,
+              color: secondaryTextColor,
+            }}
+          >
             Please wait...
           </Button>
         ) : (

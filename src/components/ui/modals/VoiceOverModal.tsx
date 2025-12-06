@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
 
@@ -31,6 +31,24 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
   const [selectedVoice, setSelectedVoice] = useState("alloy");
   const [speed, setSpeed] = useState(1.0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -103,6 +121,25 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Theme-based colors
+  const isDark = theme === "dark";
+  const colors = {
+    overlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isDark ? "#1a1a1a" : "#ffffff",
+    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    labelColor: isDark ? "#888" : "#666",
+    inputBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    inputText: isDark ? "#e5e5e5" : "#1a1a1a",
+    mutedText: isDark ? "#666" : "#999",
+    closeButtonHover: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    sliderBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    cancelButtonBg: isDark ? "transparent" : "#f5f5f5",
+    cancelButtonText: isDark ? "#888" : "#666",
+    cancelButtonBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    cancelButtonHover: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+  };
+
   const styles = {
     overlay: {
       position: "fixed" as const,
@@ -110,21 +147,23 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "12px",
       padding: "24px",
       width: "90%",
       maxWidth: "500px",
       maxHeight: "90vh",
       overflowY: "auto" as const,
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       display: "flex",
@@ -135,7 +174,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       display: "flex",
       alignItems: "center",
       gap: "10px",
@@ -143,7 +182,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
     closeButton: {
       background: "none",
       border: "none",
-      color: "#888",
+      color: colors.labelColor,
       fontSize: "24px",
       cursor: "pointer",
       padding: "4px",
@@ -162,32 +201,34 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: "600",
-      color: "#888",
+      color: colors.labelColor,
       marginBottom: "8px",
     },
     textarea: {
       width: "100%",
       minHeight: "120px",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.inputText,
       fontSize: "14px",
       fontFamily: "inherit",
       resize: "vertical" as const,
       outline: "none",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     select: {
       width: "100%",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.inputText,
       fontSize: "14px",
       outline: "none",
       cursor: "pointer",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     sliderContainer: {
       display: "flex",
@@ -199,12 +240,13 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
       height: "4px",
       borderRadius: "2px",
       appearance: "none" as const,
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.sliderBg,
       outline: "none",
+      transition: "background-color 0.3s ease",
     },
     sliderValue: {
       fontSize: "14px",
-      color: "#e5e5e5",
+      color: colors.inputText,
       fontWeight: "600",
       minWidth: "40px",
       textAlign: "center" as const,
@@ -225,9 +267,9 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
       border: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonText,
     },
     generateButton: {
       background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
@@ -235,7 +277,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
     },
     characterCount: {
       fontSize: "12px",
-      color: "#666",
+      color: colors.mutedText,
       marginTop: "4px",
     },
   };
@@ -256,7 +298,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
           <button
             style={styles.closeButton}
             onClick={onClose}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = colors.closeButtonHover)}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
             ×
@@ -293,7 +335,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
         <div style={styles.section}>
           <label style={styles.label}>Speed: {speed.toFixed(1)}x</label>
           <div style={styles.sliderContainer}>
-            <span style={{ color: "#666", fontSize: "12px" }}>0.5x</span>
+            <span style={{ color: colors.mutedText, fontSize: "12px" }}>0.5x</span>
             <input
               type="range"
               min="0.5"
@@ -303,7 +345,7 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
               onChange={(e) => setSpeed(parseFloat(e.target.value))}
               style={styles.slider}
             />
-            <span style={{ color: "#666", fontSize: "12px" }}>2.0x</span>
+            <span style={{ color: colors.mutedText, fontSize: "12px" }}>2.0x</span>
           </div>
         </div>
 
@@ -311,8 +353,8 @@ export const VoiceoverModal: React.FC<VoiceoverModalProps> = ({
           <button
             style={{ ...styles.button, ...styles.cancelButton }}
             onClick={onClose}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = colors.cancelButtonHover)}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = colors.cancelButtonBg)}
           >
             Cancel
           </button>

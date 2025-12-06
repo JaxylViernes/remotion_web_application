@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../../config";
 
@@ -21,6 +20,43 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
   const [quality, setQuality] = useState<"fast" | "balanced" | "high">("high");
   const [edgeSmoothing, setEdgeSmoothing] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [theme, setTheme] = useState<string>("light");
+
+  // Listen for theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Theme-based colors
+  const isDark = theme === "dark";
+  const colors = {
+    overlay: isDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isDark ? "#1a1a1a" : "#ffffff",
+    border: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    subtitleColor: isDark ? "#888" : "#666",
+    labelColor: isDark ? "#e5e5e5" : "#1a1a1a",
+    warningBg: isDark ? "rgba(6, 182, 212, 0.1)" : "rgba(6, 182, 212, 0.08)",
+    warningBorder: isDark ? "rgba(6, 182, 212, 0.3)" : "rgba(6, 182, 212, 0.2)",
+    qualityButtonBg: isDark ? "#0f0f0f" : "#f5f5f5",
+    qualityButtonText: isDark ? "#888" : "#666",
+    sliderBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    cancelButtonBg: isDark ? "transparent" : "#f5f5f5",
+    cancelButtonText: isDark ? "#888" : "#666",
+    cancelButtonBorder: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
@@ -29,15 +65,16 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
       padding: "20px",
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "16px",
       width: "100%",
       maxWidth: "480px",
@@ -45,21 +82,23 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       padding: "24px 24px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      borderBottom: `1px solid ${colors.border}`,
+      transition: "border-color 0.3s ease",
     },
     title: {
       fontSize: "20px",
       fontWeight: 600,
-      color: "#e5e5e5",
+      color: colors.titleColor,
       margin: "0 0 8px 0",
     },
     subtitle: {
       fontSize: "13px",
-      color: "#888",
+      color: colors.subtitleColor,
       margin: 0,
     },
     content: {
@@ -72,17 +111,18 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: 600,
-      color: "#e5e5e5",
+      color: colors.labelColor,
       marginBottom: "8px",
     },
     warning: {
       padding: "12px 16px",
-      backgroundColor: "rgba(6, 182, 212, 0.1)",
-      border: "1px solid rgba(6, 182, 212, 0.3)",
+      backgroundColor: colors.warningBg,
+      border: `1px solid ${colors.warningBorder}`,
       borderRadius: "8px",
       color: "#06b6d4",
       fontSize: "13px",
       marginBottom: "20px",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     qualityGrid: {
       display: "grid",
@@ -91,10 +131,10 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
     },
     qualityButton: {
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.qualityButtonBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#888",
+      color: colors.qualityButtonText,
       fontSize: "13px",
       fontWeight: 500,
       cursor: "pointer",
@@ -116,9 +156,10 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
       height: "4px",
       borderRadius: "2px",
       appearance: "none",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: colors.sliderBg,
       cursor: "pointer",
       outline: "none",
+      transition: "background-color 0.3s ease",
     },
     sliderValue: {
       fontSize: "13px",
@@ -129,10 +170,11 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
     },
     footer: {
       padding: "16px 24px",
-      borderTop: "1px solid rgba(255,255,255,0.1)",
+      borderTop: `1px solid ${colors.border}`,
       display: "flex",
       gap: "12px",
       justifyContent: "flex-end",
+      transition: "border-color 0.3s ease",
     },
     button: {
       padding: "12px 24px",
@@ -145,9 +187,9 @@ export const RemoveBackgroundModal: React.FC<RemoveBackgroundModalProps> = ({
       outline: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonText,
     },
     processButton: {
       background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)",

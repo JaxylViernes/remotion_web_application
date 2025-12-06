@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import html2canvas from "html2canvas";
 
@@ -21,8 +21,26 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
   const [comments, setComments] = useState(342);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [editorTheme, setEditorTheme] = useState<string>("light");
   
   const postRef = useRef<HTMLDivElement>(null);
+
+  // Listen for editor theme changes
+  useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = localStorage.getItem("editor-theme") || "light";
+      setEditorTheme(currentTheme);
+    };
+
+    updateTheme();
+    window.addEventListener("storage", updateTheme);
+    const interval = setInterval(updateTheme, 100);
+
+    return () => {
+      window.removeEventListener("storage", updateTheme);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleGenerate = async () => {
     if (!title.trim()) {
@@ -57,6 +75,25 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
   if (!isOpen) return null;
 
   const isDark = theme === "dark";
+  const isEditorDark = editorTheme === "dark";
+
+  // Theme-based colors for modal (not Reddit preview)
+  const colors = {
+    overlay: isEditorDark ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.6)",
+    modalBg: isEditorDark ? "#1a1a1a" : "#ffffff",
+    border: isEditorDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    titleColor: isEditorDark ? "#e5e5e5" : "#1a1a1a",
+    labelColor: isEditorDark ? "#888" : "#666",
+    inputBg: isEditorDark ? "#0f0f0f" : "#f5f5f5",
+    inputText: isEditorDark ? "#e5e5e5" : "#1a1a1a",
+    closeButtonHover: isEditorDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    themeButtonBg: isEditorDark ? "#0f0f0f" : "#f0f0f0",
+    themeButtonText: isEditorDark ? "#888" : "#666",
+    cancelButtonBg: isEditorDark ? "transparent" : "#f5f5f5",
+    cancelButtonText: isEditorDark ? "#888" : "#666",
+    cancelButtonBorder: isEditorDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    cancelButtonHover: isEditorDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+  };
 
   const styles = {
     overlay: {
@@ -65,23 +102,25 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: colors.overlay,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1000,
       overflowY: "auto" as const,
       padding: "20px",
+      transition: "background-color 0.3s ease",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: colors.modalBg,
       borderRadius: "12px",
       padding: "24px",
       width: "90%",
       maxWidth: "700px",
       maxHeight: "90vh",
       overflowY: "auto" as const,
-      border: "1px solid rgba(255,255,255,0.1)",
+      border: `1px solid ${colors.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     header: {
       display: "flex",
@@ -92,7 +131,7 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
     title: {
       fontSize: "20px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       display: "flex",
       alignItems: "center",
       gap: "10px",
@@ -100,7 +139,7 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
     closeButton: {
       background: "none",
       border: "none",
-      color: "#888",
+      color: colors.labelColor,
       fontSize: "24px",
       cursor: "pointer",
       padding: "4px",
@@ -125,31 +164,33 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
       display: "block",
       fontSize: "13px",
       fontWeight: "600",
-      color: "#888",
+      color: colors.labelColor,
       marginBottom: "8px",
     },
     input: {
       width: "100%",
       padding: "10px 12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.inputText,
       fontSize: "14px",
       outline: "none",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     textarea: {
       width: "100%",
       minHeight: "100px",
       padding: "12px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.inputBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#e5e5e5",
+      color: colors.inputText,
       fontSize: "14px",
       fontFamily: "inherit",
       resize: "vertical" as const,
       outline: "none",
+      transition: "background-color 0.3s ease, border-color 0.3s ease",
     },
     themeToggle: {
       display: "flex",
@@ -158,10 +199,10 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
     themeButton: {
       flex: 1,
       padding: "10px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: colors.themeButtonBg,
+      border: `1px solid ${colors.border}`,
       borderRadius: "8px",
-      color: "#888",
+      color: colors.themeButtonText,
       fontSize: "13px",
       fontWeight: "600",
       cursor: "pointer",
@@ -179,7 +220,7 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
     previewLabel: {
       fontSize: "14px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: colors.titleColor,
       marginBottom: "12px",
     },
     redditPost: {
@@ -244,9 +285,9 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
       border: "none",
     },
     cancelButton: {
-      backgroundColor: "transparent",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      backgroundColor: colors.cancelButtonBg,
+      border: `1px solid ${colors.cancelButtonBorder}`,
+      color: colors.cancelButtonText,
     },
     generateButton: {
       background: "linear-gradient(135deg, #ff4500 0%, #ff5722 100%)",
@@ -269,7 +310,7 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
           <button
             style={styles.closeButton}
             onClick={onClose}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = colors.closeButtonHover)}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
             ×
@@ -394,8 +435,8 @@ export const RedditPostModal: React.FC<RedditPostModalProps> = ({
           <button
             style={{ ...styles.button, ...styles.cancelButton }}
             onClick={onClose}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = colors.cancelButtonHover)}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = colors.cancelButtonBg)}
           >
             Cancel
           </button>

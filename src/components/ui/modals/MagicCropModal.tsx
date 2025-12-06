@@ -68,14 +68,12 @@ class AdvancedVideoCropProcessor {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })!;
     
-    // Use OffscreenCanvas for better performance if available
     if (typeof OffscreenCanvas !== 'undefined') {
       this.offscreenCanvas = new OffscreenCanvas(video.videoWidth, video.videoHeight);
       this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: true })!;
     }
   }
 
-  // Browser-native Face Detection (No backend needed)
   async detectFaces(): Promise<Array<{ x: number; y: number; width: number; height: number }>> {
     if (!('FaceDetector' in window)) {
       console.warn('FaceDetector API not available');
@@ -107,7 +105,6 @@ class AdvancedVideoCropProcessor {
     }
   }
 
-  // Motion/Action Detection using Optical Flow approximation
   async detectMotionRegions(): Promise<{ x: number; y: number; width: number; height: number } | null> {
     const width = this.video.videoWidth;
     const height = this.video.videoHeight;
@@ -124,7 +121,6 @@ class AdvancedVideoCropProcessor {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
     
-    // Create motion map
     const blockSize = 16;
     const motionMap: number[][] = [];
     
@@ -135,7 +131,6 @@ class AdvancedVideoCropProcessor {
         let mean = 0;
         let count = 0;
         
-        // Calculate variance in block (indicates detail/motion)
         for (let by = 0; by < blockSize && y + by < height; by++) {
           for (let bx = 0; bx < blockSize && x + bx < width; bx++) {
             const idx = ((y + by) * width + (x + bx)) * 4;
@@ -160,7 +155,6 @@ class AdvancedVideoCropProcessor {
       motionMap.push(row);
     }
     
-    // Find region with highest motion/detail
     let maxMotion = 0;
     let motionX = 0;
     let motionY = 0;
@@ -187,7 +181,6 @@ class AdvancedVideoCropProcessor {
     return null;
   }
 
-  // Smart Crop using Saliency Detection
   async detectSmartCrop(): Promise<{ x: number; y: number; width: number; height: number }> {
     const width = this.video.videoWidth;
     const height = this.video.videoHeight;
@@ -202,10 +195,8 @@ class AdvancedVideoCropProcessor {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
     
-    // Multi-scale saliency detection
     const saliencyMap = new Float32Array(width * height);
     
-    // Calculate color-based saliency
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = (y * width + x) * 4;
@@ -213,15 +204,12 @@ class AdvancedVideoCropProcessor {
         const g = data[idx + 1];
         const b = data[idx + 2];
         
-        // Lab color space approximation for perceptual saliency
         const l = 0.299 * r + 0.587 * g + 0.114 * b;
         const a = 0.5 * (r - g);
         const bVal = 0.5 * (r + g - 2 * b);
         
-        // Calculate uniqueness (distance from mean)
         const uniqueness = Math.sqrt(a * a + bVal * bVal);
         
-        // Edge detection (Sobel-like)
         let edgeStrength = 0;
         if (x > 0 && x < width - 1 && y > 0 && y < height - 1) {
           const leftIdx = (y * width + (x - 1)) * 4;
@@ -234,13 +222,11 @@ class AdvancedVideoCropProcessor {
           edgeStrength = Math.sqrt(gx * gx + gy * gy);
         }
         
-        // Combined saliency score
         saliencyMap[y * width + x] = uniqueness * 0.4 + edgeStrength * 300 + l * 0.3;
       }
     }
     
-    // Find optimal crop region using sliding window
-    const targetWidth = Math.min(width * 0.7, height * 1.2); // Adjust for aspect ratio
+    const targetWidth = Math.min(width * 0.7, height * 1.2);
     const targetHeight = height * 0.8;
     
     let bestScore = 0;
@@ -254,7 +240,6 @@ class AdvancedVideoCropProcessor {
         let score = 0;
         let count = 0;
         
-        // Sample saliency in this region
         for (let sy = y; sy < y + targetHeight; sy += step) {
           for (let sx = x; sx < x + targetWidth; sx += step) {
             if (sx < width && sy < height) {
@@ -266,7 +251,6 @@ class AdvancedVideoCropProcessor {
         
         score /= count;
         
-        // Prefer center slightly
         const centerBias = 1 - (Math.abs(x + targetWidth / 2 - width / 2) / width +
                                  Math.abs(y + targetHeight / 2 - height / 2) / height) * 0.3;
         score *= centerBias;
@@ -287,7 +271,6 @@ class AdvancedVideoCropProcessor {
     };
   }
 
-  // Generate smooth keyframes for auto-zoom effect
   async generateKeyframes(
     cropRegion: { x: number; y: number; width: number; height: number },
     duration: number,
@@ -303,15 +286,11 @@ class AdvancedVideoCropProcessor {
     }
 
     const keyframes = [];
-    const numKeyframes = Math.min(10, Math.floor(duration / 2)); // One keyframe every 2 seconds
+    const numKeyframes = Math.min(10, Math.floor(duration / 2));
     
     for (let i = 0; i < numKeyframes; i++) {
       const time = (duration / numKeyframes) * i;
-      
-      // Vary zoom slightly for dynamic effect
       const scale = 1 + Math.sin(i * Math.PI / numKeyframes) * 0.15;
-      
-      // Slight pan effect
       const panX = Math.sin(i * Math.PI / 5) * 20;
       const panY = Math.cos(i * Math.PI / 7) * 15;
       
@@ -326,7 +305,6 @@ class AdvancedVideoCropProcessor {
     return keyframes;
   }
 
-  // Center crop (basic, no processing needed)
   getCenterCrop(aspectRatio: string): { x: number; y: number; width: number; height: number } {
     const width = this.video.videoWidth;
     const height = this.video.videoHeight;
@@ -338,11 +316,9 @@ class AdvancedVideoCropProcessor {
     let cropWidth, cropHeight;
     
     if (currentRatio > targetRatio) {
-      // Video is wider, crop width
       cropHeight = height;
       cropWidth = height * targetRatio;
     } else {
-      // Video is taller, crop height
       cropWidth = width;
       cropHeight = width / targetRatio;
     }
@@ -356,7 +332,6 @@ class AdvancedVideoCropProcessor {
   }
 }
 
-// Backend API Service (Optional - for advanced features)
 class BackendCropService {
   private apiUrl: string;
 
@@ -394,6 +369,7 @@ class BackendCropService {
   }
 }
 
+
 export const MagicCropModal: React.FC<MagicCropModalProps> = ({
   isOpen,
   onClose,
@@ -413,14 +389,15 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
   const [processingProgress, setProcessingProgress] = useState(0);
   
   const backendServiceRef = useRef(new BackendCropService());
+  
+  const theme = localStorage.getItem("editor-theme") || "dark";
+  const isLight = theme === "light";
 
   useEffect(() => {
     const checkSupport = () => {
       const hasCanvas = typeof HTMLCanvasElement !== 'undefined';
-      // const hasOffscreenCanvas = typeof OffscreenCanvas !== 'undefined';
       setHasVideoSupport(hasCanvas);
     };
-    
     checkSupport();
   }, []);
 
@@ -436,10 +413,8 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     let newHeight = cropRegion.height;
     
     if (currentAspect > targetAspect) {
-      // Crop width
       newWidth = cropRegion.height * targetAspect;
     } else {
-      // Crop height
       newHeight = cropRegion.width / targetAspect;
     }
     
@@ -485,8 +460,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     const centerX = cropRegion.x + cropRegion.width / 2;
     const centerY = cropRegion.y + cropRegion.height / 2;
 
-    // Adjust crop size based on intensity (higher intensity = tighter crop)
-    const intensityFactor = 0.5 + (factor * 0.5); // Range from 0.5 to 1.0
+    const intensityFactor = 0.5 + (factor * 0.5);
     const newWidth = cropRegion.width * intensityFactor;
     const newHeight = cropRegion.height * intensityFactor;
 
@@ -540,11 +514,9 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       case "face":
         const faces = await processor.detectFaces();
         if (faces.length > 0) {
-          // Use largest face
           cropRegion = faces.reduce((largest, face) =>
             face.width * face.height > largest.width * largest.height ? face : largest
           );
-          // Expand region around face
           const expansion = 1.5;
           const centerX = cropRegion.x + cropRegion.width / 2;
           const centerY = cropRegion.y + cropRegion.height / 2;
@@ -584,17 +556,12 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
 
     setProcessingProgress(70);
 
-    // Apply aspect ratio
     cropRegion = applyAspectRatio(cropRegion, aspectRatio);
-
-    // Apply focus point
     cropRegion = applyFocusPoint(
       cropRegion,
       videoElement.videoWidth,
       videoElement.videoHeight
     );
-
-    // Apply intensity
     cropRegion = applyIntensity(
       cropRegion,
       videoElement.videoWidth,
@@ -603,7 +570,6 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
 
     setProcessingProgress(85);
 
-    // Generate keyframes for smooth animation
     const keyframes = await processor.generateKeyframes(
       cropRegion,
       videoElement.duration,
@@ -612,7 +578,6 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
 
     setProcessingProgress(100);
 
-    // Normalize to percentages
     return {
       cropType,
       intensity,
@@ -696,7 +661,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      backgroundColor: isLight ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.75)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -704,15 +669,15 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       backdropFilter: "blur(4px)",
     },
     modal: {
-      backgroundColor: "#1a1a1a",
+      backgroundColor: isLight ? "#ffffff" : "#1a1a1a",
       borderRadius: "16px",
       padding: "28px",
       width: "90%",
       maxWidth: "650px",
       maxHeight: "90vh",
       overflowY: "auto" as const,
-      border: "1px solid rgba(255,255,255,0.1)",
-      boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
+      boxShadow: isLight ? "0 20px 60px rgba(0,0,0,0.15)" : "0 20px 60px rgba(0,0,0,0.5)",
     },
     header: {
       display: "flex",
@@ -723,20 +688,20 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     title: {
       fontSize: "22px",
       fontWeight: "700",
-      color: "#fff",
+      color: isLight ? "#1a1a1a" : "#fff",
       display: "flex",
       alignItems: "center",
       gap: "12px",
     },
     subtitle: {
       fontSize: "13px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       marginTop: "4px",
     },
     closeButton: {
       background: "none",
       border: "none",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "28px",
       cursor: "pointer",
       padding: "4px",
@@ -755,7 +720,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       display: "block",
       fontSize: "14px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: isLight ? "#1a1a1a" : "#e5e5e5",
       marginBottom: "12px",
     },
     cropGrid: {
@@ -765,8 +730,8 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     },
     cropCard: {
       padding: "16px",
-      backgroundColor: "#0f0f0f",
-      border: "2px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "2px solid rgba(0,0,0,0.1)" : "2px solid rgba(255,255,255,0.1)",
       borderRadius: "10px",
       cursor: "pointer",
       transition: "all 0.2s",
@@ -780,7 +745,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     cropCardTitle: {
       fontSize: "14px",
       fontWeight: "600",
-      color: "#e5e5e5",
+      color: isLight ? "#1a1a1a" : "#e5e5e5",
       marginBottom: "4px",
       display: "flex",
       alignItems: "center",
@@ -788,7 +753,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     },
     cropCardDescription: {
       fontSize: "12px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
     },
     badge: {
       fontSize: "10px",
@@ -805,10 +770,10 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     },
     aspectRatioButton: {
       padding: "12px 8px",
-      backgroundColor: "#0f0f0f",
-      border: "2px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "2px solid rgba(0,0,0,0.1)" : "2px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "13px",
       fontWeight: "600",
       cursor: "pointer",
@@ -828,14 +793,14 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       justifyContent: "space-between",
       marginBottom: "8px",
       fontSize: "13px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
     },
     slider: {
       width: "100%",
       height: "6px",
       borderRadius: "3px",
       appearance: "none" as const,
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)",
       outline: "none",
     },
     focusGrid: {
@@ -845,10 +810,10 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     },
     focusButton: {
       padding: "10px",
-      backgroundColor: "#0f0f0f",
-      border: "2px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "2px solid rgba(0,0,0,0.1)" : "2px solid rgba(255,255,255,0.1)",
       borderRadius: "8px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       fontSize: "13px",
       fontWeight: "600",
       cursor: "pointer",
@@ -864,25 +829,25 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
       padding: "16px",
-      backgroundColor: "#0f0f0f",
-      border: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "#f5f5f5" : "#0f0f0f",
+      border: isLight ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.1)",
       borderRadius: "10px",
     },
     toggleLabel: {
       fontSize: "14px",
-      color: "#e5e5e5",
+      color: isLight ? "#1a1a1a" : "#e5e5e5",
       fontWeight: "600",
     },
     toggleDescription: {
       fontSize: "12px",
-      color: "#888",
+      color: isLight ? "#666" : "#888",
       marginTop: "4px",
     },
     toggle: {
       width: "48px",
       height: "26px",
       borderRadius: "13px",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)",
       border: "none",
       cursor: "pointer",
       position: "relative" as const,
@@ -932,7 +897,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     progressBar: {
       width: "100%",
       height: "4px",
-      backgroundColor: "rgba(255,255,255,0.1)",
+      backgroundColor: isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)",
       borderRadius: "2px",
       overflow: "hidden",
       marginTop: "12px",
@@ -959,8 +924,8 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
     },
     cancelButton: {
       backgroundColor: "transparent",
-      border: "2px solid rgba(255,255,255,0.1)",
-      color: "#888",
+      border: isLight ? "2px solid rgba(0,0,0,0.1)" : "2px solid rgba(255,255,255,0.1)",
+      color: isLight ? "#666" : "#888",
     },
     applyButton: {
       background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
@@ -968,8 +933,8 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
       boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
     },
     applyButtonDisabled: {
-      background: "#333",
-      color: "#666",
+      background: isLight ? "#e5e5e5" : "#333",
+      color: isLight ? "#999" : "#666",
       cursor: "not-allowed",
       boxShadow: "none",
     },
@@ -981,14 +946,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
         <div style={styles.header}>
           <div>
             <div style={styles.title}>
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M9 3v18" />
                 <path d="M15 3v18" />
@@ -1003,7 +961,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
             style={styles.closeButton}
             onClick={onClose}
             onMouseOver={(e) =>
-              (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
+              (e.currentTarget.style.backgroundColor = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.1)")
             }
             onMouseOut={(e) =>
               (e.currentTarget.style.backgroundColor = "transparent")
@@ -1024,8 +982,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
           <div style={styles.infoBox}>
             <span>ℹ️</span>
             <span>
-              This feature works best with backend AI processing. Enable it below
-              for better results.
+              This feature works best with backend AI processing. Enable it below for better results.
             </span>
           </div>
         )}
@@ -1182,7 +1139,7 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
             disabled={isProcessing}
             onMouseOver={(e) => {
               if (!isProcessing) {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)";
+                e.currentTarget.style.backgroundColor = isLight ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.05)";
               }
             }}
             onMouseOut={(e) => {
@@ -1237,20 +1194,19 @@ export const MagicCropModal: React.FC<MagicCropModalProps> = ({
           box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
         }
         
-        /* Custom scrollbar */
         div::-webkit-scrollbar {
           width: 8px;
         }
         div::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.05);
+          background: ${isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"};
           border-radius: 4px;
         }
         div::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.2);
+          background: ${isLight ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)"};
           border-radius: 4px;
         }
         div::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.3);
+          background: ${isLight ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)"};
         }
       `}</style>
     </div>
