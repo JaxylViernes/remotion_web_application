@@ -21,14 +21,59 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
+import { Tab } from "@headlessui/react";
 import { templatesWithTheirIds } from "../../data/TemplateIds";
 import { updateUsername } from "../../utils/UsernameUpdater";
 import { updatePassword } from "../../utils/PasswordUpdater";
 import { useProfileFileUpload } from "../../hooks/uploads/ProfileUpload";
 import toast from "react-hot-toast";
 import { backendPrefix } from "../../config";
+
+// Helper function to generate continuous date range
+const generateDateRange = (days: number) => {
+  const result = [];
+  const today = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    result.push({
+      date: date,
+      day: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      renders: 0, // Default to 0
+    });
+  }
+
+  return result;
+};
+
+const CustomTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: any[];
+}) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+        <p className="text-sm font-semibold text-gray-800">
+          {payload[0].payload.day}
+        </p>
+        <p className="text-sm text-gray-600">
+          Renders:{" "}
+          <span className="font-bold text-indigo-600">{payload[0].value}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 interface ProfilePageProps {
   userData: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   userDatasets: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -93,38 +138,138 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       })
     : "Unknown";
 
-  // ==== Data ====
-  const renderingHistoryData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    renders.forEach((r) => {
-      if (!r.renderedAt) return;
-      const day = new Date(r.renderedAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      counts[day] = (counts[day] || 0) + 1;
-    });
-    return Object.entries(counts).map(([day, renders]) => ({ day, renders }));
-  }, [renders]);
-
   const templatesUsageData = useMemo(() => {
     const counts: Record<string, number> = {};
+
+    // Initialize all available templates with 0
+    Object.keys(templatesWithTheirIds).forEach((templateId) => {
+      counts[templateId] = 0;
+    });
+
+    // Count actual usage
     renders.forEach((r) => {
       if (!r.templateId) return;
       counts[r.templateId] = (counts[r.templateId] || 0) + 1;
     });
-    return Object.entries(counts).map(([templateId, usage]) => ({
-      templateId,
-      template: templatesWithTheirIds[templateId],
-      usage,
-    }));
+
+    // Only return templates that were actually used (or show all with 0s)
+    return Object.entries(counts)
+      .filter(([, usage]) => usage > 0) // Remove this line to show all templates
+      .map(([templateId, usage]) => ({
+        templateId,
+        template: templatesWithTheirIds[templateId] || "Unknown",
+        usage,
+      }))
+      .sort((a, b) => b.usage - a.usage); // Sort by most used
   }, [renders]);
 
-  const mostUsedTemplate = templatesUsageData.length
+  const [chartTimeRange, setChartTimeRange] = useState<
+    "7d" | "30d" | "90d" | "all"
+  >("30d");
+
+  const mostUsedTemplateAllTime = templatesUsageData.length
     ? templatesUsageData.reduce((prev, curr) =>
         curr.usage > prev.usage ? curr : prev
       ).template
     : "No templates used yet.";
+
+  const filteredRenderingData = useMemo(() => {
+    if (chartTimeRange === "all") {
+      // ✅ ALL TIME: Show only days with renders
+      const counts: Record<string, number> = {};
+
+      renders.forEach((render) => {
+        if (!render.renderedAt) return;
+
+        const renderDate = new Date(render.renderedAt);
+        const renderDay = renderDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        counts[renderDay] = (counts[renderDay] || 0) + 1;
+      });
+
+      // Convert to array and sort by date
+      return Object.entries(counts)
+        .map(([day, renders]) => ({
+          day,
+          renders,
+          date: new Date(day + ", 2024"),
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .map(({ day, renders }) => ({ day, renders }));
+    } else {
+      // ✅ 7d, 30d, 90d: Show continuous dates (including zeros)
+      const daysToShow =
+        chartTimeRange === "7d" ? 7 : chartTimeRange === "30d" ? 30 : 90;
+
+      // Generate continuous date range
+      const dateRange = generateDateRange(daysToShow);
+
+      // Map renders to dates
+      renders.forEach((render) => {
+        if (!render.renderedAt) return;
+
+        const renderDate = new Date(render.renderedAt);
+        const renderDay = renderDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+
+        // Find matching date in our range
+        const matchingDay = dateRange.find((d) => d.day === renderDay);
+        if (matchingDay) {
+          matchingDay.renders++;
+        }
+      });
+
+      return dateRange;
+    }
+  }, [renders, chartTimeRange]);
+
+  const filteredTemplatesUsageData = useMemo(() => {
+    let filteredRenders = renders;
+
+    // Filter renders based on time range (except "all")
+    if (chartTimeRange !== "all") {
+      const daysToShow =
+        chartTimeRange === "7d" ? 7 : chartTimeRange === "30d" ? 30 : 90;
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToShow);
+
+      filteredRenders = renders.filter((render) => {
+        if (!render.renderedAt) return false;
+        return new Date(render.renderedAt) >= cutoffDate;
+      });
+    }
+
+    // Count template usage from filtered renders
+    const counts: Record<string, number> = {};
+
+    // Initialize all available templates with 0
+    Object.keys(templatesWithTheirIds).forEach((templateId) => {
+      counts[templateId] = 0;
+    });
+
+    // Count actual usage
+    filteredRenders.forEach((r) => {
+      if (!r.templateId) return;
+      counts[r.templateId] = (counts[r.templateId] || 0) + 1;
+    });
+
+    // Only return templates that were actually used
+    return Object.entries(counts)
+      .filter(([, usage]) => usage > 0)
+      .map(([templateId, usage]) => ({
+        templateId,
+        template:
+          (templatesWithTheirIds[templateId] || "Unknown").slice(0, 15) + "...",
+        usage,
+      }))
+      .sort((a, b) => b.usage - a.usage);
+  }, [renders, chartTimeRange]);
 
   useEffect(() => {
     if (userData?.name) {
@@ -310,32 +455,54 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       >
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-transparent to-pink-50 opacity-60" />
         <div className="relative flex flex-col items-center gap-3 z-10">
-          <div className="relative group">
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Change profile picture"
+          >
             <img
               src={
                 profilePic ||
                 "https://res.cloudinary.com/dnxc1lw18/image/upload/v1761048476/pfp_yitfgl.jpg"
               }
               alt="Profile"
-              className="w-28 h-28 rounded-full border-4 border-white shadow-lg object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-28 h-28 rounded-full border-4 border-white shadow-lg object-cover transition-transform duration-300"
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-1 right-1 bg-indigo-500 text-white p-2 rounded-full hover:bg-indigo-600 shadow transition"
-            >
+
+            {/* Hover overlay - always shows on mobile */}
+            <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               {isUploading ? (
                 <svg
-                  className="animate-spin h-4 w-4"
+                  className="animate-spin h-8 w-8 text-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                 >
-                  <circle cx="12" cy="12" r="10" strokeWidth="4" />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    strokeWidth="4"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    className="opacity-75"
+                  />
                 </svg>
               ) : (
-                <FiCamera size={16} />
+                <div className="text-center text-white">
+                  <FiCamera size={24} className="mx-auto mb-1" />
+                  <p className="text-xs font-medium">Change Photo</p>
+                </div>
               )}
-            </button>
+            </div>
+
+            {/* Mobile-visible edit badge */}
+            <div className="absolute bottom-0 right-0 w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg md:hidden">
+              <FiCamera className="text-white" size={16} />
+            </div>
+
             <input
               type="file"
               ref={fileInputRef}
@@ -364,6 +531,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               <button
                 onClick={() => setIsEditingUsername(true)}
                 className="text-gray-400 hover:text-indigo-500 transition"
+                aria-label="Edit username"
               >
                 <FiEdit2 />
               </button>
@@ -390,8 +558,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 <button
                   onClick={() => {
                     setIsEditingUsername(false);
+
                     setUsernameValue(userData.name);
                   }}
+                  aria-label="Edit username"
                   className="px-3 py-1 border border-gray-300 rounded-full text-sm hover:bg-gray-100"
                 >
                   Cancel
@@ -404,247 +574,779 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </motion.div>
 
-      {/* ✅ ENHANCED: Professional Security Section */}
-      <motion.div
-        className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-            <FiShield className="text-white text-xl" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800">
-              Security Settings
-            </h3>
-            <p className="text-sm text-gray-500">
-              Manage your account security and authentication
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          {/* ✅ ENHANCED: Password Card */}
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            className="flex items-center justify-between p-5 border-2 border-gray-300 rounded-xl bg-white shadow-sm hover:shadow-md hover:border-gray-400 transition-all duration-200"
+      <Tab.Group>
+        <Tab.List className="flex gap-2 bg-white rounded-xl p-2 shadow-sm border border-gray-100 mt-8">
+          <Tab
+            className={({ selected }) =>
+              `flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition ${
+                selected
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`
+            }
           >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center">
-                <FiLock className="text-gray-600 text-xl" />
-              </div>
+            Overview
+          </Tab>
+          <Tab
+            className={({ selected }) =>
+              `flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition ${
+                selected
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`
+            }
+          >
+            Security
+          </Tab>
+        </Tab.List>
+
+        <Tab.Panels className="mt-6">
+          {/* OVERVIEW TAB - Combines stats, activity, and charts */}
+          <Tab.Panel>
+            {/* Stats Grid */}
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              layout
+            >
+              {[
+                {
+                  label: "Most Used Template",
+                  value: mostUsedTemplateAllTime,
+                  icon: <FiTrendingUp />,
+                  color: "text-indigo-600",
+                  action: () => console.log("Navigate to templates"),
+                },
+                {
+                  label: "Created Templates",
+                  value: projects.length,
+                  icon: <FiPieChart />,
+                  color: "text-pink-500",
+                  action: () => console.log("Navigate to projects"),
+                },
+                {
+                  label: "Uploads",
+                  value: userUploads.length,
+                  icon: <FiCamera />,
+                  color: "text-purple-500",
+                  action: () => console.log("Navigate to uploads"),
+                },
+                {
+                  label: "Datasets",
+                  value: userDatasets.length,
+                  icon: <FiTrendingUp />,
+                  color: "text-green-500",
+                  action: () => console.log("Navigate to datasets"),
+                },
+              ].map((stat, idx) => (
+                <motion.div
+                  key={idx}
+                  whileHover={{ scale: 1.03 }}
+                  onClick={stat.action}
+                  className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500 mb-2">{stat.label}</p>
+                      <p className="text-3xl font-bold text-gray-800">
+                        {stat.value}
+                      </p>
+                    </div>
+                    <div className={`text-4xl ${stat.color}`}>{stat.icon}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Analytics Section Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div>
-                <h4 className="font-semibold text-gray-800">Password</h4>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  Analytics
+                </h3>
                 <p className="text-sm text-gray-500">
-                  Change your account password
+                  {chartTimeRange === "all"
+                    ? `Showing ${filteredRenderingData.length} active days`
+                    : `Last ${
+                        chartTimeRange === "7d"
+                          ? "7"
+                          : chartTimeRange === "30d"
+                          ? "30"
+                          : "90"
+                      } days`}
                 </p>
               </div>
-            </div>
-            <button
-              onClick={() => setOpenPasswordModal(true)}
-              className="px-5 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium border border-gray-300 transition-all hover:border-gray-400"
-            >
-              Change Password
-            </button>
-          </motion.div>
 
-          {/* ✅ ENHANCED: 2FA Card with Professional Status Indicators */}
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            className={`flex items-center justify-between p-5 border-2 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200 ${
-              twoFactorEnabled
-                ? "border-emerald-300 hover:border-emerald-400"
-                : "border-gray-300 hover:border-indigo-300"
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div
-                  className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${
-                    twoFactorEnabled
-                      ? "bg-emerald-50 ring-2 ring-emerald-200"
-                      : "bg-gray-100 border-2 border-gray-200"
-                  }`}
-                >
-                  <FiShield
-                    className={`text-xl transition-colors ${
-                      twoFactorEnabled ? "text-emerald-600" : "text-gray-500"
+              <div className="flex gap-2 bg-white rounded-lg p-1 border border-gray-200">
+                {[
+                  { value: "7d", label: "Last 7 Days" },
+                  { value: "30d", label: "Last 30 Days" },
+                  { value: "90d", label: "Last 90 Days" },
+                  { value: "all", label: "All Activity" },
+                ].map((range) => (
+                  <button
+                    key={range.value}
+                    onClick={() =>
+                      setChartTimeRange(
+                        range.value as "7d" | "30d" | "90d" | "all"
+                      )
+                    }
+                    className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded transition ${
+                      chartTimeRange === range.value
+                        ? "bg-indigo-600 text-white"
+                        : "text-gray-600 hover:bg-gray-50"
                     }`}
-                  />
-                </div>
-                {twoFactorEnabled && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                    <FiCheck className="text-white text-xs" />
-                  </div>
-                )}
+                  >
+                    {range.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h4 className="font-semibold text-gray-800">
-                    Two-Factor Authentication
+            </div>
+
+            {/* Analytics Section - Charts */}
+            <div className="space-y-6">
+              {/* Desktop Charts - 2 Column Grid */}
+              <div className="hidden lg:grid lg:grid-cols-2 gap-6">
+                {/* Rendering History Chart */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+                >
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    Rendering History
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Your daily render count.
+                  </p>
+
+                  {filteredRenderingData.every((d) => d.renders === 0) ? (
+                    // Empty state
+                    <div className="h-[250px] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <FiTrendingUp className="text-gray-400 text-2xl" />
+                        </div>
+                        <p className="text-gray-600 font-medium">
+                          No renders yet
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Start creating videos to see your analytics
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Chart */}
+                      <ResponsiveContainer width="100%" height={250}>
+                        <LineChart data={filteredRenderingData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line
+                            type="monotone"
+                            dataKey="renders"
+                            stroke="#6366F1"
+                            strokeWidth={2}
+                            dot={{ fill: "#6366F1", r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+
+                      {/* Insight */}
+                      <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FiTrendingUp className="text-blue-600 text-lg" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-blue-900">
+                              Activity Insight
+                            </p>
+                            <p className="text-xs text-blue-700 mt-1">
+                              {chartTimeRange === "all" ? (
+                                <>
+                                  You've rendered{" "}
+                                  {filteredRenderingData.reduce(
+                                    (sum, d) => sum + d.renders,
+                                    0
+                                  )}{" "}
+                                  videos across {filteredRenderingData.length}{" "}
+                                  active days. Your peak day had{" "}
+                                  {Math.max(
+                                    ...filteredRenderingData.map(
+                                      (d) => d.renders
+                                    )
+                                  )}{" "}
+                                  renders.
+                                </>
+                              ) : (
+                                <>
+                                  You rendered{" "}
+                                  {filteredRenderingData.reduce(
+                                    (sum, d) => sum + d.renders,
+                                    0
+                                  )}{" "}
+                                  videos in this period. Your peak day had{" "}
+                                  {Math.max(
+                                    ...filteredRenderingData.map(
+                                      (d) => d.renders
+                                    )
+                                  )}{" "}
+                                  renders.
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+
+                {/* Template Usage Chart */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+                >
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    Template Usage
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Most used templates.
+                  </p>
+
+                  {filteredTemplatesUsageData.length === 0 ? (
+                    // Empty state
+                    <div className="h-[250px] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <FiPieChart className="text-gray-400 text-2xl" />
+                        </div>
+                        <p className="text-gray-600 font-medium">
+                          No templates used
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Create your first video to see template statistics
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Chart */}
+                      <ResponsiveContainer width="100%" height={250}>
+                        <LineChart data={filteredTemplatesUsageData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="template"
+                            tick={{ fontSize: 11 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="usage"
+                            stroke="#8B5CF6"
+                            strokeWidth={2}
+                            dot={{ fill: "#8B5CF6", r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+
+                      {/* Insight */}
+                      <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FiPieChart className="text-purple-600 text-lg" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-purple-900">
+                              Template Preference
+                            </p>
+                            <p className="text-xs text-purple-700 mt-1">
+                              Your favorite template is "
+                              {filteredTemplatesUsageData[0]?.template}" with{" "}
+                              {filteredTemplatesUsageData[0]?.usage} uses.
+                              {filteredTemplatesUsageData.length > 1 &&
+                                ` You've explored ${filteredTemplatesUsageData.length} different templates.`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Mobile Charts - Simplified View */}
+              <div className="lg:hidden space-y-6">
+                {/* Rendering History Chart - Mobile */}
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <h4 className="font-semibold text-gray-800 mb-2">
+                    Rendering History
                   </h4>
-                  {twoFactorEnabled && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full ring-1 ring-emerald-200">
-                      <FiCheck size={12} />
-                      Active
-                    </span>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Your daily render count.
+                  </p>
+
+                  {filteredRenderingData.every((d) => d.renders === 0) ? (
+                    // Empty state
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <FiTrendingUp className="text-gray-400 text-xl" />
+                        </div>
+                        <p className="text-gray-600 text-sm font-medium">
+                          No renders yet
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Start creating videos to see your analytics
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Chart */}
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={filteredRenderingData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#f0f0f0"
+                          />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 10 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={50}
+                            interval="preserveStartEnd"
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            tick={{ fontSize: 10 }}
+                            width={30}
+                          />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line
+                            type="monotone"
+                            dataKey="renders"
+                            stroke="#6366F1"
+                            strokeWidth={2}
+                            dot={{ fill: "#6366F1", r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+
+                      {/* Insight - Mobile */}
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className="flex items-start gap-2">
+                          <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FiTrendingUp className="text-blue-600 text-sm" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-blue-900">
+                              Activity Insight
+                            </p>
+                            <p className="text-xs text-blue-700 mt-0.5">
+                              {chartTimeRange === "all" ? (
+                                <>
+                                  {filteredRenderingData.reduce(
+                                    (sum, d) => sum + d.renders,
+                                    0
+                                  )}{" "}
+                                  videos across {filteredRenderingData.length}{" "}
+                                  active days.
+                                </>
+                              ) : (
+                                <>
+                                  {filteredRenderingData.reduce(
+                                    (sum, d) => sum + d.renders,
+                                    0
+                                  )}{" "}
+                                  videos in this period. Peak:{" "}
+                                  {Math.max(
+                                    ...filteredRenderingData.map(
+                                      (d) => d.renders
+                                    )
+                                  )}{" "}
+                                  renders.
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {twoFactorEnabled
-                    ? "Your account is protected with 2FA"
-                    : "Add an extra layer of security to your account"}
-                </p>
+
+                {/* Template Usage Chart - Mobile */}
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <h4 className="font-semibold text-gray-800 mb-2">
+                    Template Usage
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Most used templates.
+                  </p>
+
+                  {filteredTemplatesUsageData.length === 0 ? (
+                    // Empty state
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <FiPieChart className="text-gray-400 text-xl" />
+                        </div>
+                        <p className="text-gray-600 text-sm font-medium">
+                          No templates used
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {chartTimeRange === "all"
+                            ? "Create your first video"
+                            : "No templates in this period"}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Chart */}
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={filteredTemplatesUsageData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#f0f0f0"
+                          />
+                          <XAxis
+                            dataKey="template"
+                            tick={{ fontSize: 9 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                            interval={0}
+                          />
+                          <YAxis
+                            allowDecimals={false}
+                            tick={{ fontSize: 10 }}
+                            width={30}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="usage"
+                            stroke="#8B5CF6"
+                            strokeWidth={2}
+                            dot={{ fill: "#8B5CF6", r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+
+                      {/* Insight - Mobile */}
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                        <div className="flex items-start gap-2">
+                          <div className="w-7 h-7 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FiPieChart className="text-purple-600 text-sm" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-purple-900">
+                              Template Preference
+                            </p>
+                            <p className="text-xs text-purple-700 mt-0.5">
+                              {chartTimeRange === "all" ? (
+                                <>
+                                  Favorite: "
+                                  {filteredTemplatesUsageData[0]?.template}" (
+                                  {filteredTemplatesUsageData[0]?.usage} uses)
+                                </>
+                              ) : (
+                                <>
+                                  Top: "
+                                  {filteredTemplatesUsageData[0]?.template}" (
+                                  {filteredTemplatesUsageData[0]?.usage}×)
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (twoFactorEnabled) {
-                  setOpen2FAModal(true);
-                } else {
-                  handleEnable2FA();
-                }
-              }}
-              disabled={isEnabling2FA}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                twoFactorEnabled
-                  ? "bg-white text-red-600 border-2 border-red-300 hover:bg-red-50 hover:border-red-400"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md"
-              }`}
-            >
-              {isEnabling2FA
-                ? "Loading..."
-                : twoFactorEnabled
-                ? "Disable 2FA"
-                : "Enable 2FA"}
-            </button>
-          </motion.div>
+          </Tab.Panel>
 
-          {/* ✅ ENHANCED: Last Login Info */}
-          {userData.lastLogin && (
+          {/* SECURITY TAB */}
+          <Tab.Panel>
+            {/* Professional Security Section */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100"
+              className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-8 mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
             >
-              <FiAlertCircle className="text-blue-500 flex-shrink-0" />
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">Last login:</span>{" "}
-                {new Date(userData.lastLogin).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* ==== Stats ==== */}
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8"
-        layout
-      >
-        {[
-          {
-            label: "Most Used Template",
-            value: mostUsedTemplate,
-            icon: <FiTrendingUp />,
-            color: "text-indigo-600",
-          },
-          {
-            label: "Created Templates",
-            value: projects.length,
-            icon: <FiPieChart />,
-            color: "text-pink-500",
-          },
-          {
-            label: "Uploads",
-            value: userUploads.length,
-            icon: <FiCamera />,
-            color: "text-purple-500",
-          },
-          {
-            label: "Datasets",
-            value: userDatasets.length,
-            icon: <FiTrendingUp />,
-            color: "text-green-500",
-          },
-        ].map((stat, idx) => (
-          <motion.div
-            key={idx}
-            whileHover={{ scale: 1.03 }}
-            className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`text-2xl ${stat.color}`}>{stat.icon}</div>
-              <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-lg font-semibold text-gray-800">
-                  {stat.value}
-                </p>
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                  <FiShield className="text-white text-xl" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
+                    Security Settings
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Manage your account security and authentication
+                  </p>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
 
-      {/* ==== Charts ==== */}
-      <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-        >
-          <h3 className="font-semibold text-gray-800 mb-2">
-            Rendering History
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">Your daily render count.</p>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={renderingHistoryData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="renders"
-                stroke="#6366F1"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
+              <div className="space-y-4 sm:space-y-5">
+                {/* Security Score */}
+                <div className="mb-6 p-6 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Security Score
+                      </p>
+                      <p className="text-4xl font-bold text-emerald-600">
+                        {twoFactorEnabled ? "85" : "65"}/100
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {twoFactorEnabled
+                          ? "Great! Your account is secure"
+                          : "Enable 2FA to improve security"}
+                      </p>
+                    </div>
 
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-        >
-          <h3 className="font-semibold text-gray-800 mb-2">Template Usage</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Frequency of template usage.
-          </p>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={templatesUsageData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="template" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="usage"
-                stroke="#EC4899"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
+                    {/* Circular Progress */}
+                    <div className="relative w-24 h-24">
+                      <svg className="w-full h-full transform -rotate-90">
+                        {/* Background circle */}
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="#d1fae5"
+                          strokeWidth="8"
+                          fill="none"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="#10b981"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeDasharray="251.2"
+                          strokeDashoffset={
+                            twoFactorEnabled ? "37.68" : "88.92"
+                          }
+                          className="transition-all duration-500"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-lg font-bold text-emerald-600">
+                          {twoFactorEnabled ? "85%" : "65%"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security checklist */}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FiCheck className="text-emerald-600" />
+                      <span className="text-gray-700">Strong password</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      {twoFactorEnabled ? (
+                        <>
+                          <FiCheck className="text-emerald-600" />
+                          <span className="text-gray-700">
+                            Two-factor authentication enabled
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <FiAlertCircle className="text-yellow-600" />
+                          <span className="text-gray-700">
+                            Enable 2FA to add +20 points
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {twoFactorEnabled && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <FiAlertCircle className="text-yellow-600" />
+                        <span className="text-gray-700">
+                          Add recovery email to reach 100
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Responsive Password Card */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5 border-2 border-gray-300 rounded-xl bg-white shadow-sm hover:shadow-md hover:border-gray-400 transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 border-2 border-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <FiLock className="text-gray-600 text-lg sm:text-xl" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
+                        Password
+                      </h4>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">
+                        Change your account password
+                      </p>
+                      {userData?.passwordLastChanged && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Last changed:{" "}
+                          {new Date(
+                            userData.passwordLastChanged
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setOpenPasswordModal(true)}
+                    aria-label="Open password change dialog"
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium border border-gray-300 transition-all hover:border-gray-400 flex-shrink-0"
+                  >
+                    Change Password
+                  </button>
+                </motion.div>
+
+                {/* Responsive 2FA Card */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5 border-2 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200 ${
+                    twoFactorEnabled
+                      ? "border-emerald-300 hover:border-emerald-400"
+                      : "border-gray-300 hover:border-indigo-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all ${
+                          twoFactorEnabled
+                            ? "bg-emerald-50 ring-2 ring-emerald-200"
+                            : "bg-gray-100 border-2 border-gray-200"
+                        }`}
+                      >
+                        <FiShield
+                          className={`text-lg sm:text-xl transition-colors ${
+                            twoFactorEnabled
+                              ? "text-emerald-600"
+                              : "text-gray-500"
+                          }`}
+                        />
+                      </div>
+                      {twoFactorEnabled && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                          <FiCheck className="text-white text-xs" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 mb-1">
+                        <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
+                          Two-Factor Authentication
+                        </h4>
+                        {twoFactorEnabled && (
+                          <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full ring-1 ring-emerald-200">
+                            <FiCheck size={12} />
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        {twoFactorEnabled
+                          ? "Your account is protected with 2FA"
+                          : "Add an extra layer of security to your account"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (twoFactorEnabled) {
+                        setOpen2FAModal(true);
+                      } else {
+                        handleEnable2FA();
+                      }
+                    }}
+                    disabled={isEnabling2FA}
+                    className={`w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
+                      twoFactorEnabled
+                        ? "bg-white text-red-600 border-2 border-red-300 hover:bg-red-50 hover:border-red-400"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md"
+                    }`}
+                  >
+                    {isEnabling2FA
+                      ? "Loading..."
+                      : twoFactorEnabled
+                      ? "Disable 2FA"
+                      : "Enable 2FA"}
+                  </button>
+                </motion.div>
+
+                {/* Last Login Info */}
+                {userData.lastLogin && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-start sm:items-center gap-3 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100"
+                  >
+                    <FiAlertCircle
+                      className="text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0"
+                      size={18}
+                    />
+                    <p className="text-xs sm:text-sm text-gray-700">
+                      <span className="font-medium">Last login:</span>{" "}
+                      {new Date(userData.lastLogin).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
 
       {/* ==== Password Change Modal ==== */}
       <AnimatePresence>
