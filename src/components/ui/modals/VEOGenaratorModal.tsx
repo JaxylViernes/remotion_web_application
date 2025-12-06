@@ -570,7 +570,7 @@ export const VEOGeneratorModal: React.FC<VEOGeneratorModalProps> = ({
   // Poll for generation status
   const pollStatus = useCallback(async (generationId: string) => {
     try {
-      const response = await fetch(`/api/veo3/status/${generationId}`);
+      const response = await fetch(`${backendPrefix}/api/veo3/status/${generationId}`);
       const data = await response.json();
 
       if (data.success && data.generation) {
