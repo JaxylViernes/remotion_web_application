@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 // import Homepage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -46,35 +46,35 @@ import RelatableQuotesPage from "./pages/templates/RelatableQuotesPage.tsx"
 import ReactionVideoPage from "./pages/templates/ReactionVideoPage.tsx"
 import CollageEditPage from "./pages/templates/CollageEditPage.tsx"
 import KenBurnsCarouselPage from "./pages/templates/KenBurnsCarouselPage.tsx"
-import PricingPage from "./pages/PricingPage";
+import PricingPage from "./pages/PricingPage.tsx";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import RefundPolicyPage from "./pages/legal/RefundPolicyPage";
-// import Footer from "./components/Footer";
+import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Wrapper component to conditionally show footer
-// const ConditionalFooter = () => {
-//   const location = useLocation();
+const ConditionalFooter = () => {
+  const location = useLocation();
 
-//   // Pages that should NOT show the footer
-//   const noFooterPaths = [
-//     '/template/',
-//     '/project/',
-//     '/dashboard',
-//     '/loading',
-//     '/tester',
-//     '/qtester'
-//   ];
+  // Pages that should NOT show the footer
+  const noFooterPaths = [
+    '/template/',
+    '/project/',
+    '/dashboard',
+    '/loading',
+    '/tester',
+    '/qtester'
+  ];
 
-//   const shouldShowFooter = !noFooterPaths.some(path => location.pathname.startsWith(path));
+  const shouldShowFooter = !noFooterPaths.some(path => location.pathname.startsWith(path));
 
-//   return shouldShowFooter ? <Footer /> : null;
-// };
+  return shouldShowFooter ? <Footer /> : null;
+};
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./styles/theme.css";
-import { LandingPage } from "./pages/LandingPage.tsx";
+import LandingPage  from "./pages/LandingPage";
 // import ViralMotionLanding from "./pages/LandingPage.tsx";
 
 function App() {
@@ -501,7 +501,7 @@ function App() {
         />
         {/* <Route path="/testpage" element={<QuoteTemplateEditor2 />} /> */}
       </Routes>
-      {/* <ConditionalFooter /> */}
+      <ConditionalFooter />
       {/* 👇 Must be rendered globally */}
       <Toaster
         position="top-right"

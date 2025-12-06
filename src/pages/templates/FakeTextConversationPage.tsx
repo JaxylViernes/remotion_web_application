@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import '../css/TemplatePage.css';
-import '../css/FeaturePage.css';
-import '../../assets/Logo.css';
 import FTC from '../../assets/image/FTC.jpeg';
 
 const FakeTextConversationPage: React.FC = () => {
   const [featuresDropdownOpen, setFeaturesDropdownOpen] = useState(false);
   const [templatesDropdownOpen, setTemplatesDropdownOpen] = useState(false);
-  // const [currentStep, setCurrentStep] = useState(0);
 
   const featureItems = [
     { name: 'Video Templates', path: '/templates' },
@@ -126,34 +122,34 @@ const FakeTextConversationPage: React.FC = () => {
   ];
 
   return (
-    <div className="template-page">
+    <div className="min-h-screen bg-[#fafbfc] font-[Inter,-apple-system,BlinkMacSystemFont,sans-serif] overflow-x-hidden pt-[60px]">
       {/* Navigation */}
-      <nav className="template-nav">
-        <div className="template-nav-container">
-          <Link to="/" className="landing-logo">
-            <span className="logo__dot"></span>
-            <span className="logo__text">ViralMotion</span>
+      <nav className="fixed top-0 left-0 right-0 z-[1000] bg-white/95 backdrop-blur-[20px] border-b border-gray-100/80 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-300">
+        <div className="max-w-[1200px] mx-auto py-3.5 px-8 flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-2 no-underline font-bold text-xl text-violet-500">
+            <span className="w-[25px] h-[25px] rounded-full bg-[conic-gradient(from_120deg,#8b5cf6,#ec4899,#06b6d4)] shadow-[0_4px_12px_rgba(139,92,246,0.45)]"></span>
+            <span className="font-bold tracking-[0.2px]">ViralMotion</span>
           </Link>
-          <div className="template-nav-links">
+          <div className="flex items-center gap-8">
             {/* Features Dropdown */}
             <div
-              className="template-nav-dropdown"
+              className="relative"
               onMouseEnter={() => setFeaturesDropdownOpen(true)}
               onMouseLeave={() => setFeaturesDropdownOpen(false)}
             >
-              <button className="template-nav-dropdown-trigger">
+              <button className="flex items-center gap-1.5 text-gray-700 text-sm font-medium bg-transparent border-none cursor-pointer py-2 transition-colors hover:text-violet-500 group">
                 Features
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="transition-transform group-hover:rotate-180" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
               {featuresDropdownOpen && (
-                <div className="template-nav-dropdown-menu">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] p-2 min-w-[200px] z-[1000] animate-[dropdownFadeIn_0.2s_ease-out]">
                   {featureItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.path}
-                      className="template-nav-dropdown-item"
+                      className="block w-full py-2 px-3 text-gray-500 no-underline text-xs font-medium rounded-lg transition-all hover:bg-gray-100 hover:text-gray-900"
                     >
                       {item.name}
                     </Link>
@@ -164,23 +160,23 @@ const FakeTextConversationPage: React.FC = () => {
 
             {/* Templates Dropdown */}
             <div
-              className="template-nav-dropdown"
+              className="relative"
               onMouseEnter={() => setTemplatesDropdownOpen(true)}
               onMouseLeave={() => setTemplatesDropdownOpen(false)}
             >
-              <button className="template-nav-dropdown-trigger">
+              <button className="flex items-center gap-1.5 text-gray-700 text-sm font-medium bg-transparent border-none cursor-pointer py-2 transition-colors hover:text-violet-500 group">
                 Templates
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="transition-transform group-hover:rotate-180" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </button>
               {templatesDropdownOpen && (
-                <div className="template-nav-dropdown-menu">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] p-2 min-w-[200px] z-[1000] animate-[dropdownFadeIn_0.2s_ease-out]">
                   {templateItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.path}
-                      className="template-nav-dropdown-item"
+                      className="block w-full py-2 px-3 text-gray-500 no-underline text-xs font-medium rounded-lg transition-all hover:bg-gray-100 hover:text-gray-900"
                     >
                       {item.name}
                     </Link>
@@ -189,24 +185,24 @@ const FakeTextConversationPage: React.FC = () => {
               )}
             </div>
 
-            <Link to="/pricing">Pricing</Link>
+            <Link to="/pricing" className="text-gray-700 no-underline text-sm font-medium transition-colors hover:text-violet-500">Pricing</Link>
           </div>
-          <Link to="/login" className="template-nav-cta">Login</Link>
+          <Link to="/login" className="bg-gray-900 text-white py-2.5 px-5 rounded-lg font-medium text-sm no-underline transition-all hover:bg-violet-500">Login</Link>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="template-hero">
-        <div className="template-hero-container">
-          <div className="template-hero-content">
-            <h1>Fake Text Conversation Templates</h1>
-            <p>
+      <section className="bg-gradient-to-b from-[#dbeafe] via-[#e0e7ff] to-[#fafbfc] py-16 px-8 pb-24">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-16 items-center">
+          <div>
+            <h1 className="text-5xl font-bold text-[#111827] mb-5 leading-[1.2] animate-[fadeInUp_0.8s_ease-out]">Fake Text Conversation Templates</h1>
+            <p className="text-lg text-[#4b5563] leading-[1.7] mb-8 animate-[fadeInUp_0.8s_ease-out_0.1s_both]">
               Create viral text message videos that hook viewers instantly. Choose from Facebook chat,
               iMessage, WhatsApp, Instagram DM, and more. Add typing indicators and notification pop-ups
               for maximum engagement.
             </p>
-            <div className="template-hero-buttons">
-              <Link to="/signup" className="template-btn-primary">
+            <div className="flex gap-4 animate-[fadeInUp_0.8s_ease-out_0.2s_both]">
+              <Link to="/signup" className="bg-[#111827] text-white py-3.5 px-6 rounded-[10px] font-medium text-[0.9rem] no-underline inline-flex items-center gap-2 transition-all duration-200 border-none cursor-pointer hover:bg-[#8b5cf6] hover:-translate-y-0.5">
                 Create Text Conversation
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
@@ -214,15 +210,17 @@ const FakeTextConversationPage: React.FC = () => {
               </Link>
             </div>
           </div>
-          <div className="template-hero-visual">
-            <div className="template-hero-image-stack">
-              <div className="template-hero-image-main">
-                <div className="template-chat-demo">
-                  <div className="template-chat-bubble template-chat-received">Hey, are you coming tonight?</div>
-                  <div className="template-chat-bubble template-chat-sent">Yeah! What time?</div>
-                  <div className="template-chat-bubble template-chat-received">8pm, don't be late! 😄</div>
-                  <div className="template-chat-typing">
-                    <span></span><span></span><span></span>
+          <div className="relative animate-[fadeInRight_0.8s_ease-out_0.3s_both]">
+            <div className="relative">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] animate-[scaleIn_0.8s_ease-out_0.4s_both] transition-all duration-300 hover:-translate-y-[5px] hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.2)]">
+                <div className="p-8 flex flex-col gap-4 min-h-[300px] bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe]">
+                  <div className="max-w-[70%] py-3 px-4 rounded-2xl text-[0.9rem] leading-[1.4] animate-[fadeInUp_0.5s_ease-out_0.3s_both] bg-white text-[#111827] self-start rounded-bl-[4px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">Hey, are you coming tonight?</div>
+                  <div className="max-w-[70%] py-3 px-4 rounded-2xl text-[0.9rem] leading-[1.4] animate-[fadeInUp_0.5s_ease-out_0.6s_both] bg-[#3b82f6] text-white self-end rounded-br-[4px]">Yeah! What time?</div>
+                  <div className="max-w-[70%] py-3 px-4 rounded-2xl text-[0.9rem] leading-[1.4] animate-[fadeInUp_0.5s_ease-out_0.9s_both] bg-white text-[#111827] self-start rounded-bl-[4px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">8pm, don't be late! 😄</div>
+                  <div className="flex gap-1 self-start py-3 px-4 bg-white rounded-2xl rounded-bl-[4px]">
+                    <span className="w-2 h-2 bg-[#9ca3af] rounded-full animate-[typingBounce_1.4s_ease-in-out_infinite]"></span>
+                    <span className="w-2 h-2 bg-[#9ca3af] rounded-full animate-[typingBounce_1.4s_ease-in-out_infinite_0.2s]"></span>
+                    <span className="w-2 h-2 bg-[#9ca3af] rounded-full animate-[typingBounce_1.4s_ease-in-out_infinite_0.4s]"></span>
                   </div>
                 </div>
               </div>
@@ -232,16 +230,20 @@ const FakeTextConversationPage: React.FC = () => {
       </section>
 
       {/* Template Variations */}
-      <section className="template-scenarios">
-        <div className="template-section-container">
-          <h2>Choose Your Platform Style</h2>
-          <p className="template-section-subtitle">Create authentic-looking conversations from any messaging platform:</p>
-          <div className="template-scenarios-grid">
-            {templateVariations.map((variation) => (
-              <div key={variation.title} className="template-scenario-card">
-                <div className="template-scenario-icon">{variation.icon}</div>
-                <h3>{variation.title}</h3>
-                <p>{variation.description}</p>
+      <section className="py-20 px-8 bg-[#fafbfc]">
+        <div className="max-w-[1200px] mx-auto text-center">
+          <h2 className="text-[2rem] font-bold text-[#111827] mb-3 animate-[fadeInUp_0.6s_ease-out]">Choose Your Platform Style</h2>
+          <p className="text-[#6b7280] text-base mb-12 animate-[fadeInUp_0.6s_ease-out_0.1s_both]">Create authentic-looking conversations from any messaging platform:</p>
+          <div className="grid grid-cols-3 gap-8 mt-8">
+            {templateVariations.map((variation, index) => (
+              <div
+                key={variation.title}
+                className="bg-white rounded-2xl p-8 text-center border border-[#f3f4f6] transition-all duration-300 animate-[fadeInUp_0.6s_ease-out_both] hover:border-[#8b5cf6] hover:shadow-[0_10px_40px_rgba(139,92,246,0.1)] hover:-translate-y-2 group"
+                style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+              >
+                <div className="w-[60px] h-[60px] bg-gradient-to-br from-[rgba(139,92,246,0.1)] to-[rgba(236,72,153,0.1)] rounded-xl flex items-center justify-center mx-auto mb-4 text-[#8b5cf6] transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-[#8b5cf6] group-hover:to-[#ec4899] group-hover:text-white group-hover:scale-110">{variation.icon}</div>
+                <h3 className="text-lg font-semibold text-[#111827] mb-2">{variation.title}</h3>
+                <p className="text-[#6b7280] text-[0.9rem] leading-[1.6]">{variation.description}</p>
               </div>
             ))}
           </div>
@@ -249,25 +251,29 @@ const FakeTextConversationPage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="template-how-it-works">
-        <div className="template-section-container">
-          <h2>How to Create Text Conversation Videos</h2>
-          <div className="template-steps-row">
-            {steps.map((step) => (
-              <div key={step.number} className="template-step-card">
-                <div className="template-step-number">{step.number}</div>
-                <div className="template-step-card-content">
-                  <h4>{step.title}</h4>
-                  <p>{step.description}</p>
+      <section className="py-20 px-8 bg-white">
+        <div className="max-w-[1200px] mx-auto text-center">
+          <h2 className="text-[2rem] font-bold text-[#111827] mb-3 animate-[fadeInUp_0.6s_ease-out]">How to Create Text Conversation Videos</h2>
+          <div className="grid grid-cols-4 gap-8 mt-12">
+            {steps.map((step, index) => (
+              <div
+                key={step.number}
+                className="bg-white rounded-2xl p-8 border border-[#f3f4f6] transition-all duration-300 animate-[fadeInUp_0.6s_ease-out_both] flex flex-col items-center text-center hover:border-[#8b5cf6] hover:shadow-[0_10px_40px_rgba(139,92,246,0.1)] hover:-translate-y-2"
+                style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#ec4899] rounded-full flex items-center justify-center text-white font-bold text-xl mb-6 shadow-[0_4px_12px_rgba(139,92,246,0.3)]">{step.number}</div>
+                <div>
+                  <h4 className="text-base font-semibold text-[#111827] mb-3">{step.title}</h4>
+                  <p className="text-sm text-[#6b7280] leading-[1.6]">{step.description}</p>
                 </div>
               </div>
             ))}
           </div>
-          <div className="template-steps-main-image">
-            <img src={FTC} alt="How to create text conversation videos" />
+          <div className="w-full rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] bg-[#f3f4f6] mt-5">
+            <img src={FTC} alt="How to create text conversation videos" className="w-full h-auto block object-cover" />
           </div>
-          <div className="template-steps-cta">
-            <Link to="/signup" className="template-btn-primary">
+          <div className="flex justify-center mt-12">
+            <Link to="/signup" className="bg-[#111827] text-white py-3.5 px-6 rounded-[10px] font-medium text-[0.9rem] no-underline inline-flex items-center gap-2 transition-all duration-200 border-none cursor-pointer hover:bg-[#8b5cf6] hover:-translate-y-0.5">
               Start Creating Now
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -278,23 +284,27 @@ const FakeTextConversationPage: React.FC = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="feature-benefits">
-        <div className="feature-section-container">
-          <h2>Why Text Conversation Videos Go Viral</h2>
-          <p className="feature-section-subtitle">Here's why creators love this format:</p>
-          <div className="feature-benefits-grid">
-            {benefits.map((benefit) => (
-              <div key={benefit.title} className="feature-benefit-card">
-                <div className="feature-benefit-image">
-                  <img src={benefit.src} alt={benefit.title} />
+      <section className="py-20 px-8 bg-white">
+        <div className="max-w-[1200px] mx-auto text-center">
+          <h2 className="text-[2rem] font-bold text-[#111827] mb-3 animate-[fadeInUp_0.6s_ease-out]">Why Text Conversation Videos Go Viral</h2>
+          <p className="text-[#6b7280] text-base mb-12 animate-[fadeInUp_0.6s_ease-out_0.1s_both]">Here's why creators love this format:</p>
+          <div className="grid grid-cols-3 gap-8 mt-8">
+            {benefits.map((benefit, index) => (
+              <div
+                key={benefit.title}
+                className="bg-[#fafbfc] rounded-2xl p-8 text-center border border-[#f3f4f6] transition-all duration-300 animate-[fadeInUp_0.6s_ease-out_both] hover:border-[#e5e7eb] hover:shadow-[0_10px_40px_rgba(0,0,0,0.05)] hover:-translate-y-[5px] group"
+                style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+              >
+                <div className="w-full h-[200px] rounded-xl overflow-hidden mb-6 bg-[#f3f4f6] transition-transform duration-300 group-hover:scale-105">
+                  <img src={benefit.src} alt={benefit.title} className="w-full h-full object-cover block" />
                 </div>
-                <h3>{benefit.title}</h3>
-                <p>{benefit.description}</p>
+                <h3 className="text-lg font-semibold text-[#111827] mb-2">{benefit.title}</h3>
+                <p className="text-[#6b7280] text-[0.9rem] leading-[1.6]">{benefit.description}</p>
               </div>
             ))}
           </div>
-          <div className="feature-benefits-cta">
-            <Link to="/signup" className="feature-btn-primary">
+          <div className="flex justify-center mt-12">
+            <Link to="/signup" className="bg-[#111827] text-white py-3.5 px-6 rounded-[10px] font-medium text-[0.9rem] no-underline inline-flex items-center gap-2 transition-all duration-200 border-none cursor-pointer hover:bg-[#8b5cf6] hover:-translate-y-0.5">
               Create Your First Video
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
