@@ -131,8 +131,8 @@ export function useProjectSave<T>({
       setProjectId(result.project.id);
       lastSavedProps.current = currentProps;
       localStorage.setItem("projectId", result.project.id.toString());
-
       setStatus("Saved!");
+      return result.project.id.toString();
     } catch (err) {
       console.error("saveNewProject error", err);
       throw err;

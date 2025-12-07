@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { FiSearch, FiTrash2, FiX } from "react-icons/fi";
-import { getTemplateRoute } from "../../../../utils/TemlplateNavigator";
 import { ChooseTemplateModal } from "../../modals/ChooseTemplateModal";
 import { useProjectHooks } from "../../../../hooks/dashboardhooks/ProjectHooks";
 
@@ -174,11 +173,12 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
                 <div className="p-3">
                   <button
                     onClick={() => {
-                      const url = getTemplateRoute(
-                        project.templateId,
-                        project.id
-                      );
-                      window.open(url, "_blank");
+                      // console.log(selectedTemplate);
+
+                      const location = `/editor?project=${project.id}`;
+                      // window.assign(location, "_blank");
+                      window.location.assign(location);
+                      // onClose();
                     }}
                     className="w-full py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 transition"
                   >

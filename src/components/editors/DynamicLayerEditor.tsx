@@ -83,6 +83,8 @@ import {
 } from "../../utils/simpleTemplateRegistry";
 import { renderVideoUsingLambda } from "../../utils/lambdarendering";
 import { backendPrefix } from "../../config";
+import { compareProjectProps } from "../../utils/projectPropsComparison";
+import { saveExistingProject } from "../../utils/projectSaver";
 
 // ============================================================================
 // ICONS & STYLES
@@ -697,6 +699,7 @@ const DynamicLayerEditor: React.FC = () => {
   const [template, setTemplate] = useState<TemplateDefinition | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("");
+
   // const [isLight, setIsLight] = useState(false);
 
   // State
@@ -792,6 +795,9 @@ const DynamicLayerEditor: React.FC = () => {
   const hasLoadedTemplate = useRef(false);
   const isPanelOpen = activeTab !== null;
 
+  //additional usestates for project saving
+  const [isProjectSaving, setIsPorjectSaving] = useState(false);
+
   // Themed grid styles
   const gridStyles = {
     container: {
@@ -883,6 +889,8 @@ const DynamicLayerEditor: React.FC = () => {
   const layoutFileRef = useRef<HTMLInputElement>(null);
   const activeSlotId = useRef<string | null>(null);
 
+  const hasLoadedProject = useRef(false);
+
   useEffect(() => {
     const templateIdParam = searchParams.get("template");
     const projectIdParam = searchParams.get("project");
@@ -911,10 +919,17 @@ const DynamicLayerEditor: React.FC = () => {
       } else {
         toast.error("Template not found");
       }
-    } else if (projectIdParam) {
+    } else if (projectIdParam && !hasLoadedProject.current) {
+      hasLoadedProject.current = true;
       setProjectId(projectIdParam);
       setIsLoading(true);
-      fetch(`${backendPrefix}/api/projects/${projectIdParam}`)
+      fetch(`${backendPrefix}/projects/${projectIdParam}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           const templateDef = getTemplate(data.templateId);
@@ -942,14 +957,14 @@ const DynamicLayerEditor: React.FC = () => {
   }, [searchParams, pushState]);
 
   const {
-  addTextLayer,
-  handleImageUpload,
-  handleAudioUpload,
-  handleVideoUpload,
-  updateLayer,
-  deleteLayer,
-  reorderLayers
-} = useLayerManagement({
+    addTextLayer,
+    handleImageUpload,
+    handleAudioUpload,
+    handleVideoUpload,
+    updateLayer,
+    deleteLayer,
+    reorderLayers,
+  } = useLayerManagement({
     layers,
     currentFrame,
     totalFrames,
@@ -1305,202 +1320,217 @@ const DynamicLayerEditor: React.FC = () => {
   // COLLAGE HANDLERS
   // ============================================================================
 
- const handleCollageLayoutSelect = useCallback((layout: CollageLayout) => {
-  setSelectedCollageLayout(layout);
-  
-  // Sample images to cycle through
-  const sampleImages = [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=1600&fit=crop', // Mountain landscape
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=1600&fit=crop', // Nature scene
-    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=1600&fit=crop', // Beach sunset
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=1600&fit=crop', // Beach view
-    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&h=1600&fit=crop', // Ocean
-    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&h=1600&fit=crop', // Lake
-    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=1600&fit=crop', // Forest
-    'https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=1200&h=1600&fit=crop', // Sunset
-    'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=1600&fit=crop', // Mountain peak
-  ];
-  
-  // Animation options for variety
-  const animations = ['fade', 'slideUp', 'scale', 'zoomPunch'];
-  
-  // Timing configuration
-  const collageEndFrame = 90;     // Collage shows for 3 seconds
-  const photoStartFrame = 90;     // Individual photos start at 3 seconds
-  const photoDuration = 60;       // Each photo shows for 2 seconds
-  
-  // 1. CREATE COLLAGE SLOT LAYERS (with aesthetic enhancements)
-  const collageLayers: Layer[] = layout.slots.map((slot, index) => {
-    const layerId = generateId();
-    const animation = animations[index % animations.length];
-    
-    const imageLayer: ImageLayer = {
-      id: layerId,
-      name: `Collage Slot ${index + 1}`,
-      visible: true,
-      locked: false,
-      type: 'image',
-      startFrame: 0,
-      endFrame: collageEndFrame,  
-      position: { 
-        x: slot.x + (slot.width / 2),
-        y: slot.y + (slot.height / 2)
-      },
-      size: { 
-        width: slot.width,
-        height: slot.height
-      },
-      rotation: slot.rotation || 0,
-      opacity: 1,
-      animation: {
-        entrance: animation as 'fade' | 'slideUp' | 'slideDown' | 'scale' | 'zoomPunch',
-        entranceDuration: 30
-      },
-      src: sampleImages[index % sampleImages.length],
-      objectFit: 'cover',
-      // Enhanced aesthetic filters
-      filter: slot.shadow 
-        ? 'drop-shadow(0px 12px 32px rgba(0, 0, 0, 0.6)) brightness(1.05) contrast(1.05)' 
-        : 'brightness(1.05) contrast(1.05)',
-    };
-    
-    return imageLayer;
-  });
-  
-  // 2. CREATE FULLSCREEN TRAILING INDIVIDUAL PHOTO LAYERS (aesthetic designs)
-  const trailingPhotoLayers: ImageLayer[] = [];
-  const individualAnimations = ['zoomPunch', 'scale', 'fade'];
-  
-  for (let i = 0; i < 6; i++) {
-    const photoId = generateId();
-    trailingPhotoLayers.push({
-      id: photoId,
-      name: `Individual Photo ${i + 1}`,
-      visible: true,
-      locked: false,
-      type: 'image',
-      startFrame: photoStartFrame + (i * photoDuration),
-      endFrame: photoStartFrame + ((i + 1) * photoDuration),
-      position: { x: 50, y: 50 },  // Center
-      size: { width: 100, height: 100 },  // FULLSCREEN
-      rotation: 0,
-      opacity: 1,
-      animation: {
-        entrance: individualAnimations[i % individualAnimations.length] as 'fade' | 'scale' | 'zoomPunch',
-        entranceDuration: 25
-      },
-      src: sampleImages[(layout.slots.length + i) % sampleImages.length],
-      objectFit: 'cover',
-      // Aesthetic enhancement filters
-      filter: 'brightness(1.08) contrast(1.1) saturate(1.15)',
-    });
-  }
-  
-  // 3. CREATE AESTHETIC TEXT OVERLAY (only during collage section)
-  const textLayer: TextLayer = {
-    id: generateId(),
-    name: 'Collage Title',
-    visible: true,
-    locked: false,
-    type: 'text',
-    startFrame: 0,
-    endFrame: collageEndFrame,  
-    position: { x: 50, y: 10 },  // Top center
-    size: { width: 85, height: 12 },
-    rotation: 0,
-    opacity: 1,
-    animation: {
-      entrance: 'slideDown',
-      entranceDuration: 30
+  const handleCollageLayoutSelect = useCallback(
+    (layout: CollageLayout) => {
+      setSelectedCollageLayout(layout);
+
+      // Sample images to cycle through
+      const sampleImages = [
+        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=1600&fit=crop", // Mountain landscape
+        "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=1600&fit=crop", // Nature scene
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=1600&fit=crop", // Beach sunset
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=1600&fit=crop", // Beach view
+        "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&h=1600&fit=crop", // Ocean
+        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&h=1600&fit=crop", // Lake
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=1600&fit=crop", // Forest
+        "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=1200&h=1600&fit=crop", // Sunset
+        "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1200&h=1600&fit=crop", // Mountain peak
+      ];
+
+      // Animation options for variety
+      const animations = ["fade", "slideUp", "scale", "zoomPunch"];
+
+      // Timing configuration
+      const collageEndFrame = 90; // Collage shows for 3 seconds
+      const photoStartFrame = 90; // Individual photos start at 3 seconds
+      const photoDuration = 60; // Each photo shows for 2 seconds
+
+      // 1. CREATE COLLAGE SLOT LAYERS (with aesthetic enhancements)
+      const collageLayers: Layer[] = layout.slots.map((slot, index) => {
+        const layerId = generateId();
+        const animation = animations[index % animations.length];
+
+        const imageLayer: ImageLayer = {
+          id: layerId,
+          name: `Collage Slot ${index + 1}`,
+          visible: true,
+          locked: false,
+          type: "image",
+          startFrame: 0,
+          endFrame: collageEndFrame,
+          position: {
+            x: slot.x + slot.width / 2,
+            y: slot.y + slot.height / 2,
+          },
+          size: {
+            width: slot.width,
+            height: slot.height,
+          },
+          rotation: slot.rotation || 0,
+          opacity: 1,
+          animation: {
+            entrance: animation as
+              | "fade"
+              | "slideUp"
+              | "slideDown"
+              | "scale"
+              | "zoomPunch",
+            entranceDuration: 30,
+          },
+          src: sampleImages[index % sampleImages.length],
+          objectFit: "cover",
+          // Enhanced aesthetic filters
+          filter: slot.shadow
+            ? "drop-shadow(0px 12px 32px rgba(0, 0, 0, 0.6)) brightness(1.05) contrast(1.05)"
+            : "brightness(1.05) contrast(1.05)",
+        };
+
+        return imageLayer;
+      });
+
+      // 2. CREATE FULLSCREEN TRAILING INDIVIDUAL PHOTO LAYERS (aesthetic designs)
+      const trailingPhotoLayers: ImageLayer[] = [];
+      const individualAnimations = ["zoomPunch", "scale", "fade"];
+
+      for (let i = 0; i < 6; i++) {
+        const photoId = generateId();
+        trailingPhotoLayers.push({
+          id: photoId,
+          name: `Individual Photo ${i + 1}`,
+          visible: true,
+          locked: false,
+          type: "image",
+          startFrame: photoStartFrame + i * photoDuration,
+          endFrame: photoStartFrame + (i + 1) * photoDuration,
+          position: { x: 50, y: 50 }, // Center
+          size: { width: 100, height: 100 }, // FULLSCREEN
+          rotation: 0,
+          opacity: 1,
+          animation: {
+            entrance: individualAnimations[i % individualAnimations.length] as
+              | "fade"
+              | "scale"
+              | "zoomPunch",
+            entranceDuration: 25,
+          },
+          src: sampleImages[(layout.slots.length + i) % sampleImages.length],
+          objectFit: "cover",
+          // Aesthetic enhancement filters
+          filter: "brightness(1.08) contrast(1.1) saturate(1.15)",
+        });
+      }
+
+      // 3. CREATE AESTHETIC TEXT OVERLAY (only during collage section)
+      const textLayer: TextLayer = {
+        id: generateId(),
+        name: "Collage Title",
+        visible: true,
+        locked: false,
+        type: "text",
+        startFrame: 0,
+        endFrame: collageEndFrame,
+        position: { x: 50, y: 10 }, // Top center
+        size: { width: 85, height: 12 },
+        rotation: 0,
+        opacity: 1,
+        animation: {
+          entrance: "slideDown",
+          entranceDuration: 30,
+        },
+        content: layout.name.toUpperCase(), // Uppercase for style
+        fontFamily: "Poppins",
+        fontSize: 7,
+        fontColor: "#ffffff",
+        fontWeight: "800",
+        fontStyle: "normal",
+        textAlign: "center",
+        lineHeight: 1.3,
+        letterSpacing: 3, // Wide letter spacing for aesthetic
+        textTransform: "uppercase",
+        textOutline: true,
+        outlineColor: "#000000",
+        textShadow: true,
+        shadowColor: "#000000",
+        shadowX: 0,
+        shadowY: 4,
+        shadowBlur: 12,
+      };
+
+      // 4. CREATE SUBTLE GRADIENT OVERLAY (only during collage for depth)
+      const gradientOverlay: ImageLayer = {
+        id: generateId(),
+        name: "Gradient Overlay",
+        visible: true,
+        locked: true,
+        type: "image",
+        startFrame: 0,
+        endFrame: collageEndFrame, // Only during collage
+        position: { x: 50, y: 50 },
+        size: { width: 100, height: 100 },
+        rotation: 0,
+        opacity: 0.15, // Subtle overlay
+        // Black gradient from top (for text readability)
+        src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOCIvPjxzdG9wIG9mZnNldD0iNDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwODAiIGhlaWdodD0iMTkyMCIgZmlsbD0idXJsKCNncmFkKSIvPjwvc3ZnPg==",
+        objectFit: "cover",
+        isBackground: false,
+      };
+
+      // 5. CREATE BOTTOM VIGNETTE FOR INDIVIDUAL PHOTOS (for aesthetic depth)
+      const bottomVignette: ImageLayer = {
+        id: generateId(),
+        name: "Bottom Vignette",
+        visible: true,
+        locked: true,
+        type: "image",
+        startFrame: photoStartFrame,
+        endFrame: totalFrames, // During all individual photos
+        position: { x: 50, y: 50 },
+        size: { width: 100, height: 100 },
+        rotation: 0,
+        opacity: 0.25, // Subtle vignette
+        // Dark edges vignette
+        src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxyYWRpYWxHcmFkaWVudCBpZD0idmlnIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI3MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOSIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDgwIiBoZWlnaHQ9IjE5MjAiIGZpbGw9InVybCgjdmlnKSIvPjwvc3ZnPg==",
+        objectFit: "cover",
+        isBackground: false,
+      };
+
+      // 6. COMBINE ALL LAYERS IN PROPER ORDER
+      const allLayers: Layer[] = [
+        ...collageLayers, // Collage slots (appear first)
+        gradientOverlay, // Gradient for collage section
+        textLayer, // Text overlay (only during collage)
+        ...trailingPhotoLayers, // Individual fullscreen photos
+        bottomVignette, // Vignette for individual photos
+      ];
+
+      // Remove ALL old layers and add new composition
+      console.log("=== CREATING AESTHETIC COLLAGE COMPOSITION ===");
+      console.log("Removing all", layers.length, "existing layers");
+      console.log("Adding", collageLayers.length, "collage slots (0-3s)");
+      console.log(
+        "Adding",
+        trailingPhotoLayers.length,
+        "fullscreen photos (3-15s)"
+      );
+      console.log("Adding text layer (0-3s only)");
+      console.log("Adding aesthetic overlays");
+
+      pushState(allLayers);
+
+      // Clear selection
+      setSelectedLayerId(null);
+      setEditingLayerId(null);
+
+      // Force cursor back to default
+      document.body.style.cursor = "default";
+      setTimeout(() => {
+        document.body.style.cursor = "default";
+      }, 0);
+
+      toast.success(`✨ Applied ${layout.name} with aesthetic design!`);
     },
-    content: layout.name.toUpperCase(),  // Uppercase for style
-    fontFamily: 'Poppins',
-    fontSize: 7,
-    fontColor: '#ffffff',
-    fontWeight: '800',
-    fontStyle: 'normal',
-    textAlign: 'center',
-    lineHeight: 1.3,
-    letterSpacing: 3,  // Wide letter spacing for aesthetic
-    textTransform: 'uppercase',
-    textOutline: true,
-    outlineColor: '#000000',
-    textShadow: true,
-    shadowColor: '#000000',
-    shadowX: 0,
-    shadowY: 4,
-    shadowBlur: 12,
-  };
-  
-  // 4. CREATE SUBTLE GRADIENT OVERLAY (only during collage for depth)
-  const gradientOverlay: ImageLayer = {
-    id: generateId(),
-    name: 'Gradient Overlay',
-    visible: true,
-    locked: true,
-    type: 'image',
-    startFrame: 0,
-    endFrame: collageEndFrame,  // Only during collage
-    position: { x: 50, y: 50 },
-    size: { width: 100, height: 100 },
-    rotation: 0,
-    opacity: 0.15,  // Subtle overlay
-    // Black gradient from top (for text readability)
-    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOCIvPjxzdG9wIG9mZnNldD0iNDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eTowIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwODAiIGhlaWdodD0iMTkyMCIgZmlsbD0idXJsKCNncmFkKSIvPjwvc3ZnPg==',
-    objectFit: 'cover',
-    isBackground: false,
-  };
-  
-  // 5. CREATE BOTTOM VIGNETTE FOR INDIVIDUAL PHOTOS (for aesthetic depth)
-  const bottomVignette: ImageLayer = {
-    id: generateId(),
-    name: 'Bottom Vignette',
-    visible: true,
-    locked: true,
-    type: 'image',
-    startFrame: photoStartFrame,
-    endFrame: totalFrames,  // During all individual photos
-    position: { x: 50, y: 50 },
-    size: { width: 100, height: 100 },
-    rotation: 0,
-    opacity: 0.25,  // Subtle vignette
-    // Dark edges vignette
-    src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxyYWRpYWxHcmFkaWVudCBpZD0idmlnIiBjeD0iNTAlIiBjeT0iNTAlIiByPSI3MCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjAuOSIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDgwIiBoZWlnaHQ9IjE5MjAiIGZpbGw9InVybCgjdmlnKSIvPjwvc3ZnPg==',
-    objectFit: 'cover',
-    isBackground: false,
-  };
-  
-  // 6. COMBINE ALL LAYERS IN PROPER ORDER
-  const allLayers: Layer[] = [
-    ...collageLayers,           // Collage slots (appear first)
-    gradientOverlay,            // Gradient for collage section
-    textLayer,                  // Text overlay (only during collage)
-    ...trailingPhotoLayers,     // Individual fullscreen photos
-    bottomVignette,             // Vignette for individual photos
-  ];
-  
-  // Remove ALL old layers and add new composition
-  console.log('=== CREATING AESTHETIC COLLAGE COMPOSITION ===');
-  console.log('Removing all', layers.length, 'existing layers');
-  console.log('Adding', collageLayers.length, 'collage slots (0-3s)');
-  console.log('Adding', trailingPhotoLayers.length, 'fullscreen photos (3-15s)');
-  console.log('Adding text layer (0-3s only)');
-  console.log('Adding aesthetic overlays');
-  
-  pushState(allLayers);
-  
-  // Clear selection
-  setSelectedLayerId(null);
-  setEditingLayerId(null);
-  
-  // Force cursor back to default
-  document.body.style.cursor = 'default';
-  setTimeout(() => {
-    document.body.style.cursor = 'default';
-  }, 0);
-  
-  toast.success(`✨ Applied ${layout.name} with aesthetic design!`);
-}, [layers, pushState, totalFrames, setSelectedLayerId, setEditingLayerId]);
+    [layers, pushState, totalFrames, setSelectedLayerId, setEditingLayerId]
+  );
 
   // --- TOOLS HANDLERS ---
   const handleRemoveBackground = useCallback(
@@ -1773,38 +1803,41 @@ const DynamicLayerEditor: React.FC = () => {
   }, [addTextLayer]);
 
   const addMediaToCanvas = useCallback(
-  (media: any) => {
-    // ✨ ADD: Log what we're adding
-    console.log('🎨 addMediaToCanvas called with:', { 
-      name: media.name, 
-      type: media.type,
-      isGif: media.isGif,
-      hasUrl: !!media.url,
-      url: media.url 
-    });
-    
-    const mediaSource =
-      media.type === "image" ||
-      media.type === "video" ||
-      media.type === "audio"
-        ? media.url
-        : media.data;
-    if (!mediaSource) {
-      toast.error("No source URL found");
-      return;
-    }
-    const newId = generateId();
-    let newLayer: any;
-    if (media.type?.startsWith("image")) {
-      // ✨ ADD: Detect if it's a GIF
-      const isGif = media.isGif || mediaSource.toLowerCase().endsWith('.gif');
-      console.log(`🖼️ Creating image layer (${isGif ? 'GIF' : 'static image'}):`, media.name);
-      
-      newLayer = {
-        id: newId,
-        type: "image",
-        name: media.name || (isGif ? "GIF" : "Image"), // ✨ Better naming
-        // ... rest of layer properties
+    (media: any) => {
+      // ✨ ADD: Log what we're adding
+      console.log("🎨 addMediaToCanvas called with:", {
+        name: media.name,
+        type: media.type,
+        isGif: media.isGif,
+        hasUrl: !!media.url,
+        url: media.url,
+      });
+
+      const mediaSource =
+        media.type === "image" ||
+        media.type === "video" ||
+        media.type === "audio"
+          ? media.url
+          : media.data;
+      if (!mediaSource) {
+        toast.error("No source URL found");
+        return;
+      }
+      const newId = generateId();
+      let newLayer: any;
+      if (media.type?.startsWith("image")) {
+        // ✨ ADD: Detect if it's a GIF
+        const isGif = media.isGif || mediaSource.toLowerCase().endsWith(".gif");
+        console.log(
+          `🖼️ Creating image layer (${isGif ? "GIF" : "static image"}):`,
+          media.name
+        );
+
+        newLayer = {
+          id: newId,
+          type: "image",
+          name: media.name || (isGif ? "GIF" : "Image"), // ✨ Better naming
+          // ... rest of layer properties
           visible: true,
           locked: false,
           startFrame: currentFrame,
@@ -2132,17 +2165,17 @@ const DynamicLayerEditor: React.FC = () => {
     [selectLayerAndCloseTab]
   );
 
-const handleReorderTracks = useCallback(
-  (fromIndex: number, toIndex: number) => {
-    // Timeline displays in reverse, so convert indices
-    const actualFromIndex = layers.length - 1 - fromIndex;
-    const actualToIndex = layers.length - 1 - toIndex;
-    
-    // Use the validated reorderLayers function
-    reorderLayers(actualFromIndex, actualToIndex);
-  },
-  [layers, reorderLayers]
-);
+  const handleReorderTracks = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      // Timeline displays in reverse, so convert indices
+      const actualFromIndex = layers.length - 1 - fromIndex;
+      const actualToIndex = layers.length - 1 - toIndex;
+
+      // Use the validated reorderLayers function
+      reorderLayers(actualFromIndex, actualToIndex);
+    },
+    [layers, reorderLayers]
+  );
 
   const handleTracksChange = useCallback(
     (updatedTracks: TimelineTrack[]) => {
@@ -2165,13 +2198,12 @@ const handleReorderTracks = useCallback(
     [layers, pushState]
   );
 
-//   const handleCutTrack = useCallback(
-//   (trackId: string, frame: number) => {
-//     splitLayer(trackId, frame);
-//   },
-//   [splitLayer]
-// );
-
+  //   const handleCutTrack = useCallback(
+  //   (trackId: string, frame: number) => {
+  //     splitLayer(trackId, frame);
+  //   },
+  //   [splitLayer]
+  // );
 
   const handleFrameChange = useCallback((frame: number) => {
     setCurrentFrame(frame);
@@ -2266,9 +2298,13 @@ const handleReorderTracks = useCallback(
         const inputProps = {
           config: {
             layers: layersToRender,
-          }
-        }
-        const videoUrl = await renderVideoUsingLambda(inputProps, template?.id as number,format);
+          },
+        };
+        const videoUrl = await renderVideoUsingLambda(
+          inputProps,
+          template?.id as number,
+          format
+        );
         setExportUrl(videoUrl);
         toast.success("Video exported!");
       } catch (error) {
@@ -2280,6 +2316,31 @@ const handleReorderTracks = useCallback(
     },
     [layers, template, getProcessedLayers]
   );
+
+  async function handleSaveExistingProject() {
+    if (projectId) {
+      setIsPorjectSaving(true);
+      const props = {
+        layers,
+        duration,
+        currentFrame,
+        templateId: template?.id || 1,
+      };
+      const changedprops = await compareProjectProps(projectId, props);
+      console.log(changedprops);
+      if (changedprops === true) {
+        toast.success("Nothing to save. Make some changes before saving");
+      }else{
+        const saveresponse = await saveExistingProject(projectId, props);
+        if(saveresponse==="error"){
+          toast.error("There was an error saving your project");
+        }else{
+          toast.success("Changes saved!");
+        }
+      }
+    }
+    setIsPorjectSaving(false);
+  }
 
   const handleSaveProject = useCallback(
     async (title: string, setStatus: (s: string) => void) => {
@@ -2293,7 +2354,6 @@ const handleReorderTracks = useCallback(
           setProjectId(savedProjectId);
           navigate(`/editor?project=${savedProjectId}`, { replace: true });
         }
-        toast.success("Project saved!");
       } catch (error) {
         setStatus("Error");
         toast.error("Save failed");
@@ -3049,9 +3109,16 @@ const handleReorderTracks = useCallback(
               <ThemeToggle />
               <button
                 style={editorStyles.addButton}
-                onClick={() => setShowSaveModal(true)}
+                onClick={() => {
+                  if (projectId) {
+                    handleSaveExistingProject();
+                    // handleSaveProject();
+                  } else {
+                    setShowSaveModal(true);
+                  }
+                }}
               >
-                Save
+                {isProjectSaving ? "Saving..." : "Save"}
               </button>
               <button
                 style={{
@@ -3075,42 +3142,42 @@ const handleReorderTracks = useCallback(
             }}
             ref={previewContainerRef}
           >
-           <div style={editorStyles.previewWrapper}>
-  <div style={{ position: 'relative', display: 'inline-block' }}>
-    <RemotionPreview
-      key={`preview-${layers.length}-${layers
-        .map((l) => l.id)
-        .join(",")}`}
-      ref={previewRef}
-      component={template?.composition || DynamicLayerComposition}
-      inputProps={previewInputProps}
-      durationInFrames={totalFrames}
-      fps={FPS}
-      onFrameUpdate={handlePreviewFrameUpdate}
-      onPlayingChange={(playing) => setIsPlaying(playing)}
-      containerWidth="100%"
-      containerHeight="100%"
-      phoneFrameWidth={`${previewDimensions.width}px`}
-      phoneFrameHeight={`${previewDimensions.height}px`}
-    />
-    
-    {template?.id !== 8 &&  (
-      <DynamicPreviewOverlay
-        layers={layers}
-        currentFrame={currentFrame}
-        selectedLayerId={selectedLayerId}
-        editingLayerId={editingLayerId}
-        onSelectLayer={selectLayerAndCloseTab}
-        onLayerUpdate={updateLayer}
-        containerWidth={previewDimensions.width}
-        containerHeight={previewDimensions.height}
-        onEditingLayerChange={setEditingLayerId}
-        isPlaying={isPlaying}
-        onPlayingChange={setIsPlaying}
-      />
-    )}
-  </div>
-</div>
+            <div style={editorStyles.previewWrapper}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <RemotionPreview
+                  key={`preview-${layers.length}-${layers
+                    .map((l) => l.id)
+                    .join(",")}`}
+                  ref={previewRef}
+                  component={template?.composition || DynamicLayerComposition}
+                  inputProps={previewInputProps}
+                  durationInFrames={totalFrames}
+                  fps={FPS}
+                  onFrameUpdate={handlePreviewFrameUpdate}
+                  onPlayingChange={(playing) => setIsPlaying(playing)}
+                  containerWidth="100%"
+                  containerHeight="100%"
+                  phoneFrameWidth={`${previewDimensions.width}px`}
+                  phoneFrameHeight={`${previewDimensions.height}px`}
+                />
+
+                {template?.id !== 8 && (
+                  <DynamicPreviewOverlay
+                    layers={layers}
+                    currentFrame={currentFrame}
+                    selectedLayerId={selectedLayerId}
+                    editingLayerId={editingLayerId}
+                    onSelectLayer={selectLayerAndCloseTab}
+                    onLayerUpdate={updateLayer}
+                    containerWidth={previewDimensions.width}
+                    containerHeight={previewDimensions.height}
+                    onEditingLayerChange={setEditingLayerId}
+                    isPlaying={isPlaying}
+                    onPlayingChange={setIsPlaying}
+                  />
+                )}
+              </div>
+            </div>
           </div>
 
           <Timeline
@@ -3123,7 +3190,6 @@ const handleReorderTracks = useCallback(
             onTrackSelect={handleTrackSelect}
             onTracksChange={handleTracksChange}
             onReorderTracks={handleReorderTracks}
-
             onDeleteTrack={deleteLayer}
             isPlaying={isPlaying}
             onPlayPause={togglePlayback}

@@ -1,6 +1,6 @@
 import { backendPrefix } from "../config";
 
-export const renderVideoUsingLambda = async (
+export const renderVideoUsingLambdaWithoutSaving = async (
   inputProps: any,
   format: string
 ) => {
