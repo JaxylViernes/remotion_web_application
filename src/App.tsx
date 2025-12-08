@@ -89,6 +89,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // ✅ NEW: Cross-tab synchronization
     const handleStorageChange = (e: StorageEvent) => {
+      console.log(isAuthenticated);
       if (e.key === "token") {
         if (e.newValue) {
           // Logged in another tab
