@@ -10,7 +10,7 @@ interface ImageEditorProps {
   totalFrames: number;
   onUpdate: (layerId: string, updates: Partial<ImageLayer>) => void;
   onDelete: (layerId: string) => void;
-  onReplace: () => void; // Now opens media gallery
+  onReplace: () => void; 
 }
 
 /**
@@ -59,7 +59,7 @@ const styles = getThemedEditorStyles(colors);
 
   return (
     <div style={styles.container}>
-      {/* Preview/Replace */}
+     {/* Preview/Replace */}
       <div style={styles.section}>
         <button
           style={styles.buttonSecondary}
@@ -73,11 +73,10 @@ const styles = getThemedEditorStyles(colors);
             e.currentTarget.style.borderColor = colors.border;
           }}
         >
-          {/* {EditorIcons.image} */}
           Replace Image
         </button>
       </div>
-
+      
       {/* Duration */}
       <div style={styles.sectionCompact}>
         <div style={styles.propertyRow}>
@@ -168,17 +167,16 @@ const styles = getThemedEditorStyles(colors);
         <div style={styles.sectionTitle}>DISPLAY</div>
 
         <div style={styles.formGroupCompact}>
-          <label style={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              style={styles.checkbox}
-              checked={layer.objectFit === "cover"}
-              onChange={(e) =>
-                onUpdate(layer.id, { objectFit: e.target.checked ? "cover" : "contain" })
-              }
-            />
-            <span>Crop to fit</span>
-          </label>
+          <label style={styles.label}>Object Fit</label>
+          <select
+            style={styles.select}
+            value={layer.objectFit || "cover"}
+            onChange={(e) => onUpdate(layer.id, { objectFit: e.target.value as "cover" | "contain" | "fill" })}
+          >
+            <option value="cover">Cover (Fill & Crop)</option>
+            <option value="contain">Contain (Fit Inside)</option>
+            <option value="fill">Fill (Stretch)</option>
+          </select>
         </div>
 
         <div style={styles.formGroupCompact}>

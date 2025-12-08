@@ -69,13 +69,14 @@ const getTrackIcon = (type: TimelineTrack["type"]) => {
 // CONFIGURATION
 // ============================================================================
 
-const TRACK_ROW_HEIGHT = 36; 
-const TRACK_CLIP_HEIGHT = 28;
+const TRACK_ROW_HEIGHT = 30; 
+const TRACK_CLIP_HEIGHT = 24;
 const TRACK_CLIP_TOP = (TRACK_ROW_HEIGHT - TRACK_CLIP_HEIGHT) / 2;
 
 // ============================================================================
 // TIMELINE COMPONENT
 // ============================================================================
+
 
 export const Timeline: React.FC<TimelineProps> = ({
   tracks,
@@ -195,6 +196,17 @@ export const Timeline: React.FC<TimelineProps> = ({
     const rect = trackAreaRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = e.clientX - rect.left + (trackAreaRef.current?.scrollLeft || 0);
+    const newFrame = Math.max(0, Math.min(totalFrames, pixelToFrame(x)));
+    onFrameChange(newFrame);
+  }, [dragState, reorderState, pixelToFrame, totalFrames, onFrameChange]);
+
+
+  // Ruler Click - Seek to clicked time
+  const handleRulerClick = useCallback((e: React.MouseEvent) => {
+    if (isDraggingPlayhead.current || dragState || reorderState?.isDragging) return;
+    const rect = rulerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left + (rulerRef.current?.scrollLeft || 0);
     const newFrame = Math.max(0, Math.min(totalFrames, pixelToFrame(x)));
     onFrameChange(newFrame);
   }, [dragState, reorderState, pixelToFrame, totalFrames, onFrameChange]);
@@ -464,27 +476,27 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   // Styles with enhanced visual feedback
   const styles: Record<string, React.CSSProperties> = {
-    container: { display: "flex", flexDirection: "column", height: "260px", backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.borderLight}`, fontFamily: "system-ui, -apple-system, sans-serif", userSelect: "none" },
-    toolbar: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderBottom: `1px solid ${colors.borderLight}`, backgroundColor: colors.bgPrimary },
-    toolGroup: { display: "flex", gap: "4px" },
+    container: { display: "flex", flexDirection: "column", height: "200px", backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.borderLight}`, fontFamily: "system-ui, -apple-system, sans-serif", userSelect: "none", flexShrink: 0, },
+    toolbar: { display: "flex", alignItems: "center", gap: "8px", padding: "4px 16px", borderBottom: `1px solid ${colors.borderLight}`, backgroundColor: colors.bgPrimary },
+    toolGroup: { display: "flex", gap: "6px" },
     divider: { width: "1px", height: "24px", backgroundColor: colors.borderLight },
-    toolButton: { width: "32px", height: "32px", border: "none", backgroundColor: "transparent", color: colors.textPrimary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", transition: "all 0.15s" },
+    toolButton: { width: "28px", height: "30px", border: "none", backgroundColor: "transparent", color: colors.textPrimary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", transition: "all 0.15s" },
     toolButtonActive: { backgroundColor: "#3b82f6", color: "white" },
     toolButtonDisabled: { opacity: 0.3, cursor: "not-allowed" },
-    timeDisplay: { marginLeft: "auto", fontSize: "13px", color: colors.textSecondary, fontVariantNumeric: "tabular-nums" },
+    timeDisplay: { marginLeft: "auto", marginRight: "12px", fontSize: "13px", color: colors.textSecondary, fontVariantNumeric: "tabular-nums" },
     zoomControl: { display: "flex", alignItems: "center", gap: "8px", color: colors.textMuted },
     zoomSlider: { width: "80px", cursor: "pointer" },
     timelineWrapper: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" },
     rulerRow: { display: "flex", borderBottom: `1px solid ${colors.borderLight}`, backgroundColor: colors.bgPrimary },
     rulerSpacer: { width: "180px", flexShrink: 0, backgroundColor: colors.bgSecondary },
     rulerContent: { flex: 1, overflow: "hidden", position: "relative" },
-    ruler: { position: "relative", height: "32px", backgroundColor: colors.bgPrimary, borderBottom: `1px solid ${colors.borderLight}` },
+   ruler: { position: "relative", height: "25px", backgroundColor: colors.bgPrimary, borderBottom: `1px solid ${colors.borderLight}`, cursor: "pointer" },
     rulerInner: { position: "relative", height: "100%", borderLeft: `1px solid ${colors.borderLight}` },
     rulerMarker: { 
       position: "absolute", 
       top: "0px", 
       transform: "translateX(-50%)", 
-      fontSize: "11px", 
+      fontSize: "8px", 
       fontWeight: 500,
       color: colors.textSecondary,
       whiteSpace: "nowrap",
@@ -613,7 +625,7 @@ export const Timeline: React.FC<TimelineProps> = ({
         <div style={styles.rulerRow}>
           <div style={styles.rulerSpacer} />
           <div style={styles.rulerContent} ref={rulerRef}>
-            <div style={styles.ruler}>
+            <div style={styles.ruler} onClick={handleRulerClick}>
               <div style={{ ...styles.rulerInner, width: `${timelineWidth}px` }}>
                 {timeMarkers.map(({ frame, label, isMajor }) => (
                   <React.Fragment key={frame}>

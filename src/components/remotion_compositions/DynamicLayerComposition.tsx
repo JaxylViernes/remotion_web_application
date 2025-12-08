@@ -58,6 +58,7 @@ export interface ImageLayer extends LayerBase {
   isBackground?: boolean;
   objectFit?: "cover" | "contain" | "fill";
   filter?: string;
+  crop?: CropData;
 }
 
 export interface AudioLayer extends LayerBase {
@@ -107,6 +108,14 @@ export interface DynamicCompositionProps {
   backgroundColor?: string;
   editingLayerId?: string | null;
   templateId?: number; 
+}
+
+
+export interface CropData {
+  x: number;      // Left position as percentage (0-100)
+  y: number;      // Top position as percentage (0-100)
+  width: number;  // Width as percentage (0-100)
+  height: number; // Height as percentage (0-100)
 }
 
 // ============================================================================
@@ -599,10 +608,15 @@ padding: "0",
 const ImageLayerComponent: React.FC<{ layer: ImageLayer; relativeFrame: number; fps: number }> = ({ layer, relativeFrame, fps }) => {
   const entrance = getEntranceAnimation(layer, relativeFrame, fps);
   const rotation = layer.rotation || 0;
+  const crop = layer.crop;
+
+  const cropStyle = crop ? {
+    clipPath: `inset(${crop.y}% ${100 - crop.x - crop.width}% ${100 - crop.y - crop.height}% ${crop.x}%)`,
+  } : {};
 
   if (layer.isBackground) {
     const bgOpacity = interpolate(relativeFrame, [0, 60], [0, 1], { extrapolateRight: "clamp" });
-    return <AbsoluteFill style={{ opacity: bgOpacity * layer.opacity }}><Img src={layer.src} style={{ width: "100%", height: "100%", objectFit: layer.objectFit, filter: layer.filter }} /></AbsoluteFill>;
+    return <AbsoluteFill style={{ opacity: bgOpacity * layer.opacity }}><Img src={layer.src} style={{ width: "100%", height: "100%", objectFit: layer.objectFit, filter: layer.filter, ...cropStyle }} /></AbsoluteFill>;
   }
   return (
     <div style={{ 
@@ -613,9 +627,10 @@ const ImageLayerComponent: React.FC<{ layer: ImageLayer; relativeFrame: number; 
         height: `${layer.size.height}%`, 
         opacity: layer.opacity * entrance.opacity, 
         transform: `rotate(${rotation}deg) ${entrance.transform}`, 
-        transformOrigin: "center center" 
+        transformOrigin: "center center",
+        overflow: "hidden",
     }}>
-      <Img src={layer.src} style={{ width: "100%", height: "100%", objectFit: layer.objectFit, filter: layer.filter }} />
+      <Img src={layer.src} style={{ width: "100%", height: "100%", objectFit: layer.objectFit, filter: layer.filter, ...cropStyle }} />
     </div>
   );
 };
