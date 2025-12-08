@@ -1,7 +1,6 @@
 import Cookies from "js-cookie";
 import { backendPrefix } from "../config";
 
-
 interface AuthResponse {
   success: boolean;
   message?: string;
@@ -21,15 +20,26 @@ interface RefreshTokenResponse {
   token: string;
 }
 
-// ✅ NEW: Token manager with auto-refresh
+// ✅ ENHANCED: Token manager with auto-refresh + heartbeat
 class TokenManager {
   private refreshTimer: NodeJS.Timeout | null = null;
+  private heartbeatTimer: NodeJS.Timeout | null = null;
 
   startAutoRefresh() {
-    // Refresh token every 14 minutes (1 minute before expiry)
+    // Clear any existing timers first
+    this.stopAutoRefresh();
+
+    // Refresh token every 14 minutes (1 minute before 15min expiry)
     this.refreshTimer = setInterval(() => {
       this.refreshAccessToken();
     }, 14 * 60 * 1000);
+
+    // ✅ NEW: Session heartbeat every 5 minutes
+    this.heartbeatTimer = setInterval(() => {
+      this.sessionHeartbeat();
+    }, 5 * 60 * 1000);
+
+    console.log("🔄 Token auto-refresh started");
   }
 
   stopAutoRefresh() {
@@ -37,13 +47,32 @@ class TokenManager {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
     }
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    console.log("⏸️  Token auto-refresh stopped");
+  }
+
+  // ✅ NEW: Keep session alive
+  async sessionHeartbeat() {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      // Just verify token is still valid
+      await getCurrentUser();
+      console.log("💓 Session heartbeat");
+    } catch (error) {
+      console.error("💔 Heartbeat failed:", error);
+    }
   }
 
   async refreshAccessToken() {
     try {
       const response = await fetch(`${backendPrefix}/auth/refresh-token`, {
         method: "POST",
-        credentials: "include", // ✅ Send cookies
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -58,9 +87,10 @@ class TokenManager {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
+        console.log("🔄 Token refreshed successfully");
       }
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.error("❌ Token refresh failed:", error);
       this.stopAutoRefresh();
       window.location.href = "/login";
     }
@@ -98,7 +128,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
     const response = await fetch(`${backendPrefix}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include", // ✅ CRITICAL: Send/receive cookies
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -294,4 +324,35 @@ export const resetPassword = async (
     console.error("Reset password error:", error);
     return { success: false, error: "Failed to reset password" };
   }
+};
+
+// ✅ NEW: Initialize session on app load
+export const initializeSession = async () => {
+  const token = localStorage.getItem("token");
+  
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const user = await getCurrentUser();
+    
+    if (user) {
+      tokenManager.startAutoRefresh();
+      console.log("✅ Session initialized for:", user.email);
+      return user;
+    } else {
+      localStorage.removeItem("token");
+      return null;
+    }
+  } catch (error) {
+    console.error("❌ Session initialization failed:", error);
+    localStorage.removeItem("token");
+    return null;
+  }
+};
+
+// ✅ NEW: Check if user is logged in (synchronous)
+export const isLoggedIn = (): boolean => {
+  return !!localStorage.getItem("token");
 };
