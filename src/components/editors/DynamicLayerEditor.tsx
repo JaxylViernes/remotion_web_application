@@ -86,6 +86,8 @@ import { backendPrefix } from "../../config";
 import { compareProjectProps } from "../../utils/projectPropsComparison";
 import { saveExistingProject } from "../../utils/projectSaver";
 
+import { CropOverlay, type CropData } from "../editor_components/CropOverlay";
+
 // ============================================================================
 // ICONS & STYLES
 // ============================================================================
@@ -732,6 +734,8 @@ const DynamicLayerEditor: React.FC = () => {
   const [copiedLayer, setCopiedLayer] = useState<Layer | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>(null);
 
+  const [cropMode, setCropMode] = useState(false);
+
   const [replacingVideoLayerId, setReplacingVideoLayerId] = useState<
     string | null
   >(null);
@@ -972,6 +976,22 @@ const DynamicLayerEditor: React.FC = () => {
     setSelectedLayerId,
   });
 
+
+  const handleCropClick = useCallback(() => {
+    setCropMode(true);
+    setIsPlaying(false); 
+  }, []);
+
+  const handleCropChange = useCallback((crop: CropData) => {
+    if (selectedLayerId) {
+      updateLayer(selectedLayerId, { crop });
+    }
+  }, [selectedLayerId, updateLayer]);
+
+  const handleCropComplete = useCallback(() => {
+    setCropMode(false);
+  }, []);
+
   const { showSaveModal, setShowSaveModal, saveNewProject } = useProjectSave({
     templateId: template?.id || 1,
     buildProps: () => ({
@@ -1029,10 +1049,10 @@ const DynamicLayerEditor: React.FC = () => {
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         const aspectRatio = 9 / 16;
-        let width = containerWidth * 0.8;
+        let width = containerWidth * 0.95
         let height = width / aspectRatio;
-        if (height > containerHeight * 0.8) {
-          height = containerHeight * 0.8;
+        if (height > containerHeight * 0.95) {
+          height = containerHeight * 0.95;
           width = height * aspectRatio;
         }
         setPreviewDimensions({ width, height });
@@ -2530,7 +2550,7 @@ const DynamicLayerEditor: React.FC = () => {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#888",
+                      color: colors.textSecondary,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -2770,7 +2790,7 @@ const DynamicLayerEditor: React.FC = () => {
                               >
                                 <Icons.Music />
                                 <span
-                                  style={{ fontSize: "12px", color: "#ccc" }}
+                                  style={{ fontSize: "12px", color: colors.textSecondary }}
                                 >
                                   {asset.name}
                                 </span>
@@ -2816,8 +2836,7 @@ const DynamicLayerEditor: React.FC = () => {
                                 <div
                                   style={{
                                     fontSize: "11px",
-                                    color: "#ccc",
-                                    padding: "4px",
+                                    color: colors.textSecondary, padding: "4px"
                                   }}
                                 >
                                   {asset.name}
@@ -2877,7 +2896,7 @@ const DynamicLayerEditor: React.FC = () => {
                     >
                       <Icons.Download />
                       <span style={gridStyles.cardTitle}>Insert Photos</span>
-                      <span style={{ fontSize: "10px", color: "#666" }}>
+                      <span style={{ fontSize: "10px", color: colors.textMuted }}>
                         Bulk Upload
                       </span>
                     </div>
@@ -3069,6 +3088,7 @@ const DynamicLayerEditor: React.FC = () => {
                   onReplace={() =>
                     openMediaGallery("media", selectedLayer.id, "image")
                   }
+                  onCropClick={handleCropClick}
                 />
               )}
               {selectedVideoLayer && (
@@ -3091,6 +3111,9 @@ const DynamicLayerEditor: React.FC = () => {
           style={{
             ...editorStyles.mainArea,
             backgroundColor: colors.bgPrimary,
+            display: "flex", 
+            flexDirection: "column",
+            height: "100%",
           }}
         >
           <div
@@ -3098,6 +3121,11 @@ const DynamicLayerEditor: React.FC = () => {
               ...editorStyles.header,
               backgroundColor: colors.bgSecondary,
               borderBottom: `1px solid ${colors.border}`,
+              height: "64px", 
+                padding: "0 24px", 
+                display: "flex",
+                alignItems: "center",
+                flexShrink: 0, 
             }}
           >
             <span
@@ -3139,45 +3167,81 @@ const DynamicLayerEditor: React.FC = () => {
             style={{
               ...editorStyles.previewArea,
               backgroundColor: colors.bgPrimary,
+                flex: 1, 
+                display: "flex",
+                alignItems: "center", 
+                justifyContent: "center",
+                overflow: "hidden",
+                padding: "20px",
+                minHeight: 0, 
             }}
             ref={previewContainerRef}
           >
-            <div style={editorStyles.previewWrapper}>
-              <div style={{ position: "relative", display: "inline-block" }}>
-                <RemotionPreview
-                  key={`preview-${layers.length}-${layers
-                    .map((l) => l.id)
-                    .join(",")}`}
-                  ref={previewRef}
-                  component={template?.composition || DynamicLayerComposition}
-                  inputProps={previewInputProps}
-                  durationInFrames={totalFrames}
-                  fps={FPS}
-                  onFrameUpdate={handlePreviewFrameUpdate}
-                  onPlayingChange={(playing) => setIsPlaying(playing)}
-                  containerWidth="100%"
-                  containerHeight="100%"
-                  phoneFrameWidth={`${previewDimensions.width}px`}
-                  phoneFrameHeight={`${previewDimensions.height}px`}
-                />
 
-                {template?.id !== 8 && (
-                  <DynamicPreviewOverlay
-                    layers={layers}
-                    currentFrame={currentFrame}
-                    selectedLayerId={selectedLayerId}
-                    editingLayerId={editingLayerId}
-                    onSelectLayer={selectLayerAndCloseTab}
-                    onLayerUpdate={updateLayer}
-                    containerWidth={previewDimensions.width}
-                    containerHeight={previewDimensions.height}
-                    onEditingLayerChange={setEditingLayerId}
-                    isPlaying={isPlaying}
-                    onPlayingChange={setIsPlaying}
-                  />
-                )}
-              </div>
-            </div>
+           <div style={{
+            width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+           }
+           }>
+  <div style={{ position: 'relative', display: 'inline-block' }}>
+    <RemotionPreview
+      key={`preview-${layers.length}-${layers
+        .map((l) => l.id)
+        .join(",")}`}
+      ref={previewRef}
+      component={template?.composition || DynamicLayerComposition}
+      inputProps={previewInputProps}
+      durationInFrames={totalFrames}
+      fps={FPS}
+      onFrameUpdate={handlePreviewFrameUpdate}
+      onPlayingChange={(playing) => setIsPlaying(playing)}
+      containerWidth="100%"
+      containerHeight="100%"
+      phoneFrameWidth={`${previewDimensions.width}px`}
+      phoneFrameHeight={`${previewDimensions.height}px`}
+    />
+
+     {cropMode && selectedLayer && isImageLayer(selectedLayer) && (
+      <div style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}>
+        <CropOverlay
+          layer={selectedLayer}
+          containerWidth={previewDimensions.width}
+          containerHeight={previewDimensions.height}
+          compositionWidth={1080}
+          compositionHeight={1920}
+          onCropChange={handleCropChange}
+          onCropComplete={handleCropComplete}
+        />
+      </div>
+    )}
+    
+    {template?.id !== 8 &&  (
+      <DynamicPreviewOverlay
+        layers={layers}
+        currentFrame={currentFrame}
+        selectedLayerId={selectedLayerId}
+        editingLayerId={editingLayerId}
+        onSelectLayer={selectLayerAndCloseTab}
+        onLayerUpdate={updateLayer}
+        containerWidth={previewDimensions.width}
+        containerHeight={previewDimensions.height}
+        onEditingLayerChange={setEditingLayerId}
+        isPlaying={isPlaying}
+        onPlayingChange={setIsPlaying}
+      />
+    )}
+  </div>
+</div>
           </div>
 
           <Timeline
