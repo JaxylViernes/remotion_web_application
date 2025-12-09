@@ -54,6 +54,16 @@ export const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
 
   const MAX_RECENT = 9;
 
+  function concatPromptWithModel (model: string, prompt: string){
+    let newprompt = prompt;
+    if(model === "flux-realism"){
+      newprompt = newprompt + ". Make it realistic";
+    }else if(model==="flux-anime"){
+      newprompt = newprompt + ". Use anime style.";
+    }
+    return newprompt;
+  }
+
   // Fetch generations on mount
   useEffect(() => {
     fetchGenerations();
@@ -99,7 +109,7 @@ export const AIImageGenerator: React.FC<AIImageGeneratorProps> = ({
     const { width, height } = ratioToSize();
 
     try {
-      const imageUrl = await generateWithPollinations(prompt, width, height);
+      const imageUrl = await generateWithPollinations(concatPromptWithModel(pollinationsModel, prompt), width, height);
 
       if (!imageUrl) throw new Error("No image returned from model");
 
