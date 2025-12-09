@@ -94,15 +94,6 @@ export const VEO3Generator: React.FC = () => {
   const [showPromptLibrary, setShowPromptLibrary] = useState(false);
   const [showPromptDocs, setShowPromptDocs] = useState(false);
 
-  // Edit panel states
-  const [showEditPanel, setShowEditPanel] = useState(false);
-  const [editingGeneration, setEditingGeneration] =
-    useState<VEO3Generation | null>(null);
-  const [editPrompt, setEditPrompt] = useState("");
-  const [editModel, setEditModel] = useState("veo-3.1-generate-preview");
-  const [, setEditDuration] = useState("8");
-  const [editAspectRatio] = useState("16:9");
-  const [, setEditLoading] = useState(false);
 
   const MAX_RECENT = 6;
 
