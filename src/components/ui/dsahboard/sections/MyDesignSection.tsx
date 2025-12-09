@@ -140,28 +140,40 @@ export const MyTemplatesSection: React.FC<MyDesignProps> = ({
                 )}
 
                 {/* Video Thumbnail */}
-                <div className="relative h-44 overflow-hidden">
-                  <video
-                    src={project.projectVidUrl}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    className="w-full h-full object-cover"
-                    onMouseOver={(e) => {
-                      e.currentTarget.play();
-                      e.currentTarget.playbackRate = 2.5;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.pause();
-                      e.currentTarget.currentTime = 0;
-                    }}
-                  />
+                <div className="relative h-44 overflow-hidden rounded-lg">
+                  {project.projectVidUrl ? (
+                    <div className="relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+                      <video
+                        src={project.projectVidUrl}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="max-w-full max-h-full object-contain drop-shadow-lg"
+                        onMouseOver={(e) => {
+                          e.currentTarget.play();
+                          e.currentTarget.playbackRate = 2.5;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
+                      <img
+                        src={project.screenshot}
+                        alt={project.title}
+                        className="max-w-full max-h-full object-contain drop-shadow-lg"
+                      />
+                    </div>
+                  )}
                   {hoveredId === project.id && (
-                    <div className="absolute bottom-0 w-full bg-black/60 text-white px-3 py-2 backdrop-blur-sm">
+                    <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/70 to-transparent text-white px-3 py-3 backdrop-blur-sm">
                       <p className="font-semibold text-sm truncate">
                         {project.title}
                       </p>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs opacity-90">
                         Updated:{" "}
                         {new Date(project.lastUpdated).toLocaleDateString()}
                       </p>

@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useRef,
@@ -10,6 +9,7 @@ import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTheme } from "../../contexts/ThemeContext";
 import { ThemeToggle } from "../../components/ui/theme/ThemeToggle";
+import html2canvas from "html2canvas";
 
 // Editor Components
 import DynamicLayerComposition from "../remotion_compositions/DynamicLayerComposition";
@@ -459,6 +459,8 @@ const DynamicLayerEditor: React.FC = () => {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("");
 
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+
   // const [isLight, setIsLight] = useState(false);
 
   // State
@@ -534,6 +536,7 @@ const DynamicLayerEditor: React.FC = () => {
 
   const previewRef = useRef<RemotionPreviewHandle>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const remotionWrapperRef = useRef<HTMLDivElement>(null);
 
   // AI Tool Modals
   const [showVoiceoverModal, setShowVoiceoverModal] = useState(false);
@@ -653,205 +656,285 @@ const DynamicLayerEditor: React.FC = () => {
   const hasLoadedProject = useRef(false);
   const location = useLocation();
 
+  useEffect(() => {
+    const templateIdParam = searchParams.get("template");
+    const projectIdParam = searchParams.get("project");
 
+    // ✅ Handle VEO redirect FIRST (before template/project loading)
+    if (
+      location.state?.fromVEO &&
+      location.state?.videoData &&
+      !hasLoadedTemplate.current
+    ) {
+      hasLoadedTemplate.current = true;
+      const videoData = location.state.videoData;
 
- useEffect(() => {
-  const templateIdParam = searchParams.get("template");
-  const projectIdParam = searchParams.get("project");
+      // Create video layer from VEO
+      const newLayer: VideoLayer = {
+        id: generateId(),
+        type: "video",
+        name: `VEO: ${videoData.prompt.substring(0, 30)}...`,
+        visible: true,
+        locked: false,
+        startFrame: 0,
+        endFrame: Math.round(videoData.duration * FPS),
+        position: { x: 50, y: 50 },
+        size: { width: 100, height: 100 },
+        rotation: 0,
+        opacity: 1,
+        src: videoData.url,
+        volume: 0.8,
+        loop: false,
+        playbackRate: 1,
+        objectFit: "cover",
+        filter: "",
+        fadeIn: 0,
+        fadeOut: 0,
+        animation: { entrance: "fade", entranceDuration: 30 },
+      };
 
-  // ✅ Handle VEO redirect FIRST (before template/project loading)
-  if (location.state?.fromVEO && location.state?.videoData && !hasLoadedTemplate.current) {
-    hasLoadedTemplate.current = true;
-    const videoData = location.state.videoData;
-    
-    // Create video layer from VEO
-    const newLayer: VideoLayer = {
-      id: generateId(),
-      type: "video",
-      name: `VEO: ${videoData.prompt.substring(0, 30)}...`,
-      visible: true,
-      locked: false,
-      startFrame: 0,
-      endFrame: Math.round(videoData.duration * FPS),
-      position: { x: 50, y: 50 },
-      size: { width: 100, height: 100 },
-      rotation: 0,
-      opacity: 1,
-      src: videoData.url,
-      volume: 0.8,
-      loop: false,
-      playbackRate: 1,
-      objectFit: "cover",
-      filter: "",
-      fadeIn: 0,
-      fadeOut: 0,
-      animation: { entrance: "fade", entranceDuration: 30 },
-    };
+      // Set project title from VEO prompt
+      setProjectTitle(`VEO: ${videoData.prompt.substring(0, 40)}...`);
 
-    // Set project title from VEO prompt
-    setProjectTitle(`VEO: ${videoData.prompt.substring(0, 40)}...`);
-    
-    // Start with ONLY the video layer
-    pushState([newLayer]);
-    setSelectedLayerId(newLayer.id);
-    setDuration(Math.max(videoData.duration + 2, 5)); // Add 2s buffer
-    
-    toast.success("VEO video loaded in editor! 🎬");
-    
-    // Clear navigation state to prevent re-triggering
-    navigate(location.pathname, { replace: true, state: {} });
-    
-    // Don't load template or project
-    return;
-  }
+      // Start with ONLY the video layer
+      pushState([newLayer]);
+      setSelectedLayerId(newLayer.id);
+      setDuration(Math.max(videoData.duration + 2, 5)); // Add 2s buffer
 
-  // ✅ Handle AI Image redirect
-  if (location.state?.fromAIImage && location.state?.imageData && !hasLoadedTemplate.current) {
-    hasLoadedTemplate.current = true;
-    const imageData = location.state.imageData;
-    
-    // Determine size based on aspect ratio
-    let layerSize = { width: 80, height: 60 }; // Default
-    if (imageData.aspectRatio === "9:16") {
-      layerSize = { width: 50, height: 90 }; // Portrait
-    } else if (imageData.aspectRatio === "16:9") {
-      layerSize = { width: 90, height: 50 }; // Landscape
-    } else if (imageData.aspectRatio === "1:1") {
-      layerSize = { width: 70, height: 70 }; // Square
-    } else if (imageData.aspectRatio === "4:5") {
-      layerSize = { width: 60, height: 75 }; // Portrait-ish
+      toast.success("VEO video loaded in editor! 🎬");
+
+      // Clear navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+
+      // Don't load template or project
+      return;
     }
-    
-    // Create image layer from AI generation
-    const newLayer: ImageLayer = {
-      id: generateId(),
-      type: "image",
-      name: `AI Image: ${imageData.model}`,
-      visible: true,
-      locked: false,
-      startFrame: 0,
-      endFrame: 300, // 10 seconds at 30fps
-      position: { x: 50, y: 50 },
-      size: layerSize,
-      rotation: 0,
-      opacity: 1,
-      src: imageData.url,
-      isBackground: false,
-      objectFit: "contain",
-      filter: "",
-      animation: { entrance: "fade", entranceDuration: 30 },
-    };
 
-    setProjectTitle(`AI Image: ${imageData.model}`);
-    pushState([newLayer]);
-    setSelectedLayerId(newLayer.id);
-    setDuration(10); // Default 10 seconds
-    
-    toast.success("AI Image loaded in editor! 🎨");
-    navigate(location.pathname, { replace: true, state: {} });
-    return;
-  }
+    // ✅ Handle AI Image redirect
+    if (
+      location.state?.fromAIImage &&
+      location.state?.imageData &&
+      !hasLoadedTemplate.current
+    ) {
+      hasLoadedTemplate.current = true;
+      const imageData = location.state.imageData;
 
-  // ✅ Handle Background Removal redirect
-  if (location.state?.fromBgRemoval && location.state?.imageData && !hasLoadedTemplate.current) {
-    hasLoadedTemplate.current = true;
-    const imageData = location.state.imageData;
-    
-    // Create image layer from background removal
-    const newLayer: ImageLayer = {
-      id: generateId(),
-      type: "image",
-      name: imageData.name ? `BG Removed: ${imageData.name.substring(0, 20)}` : "Background Removed",
-      visible: true,
-      locked: false,
-      startFrame: 0,
-      endFrame: 300, // 10 seconds
-      position: { x: 50, y: 50 },
-      size: { width: 60, height: 80 }, // Portrait by default (most bg removal images)
-      rotation: 0,
-      opacity: 1,
-      src: imageData.url,
-      isBackground: false,
-      objectFit: "contain",
-      filter: "",
-      animation: { entrance: "fade", entranceDuration: 30 },
-    };
-
-    setProjectTitle(imageData.name ? `Edited: ${imageData.name}` : "Background Removed Image");
-    pushState([newLayer]);
-    setSelectedLayerId(newLayer.id);
-    setDuration(10);
-    
-    toast.success("Image loaded! Background removed ✨");
-    navigate(location.pathname, { replace: true, state: {} });
-    return;
-  }
-
-  // ✅ Normal template loading
-  if (templateIdParam && !hasLoadedTemplate.current) {
-    hasLoadedTemplate.current = true;
-    const templateId = parseInt(templateIdParam);
-    const templateDef = getTemplate(templateId);
-    if (templateDef) {
-      setTemplate(templateDef);
-      const defaultLayers = templateDef.createDefaultLayers();
-      pushState(defaultLayers);
-      if (templateDef.calculateDuration) {
-        setDuration(
-          Math.ceil(templateDef.calculateDuration(defaultLayers) / FPS)
-        );
+      // Determine size based on aspect ratio
+      let layerSize = { width: 80, height: 60 }; // Default
+      if (imageData.aspectRatio === "9:16") {
+        layerSize = { width: 50, height: 90 }; // Portrait
+      } else if (imageData.aspectRatio === "16:9") {
+        layerSize = { width: 90, height: 50 }; // Landscape
+      } else if (imageData.aspectRatio === "1:1") {
+        layerSize = { width: 70, height: 70 }; // Square
+      } else if (imageData.aspectRatio === "4:5") {
+        layerSize = { width: 60, height: 75 }; // Portrait-ish
       }
-      // Initialize chat name
-      if (templateId === 9) {
-        const firstBubble = defaultLayers.find(
-          (l: any) => l.type === "chat-bubble"
-        );
-        if (firstBubble)
-          setChatPartnerName((firstBubble as any).senderName || "User");
-      }
-    } else {
-      toast.error("Template not found");
+
+      // Create image layer from AI generation
+      const newLayer: ImageLayer = {
+        id: generateId(),
+        type: "image",
+        name: `AI Image: ${imageData.model}`,
+        visible: true,
+        locked: false,
+        startFrame: 0,
+        endFrame: 300, // 10 seconds at 30fps
+        position: { x: 50, y: 50 },
+        size: layerSize,
+        rotation: 0,
+        opacity: 1,
+        src: imageData.url,
+        isBackground: false,
+        objectFit: "contain",
+        filter: "",
+        animation: { entrance: "fade", entranceDuration: 30 },
+      };
+
+      setProjectTitle(`AI Image: ${imageData.model}`);
+      pushState([newLayer]);
+      setSelectedLayerId(newLayer.id);
+      setDuration(10); // Default 10 seconds
+
+      toast.success("AI Image loaded in editor! 🎨");
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
     }
-  } 
-  // ✅ Normal project loading
-  else if (projectIdParam && !hasLoadedProject.current) {
-    hasLoadedProject.current = true;
-    setProjectId(projectIdParam);
-    setIsLoading(true);
-    fetch(`${backendPrefix}/projects/${projectIdParam}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const templateDef = getTemplate(data.templateId);
-        if (templateDef) setTemplate(templateDef);
-        pushState(data.props.layers || []);
-        setProjectTitle(data.title || "");
-        if (data.props.duration) setDuration(data.props.duration);
 
+    // ✅ Handle Background Removal redirect
+    if (
+      location.state?.fromBgRemoval &&
+      location.state?.imageData &&
+      !hasLoadedTemplate.current
+    ) {
+      hasLoadedTemplate.current = true;
+      const imageData = location.state.imageData;
+
+      // Create image layer from background removal
+      const newLayer: ImageLayer = {
+        id: generateId(),
+        type: "image",
+        name: imageData.name
+          ? `BG Removed: ${imageData.name.substring(0, 20)}`
+          : "Background Removed",
+        visible: true,
+        locked: false,
+        startFrame: 0,
+        endFrame: 300, // 10 seconds
+        position: { x: 50, y: 50 },
+        size: { width: 60, height: 80 }, // Portrait by default (most bg removal images)
+        rotation: 0,
+        opacity: 1,
+        src: imageData.url,
+        isBackground: false,
+        objectFit: "contain",
+        filter: "",
+        animation: { entrance: "fade", entranceDuration: 30 },
+      };
+
+      setProjectTitle(
+        imageData.name
+          ? `Edited: ${imageData.name}`
+          : "Background Removed Image"
+      );
+      pushState([newLayer]);
+      setSelectedLayerId(newLayer.id);
+      setDuration(10);
+
+      toast.success("Image loaded! Background removed ✨");
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
+    // ✅ Normal template loading
+    if (templateIdParam && !hasLoadedTemplate.current) {
+      hasLoadedTemplate.current = true;
+      const templateId = parseInt(templateIdParam);
+      const templateDef = getTemplate(templateId);
+      if (templateDef) {
+        setTemplate(templateDef);
+        const defaultLayers = templateDef.createDefaultLayers();
+        pushState(defaultLayers);
+        if (templateDef.calculateDuration) {
+          setDuration(
+            Math.ceil(templateDef.calculateDuration(defaultLayers) / FPS)
+          );
+        }
         // Initialize chat name
-        if (data.templateId === 9) {
-          const firstBubble = data.props.layers.find(
+        if (templateId === 9) {
+          const firstBubble = defaultLayers.find(
             (l: any) => l.type === "chat-bubble"
           );
           if (firstBubble)
             setChatPartnerName((firstBubble as any).senderName || "User");
         }
-        toast.success("Project loaded!");
+      } else {
+        toast.error("Template not found");
+      }
+    }
+    // ✅ Normal project loading
+    else if (projectIdParam && !hasLoadedProject.current) {
+      hasLoadedProject.current = true;
+      setProjectId(projectIdParam);
+      setIsLoading(true);
+      fetch(`${backendPrefix}/projects/${projectIdParam}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to load project");
-      })
-      .finally(() => setIsLoading(false));
-  }
-}, [searchParams, location.state, pushState, navigate]);
+        .then((res) => res.json())
+        .then((data) => {
+          const templateDef = getTemplate(data.templateId);
+          if (templateDef) setTemplate(templateDef);
+          pushState(data.props.layers || []);
+          setProjectTitle(data.title || "");
+          if (data.props.duration) setDuration(data.props.duration);
 
+          // Initialize chat name
+          if (data.templateId === 9) {
+            const firstBubble = data.props.layers.find(
+              (l: any) => l.type === "chat-bubble"
+            );
+            if (firstBubble)
+              setChatPartnerName((firstBubble as any).senderName || "User");
+          }
+          toast.success("Project loaded!");
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to load project");
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [searchParams, location.state, pushState, navigate]);
 
+  const capturePreviewScreenshot = async (): Promise<Blob | null> => {
+    if (!remotionWrapperRef.current) {
+      console.error("Preview container not found");
+      return null;
+    }
+
+    try {
+      // Optional: Temporarily hide overlays during capture
+      const overlays =
+        remotionWrapperRef.current.querySelectorAll("[data-overlay]");
+      overlays.forEach((el) => ((el as HTMLElement).style.display = "none"));
+
+      // Wait a bit for render
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(remotionWrapperRef.current, {
+        backgroundColor: colors.bgPrimary,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        foreignObjectRendering: false,
+        ignoreElements: (element) => {
+          return (
+            element.classList.contains("control-overlay") ||
+            element.classList.contains("crop-overlay")
+          );
+        },
+      });
+
+      // Restore overlays
+      overlays.forEach((el) => ((el as HTMLElement).style.display = ""));
+
+      // Convert to blob (no cropping)
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+      });
+    } catch (error) {
+      console.error("Screenshot capture failed:", error);
+      return null;
+    }
+  };
+
+  const handleSaveThumbnail = async () => {
+    handleFrameChange((duration-2)*30)
+    const blob = await capturePreviewScreenshot();
+
+    if (blob) {
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("thumbnail", blob, `project-${Date.now()}.jpg`);
+
+      const response = await fetch(
+        `${backendPrefix}/cloudinary/upload-thumbnail`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+      console.log("Thumbnail URL:", data.url);
+      setScreenshot(data.url as string);
+    }
+  };
 
   const {
     addTextLayer,
@@ -869,13 +952,14 @@ const DynamicLayerEditor: React.FC = () => {
     setSelectedLayerId,
   });
 
-
-
-  const handleCropChange = useCallback((crop: CropData) => {
-    if (selectedLayerId) {
-      updateLayer(selectedLayerId, { crop });
-    }
-  }, [selectedLayerId, updateLayer]);
+  const handleCropChange = useCallback(
+    (crop: CropData) => {
+      if (selectedLayerId) {
+        updateLayer(selectedLayerId, { crop });
+      }
+    },
+    [selectedLayerId, updateLayer]
+  );
 
   const handleCropComplete = useCallback(() => {
     setCropMode(false);
@@ -938,7 +1022,7 @@ const DynamicLayerEditor: React.FC = () => {
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         const aspectRatio = 9 / 16;
-        let width = containerWidth * 0.95
+        let width = containerWidth * 0.95;
         let height = width / aspectRatio;
         if (height > containerHeight * 0.95) {
           height = containerHeight * 0.95;
@@ -2107,7 +2191,6 @@ const DynamicLayerEditor: React.FC = () => {
     [layers, pushState]
   );
 
-
   const handleFrameChange = useCallback((frame: number) => {
     setCurrentFrame(frame);
     if (previewRef.current) previewRef.current.seekTo(frame);
@@ -2233,11 +2316,11 @@ const DynamicLayerEditor: React.FC = () => {
       console.log(changedprops);
       if (changedprops === true) {
         toast.success("Nothing to save. Make some changes before saving");
-      }else{
-        const saveresponse = await saveExistingProject(projectId, props);
-        if(saveresponse==="error"){
+      } else {
+        const saveresponse = await saveExistingProject(projectId, props, screenshot as string);
+        if (saveresponse === "error") {
           toast.error("There was an error saving your project");
-        }else{
+        } else {
           toast.success("Changes saved!");
         }
       }
@@ -2246,12 +2329,17 @@ const DynamicLayerEditor: React.FC = () => {
   }
 
   const handleSaveProject = useCallback(
-    async (title: string, setStatus: (s: string) => void) => {
+    async (
+      title: string,
+      setStatus: (s: string) => void,
+      screenshot: string
+    ) => {
       setStatus("Saving...");
       try {
         const savedProjectId = (await saveNewProject(
           title,
-          setStatus
+          setStatus,
+          screenshot
         )) as unknown as string;
         if (savedProjectId && !projectId) {
           setProjectId(savedProjectId);
@@ -2342,13 +2430,13 @@ const DynamicLayerEditor: React.FC = () => {
       style={gridStyles.card}
       onClick={onClick}
       onMouseOver={(e) => {
-  e.currentTarget.style.backgroundColor = colors.bgHover;
-  e.currentTarget.style.borderColor = colors.borderLight;
-}}
-onMouseOut={(e) => {
-  e.currentTarget.style.backgroundColor = colors.bgSecondary;
-  e.currentTarget.style.borderColor = colors.border;
-}}
+        e.currentTarget.style.backgroundColor = colors.bgHover;
+        e.currentTarget.style.borderColor = colors.borderLight;
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.backgroundColor = colors.bgSecondary;
+        e.currentTarget.style.borderColor = colors.border;
+      }}
     >
       <div style={{ marginBottom: "4px", color }}>{icon}</div>
       <div style={gridStyles.cardTitle}>{title}</div>
@@ -2371,13 +2459,13 @@ onMouseOut={(e) => {
       style={gridStyles.compactCard}
       onClick={onClick}
       onMouseOver={(e) => {
-  e.currentTarget.style.backgroundColor = colors.bgHover;
-  e.currentTarget.style.borderColor = colors.borderLight;
-}}
-onMouseOut={(e) => {
-  e.currentTarget.style.backgroundColor = colors.bgSecondary;
-  e.currentTarget.style.borderColor = colors.border;
-}}
+        e.currentTarget.style.backgroundColor = colors.bgHover;
+        e.currentTarget.style.borderColor = colors.borderLight;
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.backgroundColor = colors.bgSecondary;
+        e.currentTarget.style.borderColor = colors.border;
+      }}
     >
       <div style={{ color }}>{icon}</div>
       <div style={gridStyles.cardTitle}>{title}</div>
@@ -2411,9 +2499,9 @@ onMouseOut={(e) => {
           style={{
             ...editorStyles.layersPanel,
             backgroundColor: colors.bgPrimary,
-             // ← ADD THIS LINE
-                 zIndex: 50, // ← Ensure this is set
-    pointerEvents: "auto", // ← Allow clicks
+            // ← ADD THIS LINE
+            zIndex: 50, // ← Ensure this is set
+            pointerEvents: "auto", // ← Allow clicks
             ...(isPanelOpen ? {} : editorStyles.layersPanelClosed),
           }}
         >
@@ -2673,7 +2761,10 @@ onMouseOut={(e) => {
                               >
                                 <Icons.Music />
                                 <span
-                                  style={{ fontSize: "12px", color: colors.textSecondary }}
+                                  style={{
+                                    fontSize: "12px",
+                                    color: colors.textSecondary,
+                                  }}
                                 >
                                   {asset.name}
                                 </span>
@@ -2719,7 +2810,8 @@ onMouseOut={(e) => {
                                 <div
                                   style={{
                                     fontSize: "11px",
-                                    color: colors.textSecondary, padding: "4px"
+                                    color: colors.textSecondary,
+                                    padding: "4px",
                                   }}
                                 >
                                   {asset.name}
@@ -2729,7 +2821,10 @@ onMouseOut={(e) => {
                           </div>
                         ))}
                         <div
-                          style={{...gridStyles.card, color: colors.textPrimary} }
+                          style={{
+                            ...gridStyles.card,
+                            color: colors.textPrimary,
+                          }}
                           onClick={() => {
                             if (watchCategory === "watches")
                               watchImageInputRef.current?.click();
@@ -2740,7 +2835,12 @@ onMouseOut={(e) => {
                           }}
                         >
                           <Icons.Download />
-                          <span style={{ fontSize: "11px", color: colors.textSecondary }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: colors.textSecondary,
+                            }}
+                          >
                             Upload Custom
                           </span>
                         </div>
@@ -2779,7 +2879,9 @@ onMouseOut={(e) => {
                     >
                       <Icons.Download />
                       <span style={gridStyles.cardTitle}>Insert Photos</span>
-                      <span style={{ fontSize: "10px", color: colors.textMuted }}>
+                      <span
+                        style={{ fontSize: "10px", color: colors.textMuted }}
+                      >
                         Bulk Upload
                       </span>
                     </div>
@@ -2908,7 +3010,6 @@ onMouseOut={(e) => {
 
         {/* --- EDIT PANEL --- */}
         <div
-
           style={{
             ...editorStyles.editPanel,
             backgroundColor: colors.bgPrimary,
@@ -2996,7 +3097,7 @@ onMouseOut={(e) => {
           style={{
             ...editorStyles.mainArea,
             backgroundColor: colors.bgPrimary,
-            display: "flex", 
+            display: "flex",
             flexDirection: "column",
             height: "100%",
           }}
@@ -3006,11 +3107,11 @@ onMouseOut={(e) => {
               ...editorStyles.header,
               backgroundColor: colors.bgSecondary,
               borderBottom: `1px solid ${colors.border}`,
-              height: "64px", 
-                padding: "0 24px", 
-                display: "flex",
-                alignItems: "center",
-                flexShrink: 0, 
+              height: "64px",
+              padding: "0 24px",
+              display: "flex",
+              alignItems: "center",
+              flexShrink: 0,
             }}
           >
             <span
@@ -3023,11 +3124,16 @@ onMouseOut={(e) => {
               <button
                 style={editorStyles.addButton}
                 onClick={() => {
-                  if (projectId) {
-                    handleSaveExistingProject();
-                    // handleSaveProject();
+                  handleSaveThumbnail();
+                  if (screenshot) {
+                    if (projectId) {
+                      handleSaveExistingProject();
+                      // handleSaveProject();
+                    } else {
+                      setShowSaveModal(true);
+                    }
                   } else {
-                    setShowSaveModal(true);
+                    toast.error("There was an error saving your project.\nTry again later.");
                   }
                 }}
               >
@@ -3052,86 +3158,95 @@ onMouseOut={(e) => {
             style={{
               ...editorStyles.previewArea,
               backgroundColor: colors.bgPrimary,
-                flex: 1, 
-                display: "flex",
-                alignItems: "center", 
-                justifyContent: "center",
-                overflow: "hidden",
-                padding: "20px",
-                minHeight: 0, 
-                position: "relative", // ← Important
-                pointerEvents: "auto", // ← Allow clicks
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              padding: "20px",
+              minHeight: 0,
+              position: "relative", // ← Important
+              pointerEvents: "auto", // ← Allow clicks
             }}
             ref={previewContainerRef}
           >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative", // ← Important
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                ref={remotionWrapperRef}
+                style={{
+                  position: "relative",
+                  display: "inline-block",
+                  pointerEvents: "auto",
+                }}
+              >
+                <RemotionPreview
+                  key={`preview-${layers.length}-${layers
+                    .map((l) => l.id)
+                    .join(",")}`}
+                  ref={previewRef}
+                  component={template?.composition || DynamicLayerComposition}
+                  inputProps={previewInputProps}
+                  durationInFrames={totalFrames}
+                  fps={FPS}
+                  onFrameUpdate={handlePreviewFrameUpdate}
+                  onPlayingChange={(playing) => setIsPlaying(playing)}
+                  containerWidth="100%"
+                  containerHeight="100%"
+                  phoneFrameWidth={`${previewDimensions.width}px`}
+                  phoneFrameHeight={`${previewDimensions.height}px`}
+                />
 
-           <div style={{
-            width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                   position: "relative", // ← Important
-                     pointerEvents: "none", 
-           }
-           }>
-            <div style={{ position: 'relative', display: 'inline-block', pointerEvents : "auto" }}>
-              <RemotionPreview
-                key={`preview-${layers.length}-${layers
-                  .map((l) => l.id)
-                  .join(",")}`}
-                ref={previewRef}
-                component={template?.composition || DynamicLayerComposition}
-                inputProps={previewInputProps}
-                durationInFrames={totalFrames}
-                fps={FPS}
-                onFrameUpdate={handlePreviewFrameUpdate}
-                onPlayingChange={(playing) => setIsPlaying(playing)}
-                containerWidth="100%"
-                containerHeight="100%"
-                phoneFrameWidth={`${previewDimensions.width}px`}
-                phoneFrameHeight={`${previewDimensions.height}px`}
-              />
+                {cropMode && selectedLayer && isImageLayer(selectedLayer) && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      pointerEvents: "auto", // ← Change from "none" to "auto" only when cropMode is active
+                      zIndex: 1000, // ← Ensure it's on top
+                    }}
+                  >
+                    <CropOverlay
+                      layer={selectedLayer}
+                      containerWidth={previewDimensions.width}
+                      containerHeight={previewDimensions.height}
+                      compositionWidth={1080}
+                      compositionHeight={1920}
+                      onCropChange={handleCropChange}
+                      onCropComplete={handleCropComplete}
+                    />
+                  </div>
+                )}
 
-              {cropMode && selectedLayer && isImageLayer(selectedLayer) && (
-                <div style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-              pointerEvents: "auto", // ← Change from "none" to "auto" only when cropMode is active
-              zIndex: 1000, // ← Ensure it's on top
-                }}>
-                  <CropOverlay
-                    layer={selectedLayer}
+                {template?.id !== 8 && (
+                  <DynamicPreviewOverlay
+                    layers={layers}
+                    currentFrame={currentFrame}
+                    selectedLayerId={selectedLayerId}
+                    editingLayerId={editingLayerId}
+                    onSelectLayer={selectLayerAndCloseTab}
+                    onLayerUpdate={updateLayer}
                     containerWidth={previewDimensions.width}
                     containerHeight={previewDimensions.height}
-                    compositionWidth={1080}
-                    compositionHeight={1920}
-                    onCropChange={handleCropChange}
-                    onCropComplete={handleCropComplete}
+                    onEditingLayerChange={setEditingLayerId}
+                    isPlaying={isPlaying}
+                    onPlayingChange={setIsPlaying}
                   />
-                </div>
-              )}
-              
-              {template?.id !== 8 &&  (
-                <DynamicPreviewOverlay
-                  layers={layers}
-                  currentFrame={currentFrame}
-                  selectedLayerId={selectedLayerId}
-                  editingLayerId={editingLayerId}
-                  onSelectLayer={selectLayerAndCloseTab}
-                  onLayerUpdate={updateLayer}
-                  containerWidth={previewDimensions.width}
-                  containerHeight={previewDimensions.height}
-                  onEditingLayerChange={setEditingLayerId}
-                  isPlaying={isPlaying}
-                  onPlayingChange={setIsPlaying}
-                />
-              )}
+                )}
+              </div>
             </div>
-          </div>
           </div>
 
           <Timeline
@@ -3264,6 +3379,7 @@ onMouseOut={(e) => {
           open={showSaveModal}
           onClose={() => setShowSaveModal(false)}
           onSave={handleSaveProject}
+          screenshot={screenshot as string}
         />
       )}
       {isMediaGalleryOpen && (
@@ -3379,4 +3495,3 @@ onMouseOut={(e) => {
 };
 
 export default DynamicLayerEditor;
-
