@@ -214,7 +214,7 @@ const COLLAGE_LAYOUTS: CollageLayout[] = [
       textStartFrame: 65, // 2.17s for text
     },
     textOverlay: {
-      mainText: "collage",
+      mainText: "Layout",
       subText: "stories",
       mainFont: "Pacifico, cursive",
       subFont: "Dancing Script, cursive",
