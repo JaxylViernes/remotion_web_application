@@ -322,74 +322,10 @@ const SubscriptionPlan: React.FC = () => {
                     {new Date(subscriptionData.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <FiCheck className="text-green-600" />
-                  <span>Auto-renewal {subscriptionData.cancelAtPeriodEnd ? 'disabled' : 'enabled'}</span>
-                </div>
               </div>
             </div>
           </motion.div>
-
-          {/* Billing History */}
-          <motion.div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <FiFileText className="text-purple-600 text-xl" />
-                <h4 className="font-bold text-gray-800">Billing History</h4>
-              </div>
-              <button
-                onClick={() => toast.success('This would download all invoices as PDF')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-              >
-                <FiDownload />
-                Export All
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { date: '2025-12-05', amount: 0, status: 'Trial', description: 'Trial period started' },
-                { date: '2025-11-05', amount: 19.99, status: 'Paid', description: 'Monthly subscription - November' },
-                { date: '2025-10-05', amount: 19.99, status: 'Paid', description: 'Monthly subscription - October' }
-              ].map((invoice, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all group">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      invoice.status === 'Trial' ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      <FiFileText className={invoice.status === 'Trial' ? 'text-green-600' : 'text-blue-600'} size={20} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{invoice.description}</p>
-                      <p className="text-sm text-gray-500">{new Date(invoice.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-bold text-gray-800">${invoice.amount.toFixed(2)}</p>
-                      <p className={`text-xs font-semibold ${
-                        invoice.status === 'Paid' ? 'text-green-600' : 'text-blue-600'
-                      }`}>{invoice.status}</p>
-                    </div>
-                    {invoice.status === 'Paid' && (
-                      <button
-                        onClick={() => toast.success(`Downloading invoice for ${invoice.description}`)}
-                        className="p-2 hover:bg-indigo-50 rounded-lg transition opacity-0 group-hover:opacity-100"
-                      >
-                        <FiDownload className="text-indigo-600" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
+          
           {/* Subscription Details */}
           <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
@@ -402,8 +338,7 @@ const SubscriptionPlan: React.FC = () => {
               {[
                 { icon: FiFileText, label: 'Subscription ID', value: subscriptionData.stripeSubscriptionId },
                 { icon: FiFileText, label: 'Customer ID', value: subscriptionData.stripeCustomerId },
-                { icon: FiCalendar, label: 'Created Date', value: new Date(subscriptionData.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
-                { icon: FiCheck, label: 'Auto-Renewal', value: subscriptionData.cancelAtPeriodEnd ? 'Disabled' : 'Enabled' }
+                { icon: FiCalendar, label: 'Created Date', value: new Date(subscriptionData.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) }
               ].map((item, index) => (
                 <div key={index} className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-2 mb-2">

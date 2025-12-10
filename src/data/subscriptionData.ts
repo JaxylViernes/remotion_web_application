@@ -7,8 +7,8 @@ export const subscriptionData: Subscription = {
   stripeCustomerId: "cus_RkL8mN9pQ2rS3tU4vW5xY6zA",
   stripePriceId: "price_1QM7wPLpH3jN9vR2mN8oP9qR",
 
-  // Subscription details (expired)
-  status: "canceled",
+  // Subscription details
+  status: "active",
   plan: "pro",
 
   trialStart: "2025-12-05T14:23:47Z",

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { subscriptionData, SUBSCRIPTION_PRICE } from "../../data/subscriptionData.ts";
-import { stripePublishableKey, backendPrefix } from "../../config.ts";
+import { stripePublishableKey /* backendPrefix */ } from "../../config.ts";
 import toast from "react-hot-toast";
 
 // Load Stripe outside component to avoid recreating on every render
@@ -94,6 +94,12 @@ function CheckoutForm() {
 
       console.log('✅ Payment method created:', paymentMethod.id);
 
+      // ✅ Stripe is working! Show success for testing
+      toast.success("Stripe is working! Payment method created successfully.");
+      setShowReceiptModal(true);
+
+      // TODO: Uncomment below when backend is ready
+      /*
       // Step 2: Send payment method to backend to create subscription
       const token = localStorage.getItem('token');
       const response = await fetch(`${backendPrefix}/api/subscription/create`, {
@@ -128,6 +134,7 @@ function CheckoutForm() {
       } else {
         throw new Error('Unexpected subscription status');
       }
+      */
     } catch (error) {
       console.error('Subscription error:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create subscription. Please try again.";
