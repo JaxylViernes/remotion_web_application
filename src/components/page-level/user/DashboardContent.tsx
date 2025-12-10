@@ -13,6 +13,7 @@ import { useProfileHooks } from "../../../hooks/datafetching/ProfileData";
 import { ProfilePage } from "../../../pages/user/Profile";
 import { MyTemplatesSection } from "../../ui/dsahboard/sections/MyDesignSection";
 import { ToolsSection } from "../../ui/dsahboard/sections/ToolsSection";
+import SubscriptionPlan from "../../../pages/user/SubscriptionPlan";
 import type { DashboardSection } from "../../ui/navigations/DashboardSidenav";
 
 export const DashboardContent: React.FC = () => {
@@ -22,10 +23,6 @@ export const DashboardContent: React.FC = () => {
   const {
     fetchUserDatasets,
     userDatasets,
-    loadingDatasets,
-    selectedDatasets,
-    setSelectedDatasets,
-    handleDeleteDatasets,
   } = useDatasetsFetching();
 
   const { search, setSearch, activeSection, setActiveSection } =
@@ -55,8 +52,6 @@ export const DashboardContent: React.FC = () => {
     loadingUploads,
     selectedUploads,
     setSelectedUploads,
-    setUploadFilter,
-    uploadFilter,
     uploads,
   } = useUploadHooks();
 
@@ -161,18 +156,11 @@ export const DashboardContent: React.FC = () => {
         {/* ProjectsSection - with renders props added */}
         {activeSection === "files" && (
           <ProjectsSection
-            loadingUploads={loadingUploads}
-            setUploadFilter={setUploadFilter}
-            uploadFilter={uploadFilter}
             uploads={uploads}
-            handleDeleteUploads={handleDeleteUploads}
+            loadingUploads={loadingUploads}
             selectedUploads={selectedUploads}
             setSelectedUploads={setSelectedUploads}
-            loadingDatasets={loadingDatasets}
-            selectedDatasets={selectedDatasets}
-            setSelectedDatasets={setSelectedDatasets}
-            userDatasets={userDatasets}
-            handleDeleteDataset={handleDeleteDatasets}
+            handleDeleteUploads={handleDeleteUploads}
             renders={renders}
             loadingRenders={loadingRenders}
             selectedRenders={selectedRenders}
@@ -202,6 +190,8 @@ export const DashboardContent: React.FC = () => {
         )}
 
         {activeSection === "tools" && <ToolsSection key={toolsKey} />}
+
+        {activeSection === "subscription" && <SubscriptionPlan />}
       </main>
     </div>
   );

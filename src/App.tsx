@@ -14,6 +14,7 @@ import LoginLoading from "./pages/auth/LoginLoader.tsx";
 import Dashboard from "./pages/user/D2.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
 import DynamicLayerEditor from "./components/editors/DynamicLayerEditor.tsx";
+import SubscriptionPage from "./pages/subscription/SubscriptionPage.tsx";
 
 // Editors
 import { FactCardsEditor } from "./components/editors/FactCardsTemplate/Holder.tsx";
@@ -95,7 +96,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
           // Logged in another tab
           setIsAuthenticated(true);
           tokenManager.startAutoRefresh();
-          window.location.href = "/dashboard";
+          window.location.href = "/subscription";
         } else {
           // Logged out in another tab
           setIsAuthenticated(false);
@@ -169,13 +170,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ✅ NEW: Public Only Route (redirect to dashboard if logged in)
+// ✅ NEW: Public Only Route (redirect to subscription if logged in)
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token");
 
   if (token) {
-    console.log("✅ Already logged in, redirecting to dashboard");
-    return <Navigate to="/dashboard" replace />;
+    console.log("✅ Already logged in, redirecting to subscription");
+    return <Navigate to="/subscription" replace />;
   }
 
   return <>{children}</>;
@@ -187,12 +188,12 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* ========== PUBLIC ROUTES (Redirect to dashboard if logged in) ========== */}
+            {/* ========== PUBLIC ROUTES (Redirect to subscription if logged in) ========== */}
             <Route
               path="/"
               element={
                 localStorage.getItem("token") ? (
-                  <Navigate to="/dashboard" replace />
+                  <Navigate to="/subscription" replace />
                 ) : (
                   <LandingPage />
                 )
@@ -231,6 +232,15 @@ function App() {
             <Route path="/initializing-login" element={<LoginLoading />} />
 
             {/* ========== PROTECTED ROUTES (Require authentication) ========== */}
+            <Route
+              path="/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionPage />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/dashboard"
               element={
