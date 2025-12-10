@@ -1,36 +1,57 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { checkSubscriptionStatus } from "../../utils/subscriptionUtils";
 
 const LoginLoading = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-     
-    const timer = setTimeout(() => {
-      navigate("/dashboard"); 
-    }, 3000);
+    const checkAndRedirect = async () => {
+      // Wait for the animation
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-    return () => clearTimeout(timer);
-  }, [navigate]); 
+      try {
+        // Check subscription status
+        const status = await checkSubscriptionStatus();
+
+        // Redirect based on subscription status
+        if (status.hasActiveSubscription) {
+          // User has active subscription or valid trial - go to dashboard
+          navigate("/dashboard");
+        } else {
+          // User needs to subscribe - go to subscription page
+          navigate("/subscription");
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        // On error, redirect to subscription page to be safe
+        navigate("/subscription");
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkAndRedirect();
+  }, [navigate]);
+
+  if (!isChecking) return null;
 
   return (
     <div
       className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden px-6 text-center bg-white"
     >
-      {/* Soft floating orbs */}
+      {/* ... rest of the JSX stays the same ... */}
       <div className="absolute w-[280px] h-[280px] bg-purple-200/40 rounded-full blur-3xl top-20 left-20 animate-float-gentle"></div>
       <div className="absolute w-[320px] h-[320px] bg-pink-200/30 rounded-full blur-3xl bottom-20 right-20 animate-float-gentle-alt"></div>
       <div className="absolute w-[200px] h-[200px] bg-blue-200/35 rounded-full blur-3xl top-1/2 right-1/4 animate-float-soft"></div>
 
-      {/* Subtle sparkles */}
       <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-purple-400 rounded-full animate-twinkle"></div>
       <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-twinkle delay-600"></div>
       <div className="absolute bottom-1/3 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-twinkle delay-1200"></div>
       <div className="absolute top-2/3 right-1/4 w-1 h-1 bg-purple-300 rounded-full animate-twinkle delay-400"></div>
 
-      {/* Main content container */}
       <div className="relative z-10">
-        {/* Logo */}
         <div className="animate-slide-up mb-14">
           <div className="logo flex items-center gap-3 justify-center">
             <div className="relative">
@@ -42,38 +63,29 @@ const LoginLoading = () => {
           </div>
         </div>
 
-        {/* Video camera loader */}
         <div className="relative w-32 h-32 mb-12 mx-auto animate-slide-up delay-200">
-          {/* Outer circle with gentle rotation */}
           <div className="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 border-r-pink-500 rounded-full animate-spin-smooth"></div>
           
-          {/* Video camera icon */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
-              {/* Camera body */}
               <div className="w-16 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg shadow-xl animate-camera-bob flex items-center justify-center">
-                {/* Lens */}
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <div className="w-5 h-5 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full"></div>
                 </div>
-                {/* Recording dot */}
                 <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-recording-pulse"></div>
               </div>
-              {/* Camera handle */}
               <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-t-md"></div>
             </div>
           </div>
         </div>
 
-        {/* Progress dots */}
         <div className="flex gap-2 justify-center mb-8 animate-slide-up delay-300">
           <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce-gentle"></div>
           <div className="w-3 h-3 bg-pink-400 rounded-full animate-bounce-gentle delay-200"></div>
           <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce-gentle delay-400"></div>
         </div>
 
-        {/* Main text */}
         <h2 className="text-3xl font-bold mb-3 animate-slide-up delay-400 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
           Setting up your studio
         </h2>
@@ -82,7 +94,6 @@ const LoginLoading = () => {
           Preparing your video creation tools
         </p>
 
-        {/* Progress bar */}
         <div className="relative w-80 max-w-full mx-auto mt-6 animate-slide-up delay-600">
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full animate-progress-fill shadow-lg"></div>

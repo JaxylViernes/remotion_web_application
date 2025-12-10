@@ -142,7 +142,7 @@ export const MyRendersSection: React.FC<MyRendersSectionProps> = ({
       <div className="flex-shrink-0 bg-white border-b border-gray-100 px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
           <h2 className="text-xl font-semibold text-gray-800 tracking-tight">
-            My Renders
+            My Projects
           </h2>
           <button
             onClick={() => {

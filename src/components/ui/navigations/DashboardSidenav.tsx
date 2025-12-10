@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiHome,
   FiFolder,
@@ -7,10 +8,16 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
+  FiSettings,
+  FiCreditCard,
+  FiMail,
+  FiHelpCircle,
 } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 import "../../../assets/Logo.css";
-import { LuSparkles } from "react-icons/lu"
+import { LuSparkles } from "react-icons/lu";
+import { checkSubscriptionStatus } from "../../../utils/subscriptionUtils";
 
 export type DashboardSection =
   | "home"
@@ -18,7 +25,8 @@ export type DashboardSection =
   | "files"
   | "renders"
   | "profile"
-  | "tools";
+  | "tools"
+  | "subscription";
   
 
 interface DashboardSidebarNavProps {
@@ -38,8 +46,27 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
   isCollapsed,
   setIsCollapsed,
 }) => {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Check subscription status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const status = await checkSubscriptionStatus();
+
+        // Redirect to subscription page if needed
+        if (status.shouldRedirectToSubscription) {
+          navigate("/subscription");
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+      }
+    };
+
+    checkStatus();
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -208,10 +235,46 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
                 <FiUser /> View Profile
               </button>
               <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  toast("Settings coming soon!", { icon: "⚙️" });
+                }}
+                className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <FiSettings /> Settings
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onChange("subscription");
+                }}
+                className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <FiCreditCard /> Subscription Plans
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  toast("Contact us feature coming soon!", { icon: "📧" });
+                }}
+                className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <FiMail /> Contact Us
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  toast("Support page coming soon!", { icon: "💬" });
+                }}
+                className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <FiHelpCircle /> Support
+              </button>
+              <button
                 onClick={handleLogout}
                 className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
               >
-                <FiLogOut /> Logout
+                <FiLogOut /> Log Out
               </button>
             </div>
           )}
@@ -287,10 +350,46 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
             <FiUser className="text-xl" /> View Profile
           </button>
           <button
+            onClick={() => {
+              setMobileOpen(false);
+              toast("Settings coming soon!", { icon: "⚙️" });
+            }}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <FiSettings className="text-xl" /> Settings
+          </button>
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              onChange("subscription");
+            }}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <FiCreditCard className="text-xl" /> Subscription Plans
+          </button>
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              toast("Contact us feature coming soon!", { icon: "📧" });
+            }}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <FiMail className="text-xl" /> Contact Us
+          </button>
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              toast("Support page coming soon!", { icon: "💬" });
+            }}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <FiHelpCircle className="text-xl" /> Support
+          </button>
+          <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
           >
-            <FiLogOut className="text-xl" /> Logout
+            <FiLogOut className="text-xl" /> Log Out
           </button>
         </nav>
       </div>

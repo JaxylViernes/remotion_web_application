@@ -17,17 +17,10 @@ interface RenderItem {
 
 interface SavedTemplatesSectionProps {
   uploads: any[];
-  uploadFilter: "all" | "image" | "video";
-  setUploadFilter: React.Dispatch<React.SetStateAction<"all" | "image" | "video">>;
   loadingUploads: boolean;
   selectedUploads: number[];
   setSelectedUploads: React.Dispatch<React.SetStateAction<number[]>>;
   handleDeleteUploads: () => Promise<void>;
-  userDatasets: any[];
-  selectedDatasets: number[];
-  setSelectedDatasets: React.Dispatch<React.SetStateAction<number[]>>;
-  loadingDatasets: boolean;
-  handleDeleteDataset: () => Promise<void>;
   renders?: RenderItem[];
   loadingRenders?: boolean;
   selectedRenders?: string[];
@@ -37,17 +30,10 @@ interface SavedTemplatesSectionProps {
 
 export const ProjectsSection: React.FC<SavedTemplatesSectionProps> = ({
   uploads = [],
-  uploadFilter,
-  setUploadFilter,
   loadingUploads = false,
   selectedUploads = [],
   setSelectedUploads,
   handleDeleteUploads,
-  userDatasets = [],
-  selectedDatasets = [],
-  setSelectedDatasets,
-  loadingDatasets = false,
-  handleDeleteDataset,
   renders = [],
   loadingRenders = false,
   selectedRenders = [],
@@ -70,7 +56,7 @@ export const ProjectsSection: React.FC<SavedTemplatesSectionProps> = ({
             }`}
           >
             <FiFilm size={18} />
-            My Renders
+            My Projects
           </button>
           <button
             onClick={() => setActiveTab("files")}
@@ -81,7 +67,7 @@ export const ProjectsSection: React.FC<SavedTemplatesSectionProps> = ({
             }`}
           >
             <FiFolder size={18} />
-            My Files
+            My Assets
           </button>
         </div>
       </div>
@@ -98,17 +84,10 @@ export const ProjectsSection: React.FC<SavedTemplatesSectionProps> = ({
       ) : (
         <MyFilesSection
           uploads={uploads}
-          uploadFilter={uploadFilter}
-          setUploadFilter={setUploadFilter}
           loadingUploads={loadingUploads}
           selectedUploads={selectedUploads}
           setSelectedUploads={setSelectedUploads}
           handleDeleteUploads={handleDeleteUploads}
-          userDatasets={userDatasets}
-          selectedDatasets={selectedDatasets}
-          setSelectedDatasets={setSelectedDatasets}
-          loadingDatasets={loadingDatasets}
-          handleDeleteDataset={handleDeleteDataset}
         />
       )}
     </div>

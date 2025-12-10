@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiX, FiDownload, FiFilm, FiCalendar } from "react-icons/fi";
+import { FiX, FiEdit2, FiFilm, FiCalendar } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 interface MediaItem {
   id?: string;
@@ -96,6 +97,17 @@ export const ViewMediaModal: React.FC<ViewMediaModalProps> = ({
   const videoUrl = getVideoUrl();
   const title = getTitle();
 
+  const handleEdit = () => {
+    // Check if item has a templateId for navigation
+    if (item && item.templateId) {
+      const location = `/editor?template=${item.templateId}`;
+      window.location.assign(location);
+    } else {
+      // No templateId available - show message
+      toast.error("This media cannot be edited. Only rendered templates can be reopened in the editor.");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -165,16 +177,13 @@ export const ViewMediaModal: React.FC<ViewMediaModalProps> = ({
           <div className="p-4 border-t border-gray-200 bg-gray-50">
             <div className="flex flex-col gap-3">
               {videoUrl && (
-                <a
-                  href={videoUrl}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleEdit}
                   className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-md"
                 >
-                  <FiDownload size={18} />
-                  Download
-                </a>
+                  <FiEdit2 size={18} />
+                  Edit
+                </button>
               )}
               <button
                 onClick={onClose}
@@ -260,16 +269,13 @@ export const ViewMediaModal: React.FC<ViewMediaModalProps> = ({
             <div className="p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0 sticky bottom-0">
               <div className="flex flex-col gap-3">
                 {videoUrl && (
-                  <a
-                    href={videoUrl}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={handleEdit}
                     className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-md"
                   >
-                    <FiDownload size={18} />
-                    Download
-                  </a>
+                    <FiEdit2 size={18} />
+                    Edit
+                  </button>
                 )}
                 <button
                   onClick={onClose}
@@ -346,16 +352,13 @@ export const ViewMediaModal: React.FC<ViewMediaModalProps> = ({
 
             <div className="flex items-center gap-3 flex-shrink-0">
               {videoUrl && (
-                <a
-                  href={videoUrl}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleEdit}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-md"
                 >
-                  <FiDownload size={16} />
-                  Download
-                </a>
+                  <FiEdit2 size={16} />
+                  Edit
+                </button>
               )}
               <button
                 onClick={onClose}

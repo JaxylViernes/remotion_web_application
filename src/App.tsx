@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { getCurrentUser, tokenManager } from "./services/authService";
@@ -14,6 +14,7 @@ import LoginLoading from "./pages/auth/LoginLoader.tsx";
 import Dashboard from "./pages/user/D2.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
 import DynamicLayerEditor from "./components/editors/DynamicLayerEditor.tsx";
+import SubscriptionPage from "./pages/subscription/SubscriptionPage.tsx";
 
 // Editors
 import { FactCardsEditor } from "./components/editors/FactCardsTemplate/Holder.tsx";
@@ -97,7 +98,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
           // Logged in another tab
           setIsAuthenticated(true);
           tokenManager.startAutoRefresh();
-          window.location.href = "/dashboard";
+          window.location.href = "/subscription";
         } else {
           // Logged out in another tab
           setIsAuthenticated(false);
@@ -171,13 +172,61 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ✅ NEW: Public Only Route (redirect to dashboard if logged in)
+// ✅ NEW: Public Only Route (redirect to subscription if logged in)
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token");
 
   if (token) {
-    console.log("✅ Already logged in, redirecting to dashboard");
-    return <Navigate to="/dashboard" replace />;
+    console.log("✅ Already logged in, redirecting to subscription");
+    return <Navigate to="/subscription" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function SubscriptionGuard({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const checkSub = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/subscription/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        // If user already has subscription, redirect to dashboard
+        if (data.success && data.hasSubscription) {
+          console.log('✅ User has subscription, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        setChecking(false);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setChecking(false);
+      }
+    };
+
+    checkSub();
+  }, [navigate]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking subscription...</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
@@ -189,12 +238,12 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* ========== PUBLIC ROUTES (Redirect to dashboard if logged in) ========== */}
+            {/* ========== PUBLIC ROUTES (Redirect to subscription if logged in) ========== */}
             <Route
               path="/"
               element={
                 localStorage.getItem("token") ? (
-                  <Navigate to="/dashboard" replace />
+                  <Navigate to="/subscription" replace />
                 ) : (
                   <LandingPage />
                 )
@@ -243,6 +292,17 @@ function App() {
             {/* <Route path="/pricing" element={<PricingPage />} /> */}
 
             {/* ========== PROTECTED ROUTES (Require authentication) ========== */}
+            <Route
+              path="/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionGuard>
+                    <SubscriptionPage />
+                  </SubscriptionGuard>
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/dashboard"
               element={

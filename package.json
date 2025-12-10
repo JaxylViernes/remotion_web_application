@@ -23,6 +23,8 @@
     "@remotion/google-fonts": "^4.0.340",
     "@remotion/player": "^4.0.340",
     "@remotion/zod-types": "^4.0.375",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.5.3",
     "axios": "^1.13.2",
     "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",

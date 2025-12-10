@@ -1,0 +1,2 @@
+export const SUBSCRIPTION_PRICE = 19.99;
+export const SUBSCRIPTION_CURRENCY = "USD";
