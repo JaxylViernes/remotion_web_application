@@ -2652,7 +2652,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
   );
 
   return (
-    <>
+    <>  
       <div
         style={{
           ...editorStyles.container,
