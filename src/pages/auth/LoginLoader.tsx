@@ -1,13 +1,23 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { checkSubscriptionStatus } from "../../utils/subscriptionUtils";
 
 const LoginLoading = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   useEffect(() => {
-     
     const timer = setTimeout(() => {
-      navigate("/dashboard"); 
+      // Check subscription status
+      const status = checkSubscriptionStatus();
+
+      // Redirect based on subscription status
+      if (status.hasActiveSubscription) {
+        // User has active subscription or valid trial - go to dashboard
+        navigate("/dashboard");
+      } else {
+        // User needs to subscribe - go to subscription page
+        navigate("/subscription");
+      }
     }, 3000);
 
     return () => clearTimeout(timer);
