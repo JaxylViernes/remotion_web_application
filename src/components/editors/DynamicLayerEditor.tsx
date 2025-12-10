@@ -3432,7 +3432,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
                   </div>
                 )}
 
-                {template?.id !== 8 && (
+                {/* {template?.id !== 8 && ( */}
                   <DynamicPreviewOverlay
                     layers={layers}
                     currentFrame={currentFrame}
@@ -3446,7 +3446,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
                     isPlaying={isPlaying}
                     onPlayingChange={setIsPlaying}
                   />
-                )}
+                {/* )} */}
               </div>
             </div>
           </div>
