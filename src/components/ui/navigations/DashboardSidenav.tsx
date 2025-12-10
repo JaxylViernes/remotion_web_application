@@ -52,12 +52,20 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
 
   // Check subscription status
   useEffect(() => {
-    const status = checkSubscriptionStatus();
+    const checkStatus = async () => {
+      try {
+        const status = await checkSubscriptionStatus();
 
-    // Redirect to subscription page if needed
-    if (status.shouldRedirectToSubscription) {
-      navigate("/subscription");
-    }
+        // Redirect to subscription page if needed
+        if (status.shouldRedirectToSubscription) {
+          navigate("/subscription");
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+      }
+    };
+
+    checkStatus();
   }, [navigate]);
 
   const handleLogout = () => {

@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { subscriptionData, SUBSCRIPTION_PRICE } from "../../data/subscriptionData.ts";
-import { stripePublishableKey /* backendPrefix */ } from "../../config.ts";
+import { SUBSCRIPTION_PRICE } from "../../data/subscriptionData.ts";
+import { backendPrefix } from "../../config.ts";
 import toast from "react-hot-toast";
 
-// Load Stripe outside component to avoid recreating on every render
-const stripePromise = loadStripe(stripePublishableKey);
+// Stripe promise will be initialized after fetching the key
+let stripePromise: Promise<any> | null = null;
 
-// Card Element styling to match your design
+// Card Element styling
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
@@ -30,7 +30,7 @@ const CARD_ELEMENT_OPTIONS = {
   hidePostalCode: true,
 };
 
-// Main form component with Stripe integration
+// Main form component
 function CheckoutForm() {
   const navigate = useNavigate();
   const stripe = useStripe();
@@ -38,10 +38,36 @@ function CheckoutForm() {
 
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
   const [formData, setFormData] = useState({
     nameOnCard: "",
     zipCode: ""
   });
+
+  // ✅ Fetch client secret on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    fetch(`${backendPrefix}/api/subscription/create-setup-intent`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.clientSecret) {
+          setClientSecret(data.clientSecret);
+        } else {
+          toast.error(data.error || 'Failed to initialize payment');
+        }
+      })
+      .catch(err => {
+        console.error('Setup intent error:', err);
+        toast.error('Failed to connect to server');
+      });
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -69,72 +95,60 @@ function CheckoutForm() {
       return;
     }
 
+    if (!clientSecret) {
+      toast.error("Payment not initialized. Please refresh the page.");
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Step 1: Create a payment method
-      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: formData.nameOnCard,
-          address: {
-            postal_code: formData.zipCode,
+      // Step 1: Confirm card setup with Stripe
+      const { error: setupError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: formData.nameOnCard,
+            address: {
+              postal_code: formData.zipCode,
+            },
           },
         },
       });
 
-      if (paymentMethodError) {
-        console.error('Stripe PaymentMethod Error:', paymentMethodError);
-        // Show the actual Stripe error message for better debugging
-        toast.error(paymentMethodError.message || "Failed to process card information.");
+      if (setupError) {
+        console.error('Stripe setup error:', setupError);
+        toast.error(setupError.message || "Failed to process card information.");
         setIsProcessing(false);
         return;
       }
 
-      console.log('✅ Payment method created:', paymentMethod.id);
+      console.log('✅ Card setup confirmed:', setupIntent.id);
 
-      // ✅ Stripe is working! Show success for testing
-      toast.success("Stripe is working! Payment method created successfully.");
-      setShowReceiptModal(true);
-
-      // TODO: Uncomment below when backend is ready
-      /*
       // Step 2: Send payment method to backend to create subscription
       const token = localStorage.getItem('token');
-      const response = await fetch(`${backendPrefix}/api/subscription/create`, {
+      const response = await fetch(`${backendPrefix}/api/subscription/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          paymentMethodId: paymentMethod.id,
+          paymentMethodId: setupIntent.payment_method,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create subscription');
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create subscription');
       }
 
-      // Step 3: Handle subscription status
-      if (data.status === 'active' || data.status === 'trialing') {
-        toast.success("Subscription activated successfully!");
-        setShowReceiptModal(true);
-      } else if (data.clientSecret) {
-        // Handle 3D Secure or additional authentication if needed
-        const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret);
-        if (confirmError) {
-          throw new Error(confirmError.message);
-        }
-        toast.success("Subscription activated successfully!");
-        setShowReceiptModal(true);
-      } else {
-        throw new Error('Unexpected subscription status');
-      }
-      */
+      // Step 3: Success!
+      console.log('✅ Subscription created:', data.subscription);
+      toast.success("Subscription activated successfully!");
+      setShowReceiptModal(true);
+
     } catch (error) {
       console.error('Subscription error:', error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create subscription. Please try again.";
@@ -150,19 +164,18 @@ function CheckoutForm() {
   };
 
   const handleBack = () => {
-    localStorage.removeItem('token');
-    navigate("/");
+    navigate("/dashboard");
   };
 
   // Calculate dates
-  const trialEndDate = subscriptionData.trialEnd ? new Date(subscriptionData.trialEnd) : new Date();
-  const billingStartDate = new Date(subscriptionData.currentPeriodEnd);
+  const trialEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const billingStartDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   return (
     <div className="min-h-screen relative font-['DM_Sans',sans-serif]" style={{
       background: 'linear-gradient(135deg, #f8f9fc 0%, #faf6fb 25%, #f6f9fc 50%, #f9f6fa 75%, #f6fafb 100%)'
     }}>
-      {/* CSS Variables for brand colors */}
+      {/* CSS Variables */}
       <style>{`
         :root {
           --primary-1: #8b5cf6;
@@ -179,7 +192,6 @@ function CheckoutForm() {
         .animate-bounce-subtle {
           animation: bounce-subtle 2s ease-in-out infinite;
         }
-        /* Custom Stripe CardElement styling */
         .StripeElement {
           padding: 14px 16px;
           border-radius: 12px;
@@ -199,7 +211,7 @@ function CheckoutForm() {
         }
       `}</style>
 
-      {/* Header with back button and logo */}
+      {/* Header */}
       <div className="absolute top-6 left-6 right-6 z-20 flex justify-between items-center">
         <button
           onClick={handleBack}
@@ -211,7 +223,6 @@ function CheckoutForm() {
           <span>Back</span>
         </button>
 
-        {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full conic-gradient-bg" style={{ boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)' }}></div>
           <span className="font-semibold text-lg text-slate-700">ViralMotion</span>
@@ -224,7 +235,6 @@ function CheckoutForm() {
 
           {/* Hero Section */}
           <div className="text-center mb-10 mt-12">
-            {/* Free Trial Badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white font-semibold text-sm shadow-lg mb-6 animate-bounce-subtle" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', boxShadow: '0 8px 24px rgba(168, 85, 247, 0.35)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
@@ -254,11 +264,9 @@ function CheckoutForm() {
               background: 'linear-gradient(160deg, #a855f7 0%, #c026d3 40%, #ec4899 100%)',
               boxShadow: '0 25px 50px -12px rgba(168, 85, 247, 0.4)'
             }}>
-              {/* Decorative blur elements */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
 
-              {/* Header with icon */}
               <div className="relative flex items-start gap-4 mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
                   <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,13 +284,11 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* Subscription Fee - Big Price */}
               <div className="relative text-center py-6 border-b border-white/20">
                 <p className="text-white/80 text-sm mb-1">Subscription Fee</p>
                 <p className="text-6xl font-bold">$0</p>
               </div>
 
-              {/* Pricing Breakdown */}
               <div className="relative space-y-3 py-5 border-b border-white/20">
                 <div className="flex justify-between items-center">
                   <div>
@@ -301,13 +307,11 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* Total Due Today */}
               <div className="relative flex justify-between items-center py-5 border-b border-white/20">
                 <p className="font-bold text-lg">Total due today</p>
                 <p className="font-bold text-2xl">$0.00</p>
               </div>
 
-              {/* Cancel Notice */}
               <div className="relative mt-5 flex items-center gap-3 p-4 rounded-xl bg-white/15 backdrop-blur-sm">
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -322,7 +326,6 @@ function CheckoutForm() {
             <div className="bg-white rounded-3xl p-7 shadow-xl border border-slate-100">
               <h2 className="text-xl font-bold text-slate-800 mb-5">Payment Information</h2>
 
-              {/* Payment notice */}
               <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-violet-50/80 to-pink-50/80 border border-violet-100">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -339,7 +342,6 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* Accepted Cards */}
               <div className="flex items-center gap-3 mb-5">
                 <span className="text-sm text-slate-500">We accept:</span>
                 <div className="flex gap-2">
@@ -361,15 +363,12 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* Payment Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Stripe Card Element */}
                 <div>
                   <label className="block text-slate-700 text-sm font-medium mb-2">Card Information</label>
                   <CardElement options={CARD_ELEMENT_OPTIONS} />
                 </div>
 
-                {/* Cardholder Name */}
                 <div>
                   <label className="block text-slate-700 text-sm font-medium mb-2">Cardholder Name</label>
                   <input
@@ -383,7 +382,6 @@ function CheckoutForm() {
                   />
                 </div>
 
-                {/* ZIP/Postal Code */}
                 <div>
                   <label className="block text-slate-700 text-sm font-medium mb-2">ZIP / Postal Code</label>
                   <input
@@ -397,10 +395,9 @@ function CheckoutForm() {
                   />
                 </div>
 
-                {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={!stripe || isProcessing}
+                  disabled={!stripe || isProcessing || !clientSecret}
                   className="w-full py-4 rounded-xl text-white font-bold text-base shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-xl mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
                   style={{ 
                     background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)', 
@@ -420,7 +417,6 @@ function CheckoutForm() {
                   )}
                 </button>
 
-                {/* Terms */}
                 <p className="text-xs text-slate-400 text-center leading-relaxed pt-1">
                   By starting your trial, you agree to our{" "}
                   <a href="#" className="text-violet-500 hover:underline">Terms of Service</a>
@@ -434,7 +430,7 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* Receipt/Thank You Modal */}
+      {/* Success Modal */}
       <AnimatePresence>
         {showReceiptModal && (
           <motion.div
@@ -450,11 +446,9 @@ function CheckoutForm() {
               transition={{ type: "spring", duration: 0.5 }}
               className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden"
             >
-              {/* Decorative gradient background */}
               <div className="absolute top-0 left-0 right-0 h-32 opacity-10" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}></div>
 
               <div className="relative p-8">
-                {/* Success Icon */}
                 <div className="flex justify-center mb-6">
                   <motion.div
                     initial={{ scale: 0 }}
@@ -477,7 +471,6 @@ function CheckoutForm() {
                   </motion.div>
                 </div>
 
-                {/* Thank You Message */}
                 <div className="text-center mb-6">
                   <h2 className="text-3xl font-bold mb-2" style={{
                     background: 'linear-gradient(135deg, #a855f7, #ec4899)',
@@ -492,9 +485,7 @@ function CheckoutForm() {
                   </p>
                 </div>
 
-                {/* Subscription Details */}
                 <div className="space-y-4 mb-6">
-                  {/* Plan Card */}
                   <div className="p-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -512,7 +503,6 @@ function CheckoutForm() {
                       </div>
                     </div>
 
-                    {/* Trial Info */}
                     <div className="pt-3 border-t border-slate-200">
                       <div className="flex items-center gap-2 text-sm">
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}>
@@ -530,7 +520,6 @@ function CheckoutForm() {
                     </div>
                   </div>
 
-                  {/* What's Next */}
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-50 to-pink-50 border border-violet-100">
                     <div className="flex items-start gap-3">
                       <svg className="w-5 h-5 text-violet-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,7 +535,6 @@ function CheckoutForm() {
                   </div>
                 </div>
 
-                {/* Action Button */}
                 <button
                   onClick={handleGoToDashboard}
                   className="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-xl"
@@ -567,8 +555,47 @@ function CheckoutForm() {
   );
 }
 
-// Main wrapper component with Stripe Elements provider
+// Main wrapper component
 export default function SubscriptionPage() {
+  const [loading, setLoading] = useState(true);
+  const [publishableKey, setPublishableKey] = useState('');
+
+  useEffect(() => {
+    // ✅ Fetch Stripe publishable key from backend
+    const token = localStorage.getItem('token');
+    
+    fetch(`${backendPrefix}/api/subscription/create-setup-intent`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.publishableKey) {
+          setPublishableKey(data.publishableKey);
+          stripePromise = loadStripe(data.publishableKey);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch Stripe key:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading || !publishableKey || !stripePromise) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading payment form...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <CheckoutForm />

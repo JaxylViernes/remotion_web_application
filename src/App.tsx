@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { getCurrentUser, tokenManager } from "./services/authService";
@@ -182,6 +182,54 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SubscriptionGuard({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const checkSub = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/subscription/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        // If user already has subscription, redirect to dashboard
+        if (data.success && data.hasSubscription) {
+          console.log('✅ User has subscription, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        setChecking(false);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setChecking(false);
+      }
+    };
+
+    checkSub();
+  }, [navigate]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking subscription...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -236,7 +284,9 @@ function App() {
               path="/subscription"
               element={
                 <ProtectedRoute>
-                  <SubscriptionPage />
+                  <SubscriptionGuard>
+                    <SubscriptionPage />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               }
             />
