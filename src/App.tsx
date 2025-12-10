@@ -203,7 +203,7 @@ function SubscriptionGuard({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         // If user already has subscription, redirect to dashboard
-        if (data.success && data.hasSubscription) {
+        if (data.success) {
           console.log('✅ User has subscription, redirecting to dashboard');
           navigate('/dashboard', { replace: true });
           return;
