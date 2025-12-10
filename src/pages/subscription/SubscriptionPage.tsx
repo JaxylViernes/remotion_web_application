@@ -164,6 +164,7 @@ function CheckoutForm() {
   };
 
   const handleBack = () => {
+    localStorage.removeItem('token');
     navigate("/");
   };
 
