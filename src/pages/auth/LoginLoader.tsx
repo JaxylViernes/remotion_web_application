@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { checkSubscriptionStatus } from "../../utils/subscriptionUtils";
+import { backendPrefix } from "../../config";
 
 const LoginLoading = () => {
   const navigate = useNavigate();
@@ -8,25 +9,47 @@ const LoginLoading = () => {
 
   useEffect(() => {
     const checkAndRedirect = async () => {
-      // Wait for the animation
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       try {
-        // Check subscription status
-        const status = await checkSubscriptionStatus();
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${backendPrefix}/api/subscription/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-        // Redirect based on subscription status
-        if (status.hasActiveSubscription) {
-          // User has active subscription or valid trial - go to dashboard
-          navigate("/dashboard");
-        } else {
-          // User needs to subscribe - go to subscription page
-          navigate("/subscription");
+        const data = await response.json();
+
+        console.log("📊 Subscription check result:", data);
+
+        // ✅ NEW LOGIC:
+        if (data.success) {
+          if (data.hasSubscription) {
+            // User has active subscription OR active free trial
+            console.log(
+              "✅ Has active subscription/trial - redirecting to dashboard"
+            );
+            navigate("/dashboard");
+          } else if (data.trialExpired) {
+            // Free trial expired, needs to subscribe
+            console.log("⏰ Trial expired - redirecting to subscription page");
+            navigate("/subscription");
+          } else {
+            // No subscription at all (shouldn't happen with auto-creation)
+            console.log(
+              "❌ No subscription - redirecting to subscription page"
+            );
+            navigate("/subscription");
+          }
         }
       } catch (error) {
-        console.error('Error checking subscription:', error);
-        // On error, redirect to subscription page to be safe
-        navigate("/subscription");
+        console.error("Error checking subscription:", error);
+        navigate("/dashboard"); // On error, allow access (fail open)
       } finally {
         setIsChecking(false);
       }
@@ -38,10 +61,8 @@ const LoginLoading = () => {
   if (!isChecking) return null;
 
   return (
-    <div
-      className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden px-6 text-center bg-white"
-    >
-      {/* ... rest of the JSX stays the same ... */}
+    <div className="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden px-6 text-center bg-white">
+      
       <div className="absolute w-[280px] h-[280px] bg-purple-200/40 rounded-full blur-3xl top-20 left-20 animate-float-gentle"></div>
       <div className="absolute w-[320px] h-[320px] bg-pink-200/30 rounded-full blur-3xl bottom-20 right-20 animate-float-gentle-alt"></div>
       <div className="absolute w-[200px] h-[200px] bg-blue-200/35 rounded-full blur-3xl top-1/2 right-1/4 animate-float-soft"></div>
@@ -66,7 +87,7 @@ const LoginLoading = () => {
         <div className="relative w-32 h-32 mb-12 mx-auto animate-slide-up delay-200">
           <div className="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 border-r-pink-500 rounded-full animate-spin-smooth"></div>
-          
+
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative">
               <div className="w-16 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg shadow-xl animate-camera-bob flex items-center justify-center">
