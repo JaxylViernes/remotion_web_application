@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { checkSubscriptionStatus } from "../../utils/subscriptionUtils";
+// import { checkSubscriptionStatus } from "../../utils/subscriptionUtils";
 import { backendPrefix } from "../../config";
 
 const LoginLoading = () => {
