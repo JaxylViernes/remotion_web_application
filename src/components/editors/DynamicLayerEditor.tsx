@@ -486,7 +486,6 @@ const DynamicLayerEditor: React.FC = () => {
 
     const requiredDuration = Math.ceil(maxEndFrame / FPS) + 1;
 
-    // Update to fit exactly (minimum 5 seconds)
     setDuration(Math.max(requiredDuration, 5));
   }, [layers, FPS]);
 
@@ -494,6 +493,7 @@ const DynamicLayerEditor: React.FC = () => {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  const justSelectedRef = useRef(false);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [copiedLayer, setCopiedLayer] = useState<Layer | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>(null);
@@ -671,7 +671,6 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
     const templateIdParam = searchParams.get("template");
     const projectIdParam = searchParams.get("project");
 
-    // ✅ Handle VEO redirect FIRST (before template/project loading)
     if (
       location.state?.fromVEO &&
       location.state?.videoData &&
@@ -679,8 +678,6 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
     ) {
       hasLoadedTemplate.current = true;
       const videoData = location.state.videoData;
-
-      // Create video layer from VEO
       const newLayer: VideoLayer = {
         id: generateId(),
         type: "video",
@@ -704,24 +701,18 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
         animation: { entrance: "fade", entranceDuration: 30 },
       };
 
-      // Set project title from VEO prompt
       setProjectTitle(`VEO: ${videoData.prompt.substring(0, 40)}...`);
 
-      // Start with ONLY the video layer
       pushState([newLayer]);
       setSelectedLayerId(newLayer.id);
-      setDuration(Math.max(videoData.duration + 2, 5)); // Add 2s buffer
+      setDuration(Math.max(videoData.duration + 2, 5));
 
       toast.success("VEO video loaded in editor! 🎬");
-
-      // Clear navigation state to prevent re-triggering
       navigate(location.pathname, { replace: true, state: {} });
-
-      // Don't load template or project
       return;
     }
 
-    // ✅ Handle AI Image redirect
+
     if (
       location.state?.fromAIImage &&
       location.state?.imageData &&
@@ -1055,10 +1046,18 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
         setPreviewDimensions({ width, height });
       }
     };
+    
     updateDimensions();
+    
+    // Force recalculation after a short delay to ensure layout has updated
+    const timeoutId = setTimeout(updateDimensions, 100);
+    
     window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
-  }, [timelineHeight]);
+    return () => {
+      window.removeEventListener("resize", updateDimensions);
+      clearTimeout(timeoutId);
+    };
+  }, [timelineHeight, showEditPanel, isPanelOpen]);
 
   // --- SPLIT SCREEN HANDLERS ---
   const getLayoutMode = () => {
@@ -1342,10 +1341,18 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const handleGlobalDeselect = useCallback(
     (e: MouseEvent) => {
+      if (justSelectedRef.current) {
+        return;
+      }
+      
       if (!selectedLayerId && !editingLayerId) return;
 
       const target = e.target as HTMLElement;
 
+      if (remotionWrapperRef.current && remotionWrapperRef.current.contains(target)) {
+        return;
+      }
+      
       const isTargetingInput =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -1953,17 +1960,36 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
     [currentFrame, totalFrames, layers, pushState, FPS]
   );
 
-  const selectLayerAndCloseTab = useCallback((layerId: string | null) => {
+const selectLayerAndCloseTab = useCallback((layerId: string | null) => {
   setSelectedLayerId(layerId);
-  if (isMobile && layerId !== null) {
-    // On mobile, open the panel when a layer is selected
-    setIsPanelOpen(true);
-  } else if (!isMobile && layerId !== null) {
-    // On desktop, close the media/tools panel to show the editor
-    setActiveTab(null);
-    setIsPanelOpen(false);
+  
+  if (layerId !== null) {
+    // Set flag to prevent immediate deselection
+    justSelectedRef.current = true;
+    setTimeout(() => {
+      justSelectedRef.current = false;
+    }, 100);
+    
+    if (isMobile) {
+      // setIsPanelOpen(true);  // Mobile: open bottom panel
+    } else {
+      // Desktop: MUST close sidebar so editor can show
+      setIsPanelOpen(false);  // ← This makes editor visible!
+      setActiveTab(null);     // ← Close sidebar tab
+    }
+  } else {
+    if (isMobile) {
+      setIsPanelOpen(false);
+    }
   }
 }, [isMobile]);
+
+const openEditor = useCallback(() => {
+  if (isMobile && selectedLayerId) {
+    setIsPanelOpen(true);
+    setActiveTab(null);
+  }
+}, [isMobile, selectedLayerId]);
 
   const handleAddText = useCallback(() => {
     addTextLayer();
@@ -2339,12 +2365,19 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
 );
 
   const handleTrackSelect = useCallback(
-    (trackId: string | null) => {
-      selectLayerAndCloseTab(trackId);
-      setEditingLayerId(null);
-    },
-    [selectLayerAndCloseTab]
-  );
+  (trackId: string | null) => {
+    // ✅ NEW: Only deselect if explicitly clicking to deselect
+    // Prevent accidental deselection from misclicks on timeline background
+    if (trackId === null && selectedLayerId !== null) {
+      // If clicking background but a layer is selected, ignore the deselection
+      // User must explicitly click the X button to deselect
+      return;
+    }
+    selectLayerAndCloseTab(trackId);
+    setEditingLayerId(null);
+  },
+  [selectLayerAndCloseTab, selectedLayerId]
+);
 
   const handleReorderTracks = useCallback(
     (fromIndex: number, toIndex: number) => {
@@ -3325,7 +3358,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
   display: !isMobile && !showEditPanel ? "none" : undefined,
   pointerEvents: isMobile 
   ? (showEditPanel ? "auto" : "none")
-  : (showEditPanel && !isPanelOpen ? "auto" : "none"),
+  : (showEditPanel ? "auto" : "none"),
   ...(!isMobile && showEditPanel
     ? {}
     : (!isMobile ? editorStyles.editPanelHidden : {})),
@@ -3436,8 +3469,40 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
               display: "flex",
               alignItems: "center",
               flexShrink: 0,
+              gap: "12px",
             }}
           >
+
+            {isMobile && (
+              <button
+                onClick={() => navigate("/dashboard")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: colors.textPrimary,
+                  borderRadius: "6px",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.bgHover;
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                title="Back to Dashboard"
+              >
+                <Icons.ChevronLeft />
+              </button>
+            )}
+
             <span
               style={{ ...editorStyles.headerTitle, color: colors.textPrimary }}
             >
@@ -3480,7 +3545,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
             </div>
           </div>
 
-          <div
+        <div
             style={{
               ...editorStyles.previewArea,
               backgroundColor: colors.bgPrimary,
@@ -3491,8 +3556,12 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
               overflow: "hidden",
               padding: "20px",
               minHeight: 0,
-              position: "relative", // ← Important
-              pointerEvents: "auto", // ← Allow clicks
+              position: "relative",
+              pointerEvents: "auto",
+              ...(isMobile && isPanelOpen && showEditPanel ? {
+                height: "calc(100vh - 60px - 40vh - 64px)",
+                maxHeight: "calc(100vh - 60px - 40vh - 64px)",
+              } : {}),
             }}
             ref={previewContainerRef}
           >
@@ -3503,7 +3572,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                position: "relative", // ← Important
+                position: "relative", 
                 pointerEvents: "none",
               }}
             >
@@ -3540,8 +3609,8 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
                       left: 0,
                       width: "100%",
                       height: "100%",
-                      pointerEvents: "auto", // ← Change from "none" to "auto" only when cropMode is active
-                      zIndex: 1000, // ← Ensure it's on top
+                      pointerEvents: "auto", 
+                      zIndex: 1000, 
                     }}
                   >
                     <CropOverlay
@@ -3618,6 +3687,7 @@ const collageLayers: Layer[] = layout.slots.map((slot, index) => {
             onReorderTracks={handleReorderTracks}
             onDeleteTrack={deleteLayer}
             onCutTrack={splitLayer} 
+            onEdit={openEditor}
             isPlaying={isPlaying}
             onPlayPause={togglePlayback}
             data-timeline="true"

@@ -12,7 +12,7 @@ interface MobilePanelWrapperProps {
 
 export const MobilePanelWrapper: React.FC<MobilePanelWrapperProps> = ({
   isOpen,
-  showEdit = false,
+  // showEdit = false,
   onClose,
   isMobile,
   children,
@@ -109,7 +109,7 @@ export const MobilePanelWrapper: React.FC<MobilePanelWrapperProps> = ({
 
   const styles = {
     overlay: {
-      display: isMobile && isOpen ? "block" : "none",
+      display: "none",
       position: "fixed" as const,
       top: 0,
       left: 0,
@@ -140,13 +140,13 @@ export const MobilePanelWrapper: React.FC<MobilePanelWrapperProps> = ({
         ? "0 -4px 20px rgba(0, 0, 0, 0.3)"
         : "none",
         
-      display: isMobile ? (isOpen ? "flex" : "none") : ((isOpen || showEdit) ? "flex" : "none"),
+      display: isMobile ? (isOpen ? "flex" : "none") : "flex",
       flexDirection: "column" as const,
       overflow: "hidden",
       transform: isMobile ? `translateY(${translateY}px)` : "none",
       transition: isDragging ? "none" : "transform 0.3s ease-in-out",
       animation: isMobile && isOpen ? "slideUp 0.3s ease-out" : "none",
-      pointerEvents: (isMobile ? "auto" : "none") as "auto" | "none",
+      pointerEvents: "auto" as "auto" | "none",
     },
     panelHeader: {
       display: isMobile ? "flex" : "none",
@@ -208,7 +208,7 @@ export const MobilePanelWrapper: React.FC<MobilePanelWrapperProps> = ({
       <div style={styles.overlay} onClick={onClose} />
 
       {/* Panel */}
-      <div ref={panelRef} style={styles.panel}>
+      <div ref={panelRef} style={styles.panel} data-panel="true">
         {/* Drag handle (mobile only) */}
         <div
           style={styles.panelHeader}

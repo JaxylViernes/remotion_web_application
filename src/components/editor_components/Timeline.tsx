@@ -36,6 +36,7 @@ export interface TimelineProps {
   onDeleteTrack?: (trackId: string) => void;
   onCutTrack?: (trackId: string, frame: number) => void;
   onReorderTracks?: (fromIndex: number, toIndex: number) => void;
+  onEdit?: () => void;
   height?: string
 }
 
@@ -95,6 +96,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   onDeleteTrack,
   onCutTrack,
   onReorderTracks,
+  onEdit,
   height = "200px",
 }) => {
   const [zoom, setZoom] = useState(1);
@@ -638,7 +640,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   );
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} data-timeline="true">
       {/* Toolbar */}
       <div style={styles.toolbar}>
         <div style={styles.toolGroup}>
@@ -647,6 +649,25 @@ export const Timeline: React.FC<TimelineProps> = ({
         </div>
         <div style={styles.divider} />
         <div style={styles.toolGroup}>
+          {isMobile && selectedTrackId && onEdit && (
+            <button 
+              style={{ 
+                ...styles.toolButton, 
+                backgroundColor: colors.accent,
+                color: colors.bgPrimary 
+              }} 
+              onClick={onEdit} 
+              title="Edit Layer" 
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = colors.accentHover || colors.accent;
+              }} 
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = colors.accent;
+              }}
+            >
+              <EditorIcons.Edit />
+            </button>
+          )}
           <button style={{ ...styles.toolButton, ...(!canCut ? styles.toolButtonDisabled : {}) }} onClick={handleCutTrack} disabled={!canCut} title="Cut at Playhead (C)" onMouseOver={(e) => canCut && (e.currentTarget.style.backgroundColor = colors.bgHover)} onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}><EditorIcons.Split /></button>
           <button style={{ ...styles.toolButton, ...(!canDelete ? styles.toolButtonDisabled : {}) }} onClick={handleDeleteTrack} disabled={!canDelete} title="Delete Track (Del)" onMouseOver={(e) => canDelete && (e.currentTarget.style.backgroundColor = colors.bgHover)} onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}><EditorIcons.Trash /></button>
         </div>
