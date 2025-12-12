@@ -261,7 +261,7 @@ function App() {
               path="/"
               element={
                 localStorage.getItem("token") ? (
-                  <Navigate to="/subscription" replace />
+                  <Navigate to="/dashboard" replace />
                 ) : (
                   <LandingPage />
                 )
