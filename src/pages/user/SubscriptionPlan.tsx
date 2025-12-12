@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   FiTrendingUp,
-  FiPieChart,
   FiShield,
   FiAlertCircle,
   FiCreditCard,
-  FiCalendar,
-  FiDollarSign,
-  FiFileText,
   FiExternalLink,
   FiPackage,
   FiZap,
@@ -342,253 +338,18 @@ const SubscriptionPlan: React.FC = () => {
               </div>
             </div>
 
-            {/* Trial Progress */}
-            {subscription.status === "trialing" &&
-              subscription.trialStart &&
-              subscription.trialEnd && (
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                      <FiPieChart className="text-indigo-600" />
-                      Trial Period Progress
-                    </h4>
-                  </div>
-
-                  {(() => {
-                    const trialStart = new Date(subscription.trialStart);
-                    const trialEnd = new Date(subscription.trialEnd);
-                    const today = new Date();
-                    const totalDays = Math.ceil(
-                      (trialEnd.getTime() - trialStart.getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    );
-                    const daysElapsed = Math.max(
-                      0,
-                      Math.ceil(
-                        (today.getTime() - trialStart.getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      )
-                    );
-                    const daysRemaining = Math.max(
-                      0,
-                      Math.ceil(
-                        (trialEnd.getTime() - today.getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      )
-                    );
-                    const progressPercent = Math.min(
-                      100,
-                      (daysElapsed / totalDays) * 100
-                    );
-
-                    return (
-                      <>
-                        <div className="mb-4">
-                          <div className="flex justify-between text-sm mb-3">
-                            <span className="text-gray-600 font-medium">
-                              {daysElapsed} of {totalDays} days used
-                            </span>
-                            <span
-                              className="font-bold text-transparent bg-clip-text"
-                              style={{
-                                backgroundImage:
-                                  "linear-gradient(135deg, var(--primary-1), var(--primary-2))",
-                              }}
-                            >
-                              {daysRemaining} days remaining
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
-                            <motion.div
-                              className="h-full rounded-full shadow-lg"
-                              style={{
-                                background:
-                                  "linear-gradient(90deg, #8b5cf6, #ec4899)",
-                              }}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${progressPercent}%` }}
-                              transition={{ duration: 1, ease: "easeOut" }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Calendar View */}
-                        <div className="mt-4 p-3 bg-white rounded-xl border border-gray-200">
-                          <div className="flex items-center justify-between mb-2.5">
-                            <h5 className="font-semibold text-gray-800 flex items-center gap-1.5 text-xs">
-                              <FiCalendar className="text-indigo-600 text-sm" />
-                              {trialStart.toLocaleDateString("en-US", {
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </h5>
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                <span className="text-gray-600 text-xs">
-                                  Start
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span className="text-gray-600 text-xs">
-                                  End
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Calendar Grid */}
-                          {(() => {
-                            const year = trialStart.getFullYear();
-                            const month = trialStart.getMonth();
-                            const firstDay = new Date(year, month, 1);
-                            const lastDay = new Date(year, month + 1, 0);
-                            const startingDayOfWeek = firstDay.getDay();
-                            const daysInMonth = lastDay.getDate();
-
-                            const days = [];
-
-                            // Add empty cells for days before month starts
-                            for (let i = 0; i < startingDayOfWeek; i++) {
-                              days.push(
-                                <div
-                                  key={`empty-${i}`}
-                                  className="flex justify-center items-center h-8"
-                                >
-                                  <div className="w-7 h-7"></div>
-                                </div>
-                              );
-                            }
-
-                            // Add days of month
-                            for (let day = 1; day <= daysInMonth; day++) {
-                              const currentDate = new Date(year, month, day);
-                              const isTrialStart = day === trialStart.getDate();
-                              const isTrialEnd = day === trialEnd.getDate();
-                              const isInTrial =
-                                currentDate >= trialStart &&
-                                currentDate <= trialEnd;
-                              const isToday =
-                                currentDate.toDateString() ===
-                                today.toDateString();
-
-                              let className =
-                                "relative w-7 h-7 flex items-center justify-center rounded-md text-xs font-medium transition-all ";
-
-                              if (isTrialStart) {
-                                className +=
-                                  "bg-green-500 text-white shadow-sm ring-2 ring-green-300";
-                              } else if (isTrialEnd) {
-                                className +=
-                                  "bg-red-500 text-white shadow-sm ring-2 ring-red-300";
-                              } else if (isInTrial) {
-                                className +=
-                                  "bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-700 font-semibold";
-                              } else {
-                                className += "text-gray-400 hover:bg-gray-50";
-                              }
-
-                              if (isToday && !isTrialStart && !isTrialEnd) {
-                                className += " ring-2 ring-indigo-400";
-                              }
-
-                              days.push(
-                                <div
-                                  key={day}
-                                  className="flex justify-center items-center h-8"
-                                >
-                                  <div className={className}>{day}</div>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <>
-                                {/* Day headers */}
-                                <div className="grid grid-cols-7 gap-1 mb-1">
-                                  {["S", "M", "T", "W", "T", "F", "S"].map(
-                                    (day, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="h-7 flex items-center justify-center text-xs font-bold text-gray-600"
-                                      >
-                                        {day}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                                {/* Calendar days */}
-                                <div className="grid grid-cols-7 gap-1">
-                                  {days}
-                                </div>
-                              </>
-                            );
-                          })()}
-
-                          {/* Date Info */}
-                          <div className="mt-2.5 pt-2.5 border-t border-gray-200 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                              <span className="text-gray-600">
-                                {trialStart.toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                              <span className="text-gray-600">
-                                {trialEnd.toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {daysRemaining <= 3 && daysRemaining > 0 && (
-                          <motion.div
-                            className="mt-4 p-5 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl shadow-md"
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <div className="flex items-start gap-3">
-                              <FiAlertCircle
-                                className="text-yellow-600 mt-0.5 flex-shrink-0"
-                                size={22}
-                              />
-                              <div>
-                                <p className="text-sm font-bold text-yellow-900 mb-1">
-                                  Trial Ending Soon!
-                                </p>
-                                <p className="text-sm text-yellow-800 leading-relaxed">
-                                  Your trial ends in{" "}
-                                  <strong>
-                                    {daysRemaining}{" "}
-                                    {daysRemaining === 1 ? "day" : "days"}
-                                  </strong>
-                                  . You'll be charged{" "}
-                                  <strong>${SUBSCRIPTION_PRICE}/month</strong>{" "}
-                                  starting{" "}
-                                  {trialEnd.toLocaleDateString("en-US", {
-                                    month: "long",
-                                    day: "numeric",
-                                  })}
-                                  .
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+            {/* Trial Info - Simple one-liner */}
+            {subscription.status === "trialing" && subscription.trialEnd && (
+              <p className="text-sm text-gray-600 mt-4">
+                Your trial ends on{" "}
+                <span className="font-semibold text-gray-800">
+                  {new Date(subscription.trialEnd).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </p>
+            )}
           </motion.div>
 
           {/* Payment Method & Billing Info */}
@@ -655,82 +416,38 @@ const SubscriptionPlan: React.FC = () => {
               </div>
             </div>
 
-            {/* Next Billing */}
+            {/* Next Billing - Improved Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <FiDollarSign className="text-green-600 text-xl" />
-                <h4 className="font-bold text-gray-800">Next Billing</h4>
-              </div>
-              <div className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-green-50 to-emerald-50">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-600 font-medium">Amount</span>
-                  <span className="text-3xl font-bold text-gray-800">
-                    ${SUBSCRIPTION_PRICE}
-                  </span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
+                  <FiCreditCard className="text-white text-lg" />
                 </div>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">
-                    Billing Date
-                  </span>
-                  <span className="font-semibold text-gray-800">
-                    {new Date(subscription.currentPeriodEnd).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric", year: "numeric" }
-                    )}
-                  </span>
-                </div>
+                <h4 className="font-bold text-gray-800">Billing Info</h4>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Subscription Details */}
-          <motion.div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h4 className="font-bold text-gray-800 mb-5">
-              Subscription Details
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                {
-                  icon: FiFileText,
-                  label: "Subscription ID",
-                  value: subscription.stripeSubscriptionId || "N/A",
-                },
-                {
-                  icon: FiFileText,
-                  label: "Customer ID",
-                  value: subscription.stripeCustomerId || "N/A",
-                },
-                {
-                  icon: FiCalendar,
-                  label: "Created Date",
-                  value: subscription.createdAt
-                    ? new Date(subscription.createdAt).toLocaleDateString(
+              <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-emerald-600 font-medium uppercase tracking-wide mb-1">
+                      Next billing date
+                    </p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString(
                         "en-US",
-                        { month: "long", day: "numeric", year: "numeric" }
-                      )
-                    : "N/A",
-                },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl border border-gray-200"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <item.icon className="text-indigo-600 text-sm" />
-                    <p className="text-xs text-gray-600 font-medium">
-                      {item.label}
+                        { month: "long", day: "numeric" }
+                      )}
                     </p>
                   </div>
-                  <p className="font-semibold text-gray-800 truncate text-sm">
-                    {item.value}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xs text-emerald-600 font-medium uppercase tracking-wide mb-1">
+                      Amount
+                    </p>
+                    <p className="text-lg font-bold text-gray-800">
+                      ${SUBSCRIPTION_PRICE}
+                      <span className="text-sm font-normal text-gray-500">/mo</span>
+                    </p>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
           </motion.div>
 

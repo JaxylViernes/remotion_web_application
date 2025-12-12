@@ -7,8 +7,9 @@ import {
   FiCheckSquare,
   FiSquare,
   FiVideo,
+  FiDownload,
+  FiX,
 } from "react-icons/fi";
-import { ViewMediaModal } from "../../modals/ViewMediaModal";
 
 type FolderType = "videos" | "images";
 
@@ -428,21 +429,70 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
         </div>
       )}
 
-      {/* View Media Modal */}
-      <ViewMediaModal
-        isOpen={!!previewMedia}
-        onClose={() => setPreviewMedia(null)}
-        item={previewMedia ? {
-          id: previewMedia.id,
-          type: previewMedia.type === "image" ? "gif" : "mp4",
-          outputUrl: previewMedia.url,
-          projectVidUrl: previewMedia.url,
-          aspectRatio: previewMedia.aspectRatio,
-        } : null}
-        itemType="render"
-        templateName={previewMedia?.type?.toUpperCase() || "MEDIA"}
-        formattedDate={previewMedia ? formatDate(previewMedia.uploadedAt) : undefined}
-      />
+      {/* Preview Media Modal with Download */}
+      {previewMedia && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setPreviewMedia(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {previewMedia.type === "image" ? "Image Preview" : "Video Preview"}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {formatDate(previewMedia.uploadedAt)} • {formatFileSize(previewMedia.size)}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewMedia(null)}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <FiX size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Media Content */}
+            <div className="p-4 bg-gray-50">
+              <div className="flex items-center justify-center max-h-[60vh] overflow-hidden rounded-lg">
+                {previewMedia.type === "image" ? (
+                  <img
+                    src={previewMedia.url}
+                    alt="Preview"
+                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                ) : (
+                  <video
+                    src={previewMedia.url}
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Footer with Download Button */}
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+              <a
+                href={previewMedia.url}
+                download={`${previewMedia.type}-${previewMedia.id || Date.now()}.${previewMedia.type === "image" ? "png" : "mp4"}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90 transition shadow-md"
+              >
+                <FiDownload size={18} />
+                Download
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

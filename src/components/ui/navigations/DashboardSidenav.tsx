@@ -10,8 +10,8 @@ import {
   FiX,
   FiSettings,
   FiCreditCard,
-  FiMail,
   FiHelpCircle,
+  FiSidebar,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -150,7 +150,7 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Expand sidebar"
               >
-                <FiMenu size={20} className="text-gray-600" />
+                <FiSidebar size={20} className="text-gray-600" />
               </button>
             </div>
           ) : (
@@ -175,7 +175,7 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 mt-1"
                 title="Collapse sidebar"
               >
-                <FiMenu size={20} className="text-gray-600" />
+                <FiSidebar size={20} className="text-gray-600" />
               </button>
             </div>
           )}
@@ -275,15 +275,6 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
                 className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
               >
                 <FiCreditCard /> Subscription Plans
-              </button>
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  toast("Contact us feature coming soon!", { icon: "📧" });
-                }}
-                className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-              >
-                <FiMail /> Contact Us
               </button>
               <button
                 onClick={() => {
@@ -390,15 +381,6 @@ export const DashboardSidebarNav: React.FC<DashboardSidebarNavProps> = ({
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
           >
             <FiCreditCard className="text-xl" /> Subscription Plans
-          </button>
-          <button
-            onClick={() => {
-              setMobileOpen(false);
-              toast("Contact us feature coming soon!", { icon: "📧" });
-            }}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-          >
-            <FiMail className="text-xl" /> Contact Us
           </button>
           <button
             onClick={() => {
