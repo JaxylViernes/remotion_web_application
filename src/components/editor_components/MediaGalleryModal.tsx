@@ -4,7 +4,7 @@ import { useVideoUpload } from '../../hooks/uploads/HandleVideoUploads';
 import { useUploadHooks } from '../../hooks/dashboardhooks/UploadHooks';
 
 //lipat mo to sa ennv
-const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
 
 
 interface MediaGalleryModalProps {
