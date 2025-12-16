@@ -2007,11 +2007,11 @@ const DynamicLayerEditor: React.FC = () => {
         }, 100);
 
         if (isMobile) {
-          // setIsPanelOpen(true);  // Mobile: open bottom panel
+          setActiveTab(null);
+          // setIsPanelOpen(true);  
         } else {
-          // Desktop: MUST close sidebar so editor can show
-          setIsPanelOpen(false); // ← This makes editor visible!
-          setActiveTab(null); // ← Close sidebar tab
+          setIsPanelOpen(false);
+          setActiveTab(null); 
         }
       } else {
         if (isMobile) {
@@ -2030,8 +2030,9 @@ const DynamicLayerEditor: React.FC = () => {
   }, [isMobile, selectedLayerId]);
 
   const handleAddText = useCallback(() => {
-    addTextLayer();
-  }, [addTextLayer]);
+  addTextLayer();
+  setActiveTab(null);
+}, [addTextLayer]);
 
   const addMediaToCanvas = useCallback(
     (media: any) => {
@@ -3730,7 +3731,7 @@ const DynamicLayerEditor: React.FC = () => {
               minHeight: 0,
               position: "relative",
               pointerEvents: "auto",
-              ...(isMobile && isPanelOpen && showEditPanel
+              ...(isMobile && isPanelOpen
                 ? {
                     height: "calc(100vh - 60px - 40vh - 64px)",
                     maxHeight: "calc(100vh - 60px - 40vh - 64px)",

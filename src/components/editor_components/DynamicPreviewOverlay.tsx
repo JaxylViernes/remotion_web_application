@@ -197,7 +197,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
   );
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent, layer: Layer) => {
+  (e: React.MouseEvent | React.TouchEvent, layer: Layer) => {
       if (layer.locked || (layer as ImageLayer).isBackground) return;
       if (editingLayerId === layer.id) return;
       if (!layer.position) return;
@@ -211,13 +211,15 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
 
       const centerX = rect.left + (layer.position.x / 100) * actualWidth;
       const centerY = rect.top + (layer.position.y / 100) * actualHeight;
-      const offsetX = e.clientX - centerX;
-      const offsetY = e.clientY - centerY;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+const offsetX = clientX - centerX;
+const offsetY = clientY - centerY;
 
       const fontSize = isTextLayer(layer) ? layer.fontSize : 0;
       setDragMode("move");
       setDragLayerId(layer.id);
-      setDragStart({ x: e.clientX, y: e.clientY });
+      setDragStart({ x: clientX, y: clientY });
       setDragStartPos({
         x: layer.position.x,
         y: layer.position.y,
@@ -242,7 +244,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
   );
 
   const handleRotateStart = useCallback(
-    (e: React.MouseEvent, layer: Layer) => {
+  (e: React.MouseEvent | React.TouchEvent, layer: Layer) => {
       if (layer.locked) return;
       e.stopPropagation();
       e.preventDefault();
@@ -252,7 +254,9 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
       const fontSize = isTextLayer(layer) ? layer.fontSize : 0;
       setDragMode("rotate");
       setDragLayerId(layer.id);
-      setDragStart({ x: e.clientX, y: e.clientY });
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+setDragStart({ x: clientX, y: clientY });
       setDragStartPos({
         x: layer.position.x,
         y: layer.position.y,
@@ -267,7 +271,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
   );
 
   const handleResizeStart = useCallback(
-    (e: React.MouseEvent, layer: Layer, corner: any) => {
+  (e: React.MouseEvent | React.TouchEvent, layer: Layer, corner: any) => {
       if (layer.locked) return;
       e.stopPropagation();
       e.preventDefault();
@@ -275,7 +279,9 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
       const fontSize = isTextLayer(layer) ? layer.fontSize : 0;
       setDragMode(`resize-${corner}` as DragMode);
       setDragLayerId(layer.id);
-      setDragStart({ x: e.clientX, y: e.clientY });
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+setDragStart({ x: clientX, y: clientY });
       setDragStartPos({
         x: layer.position.x,
         y: layer.position.y,
@@ -342,13 +348,16 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
     const layer = layers.find((l) => l.id === dragLayerId);
     if (!layer || !layer.position) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
       const rect = overlayRef.current?.getBoundingClientRect();
       if (!rect) return;
 
+       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+  const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
       if (dragMode === "move") {
-        const targetCenterX = e.clientX - grabOffset.x;
-        const targetCenterY = e.clientY - grabOffset.y;
+        const targetCenterX = clientX - grabOffset.x;
+        const targetCenterY = clientY - grabOffset.y;
         const relativeX = targetCenterX - rect.left;
         const relativeY = targetCenterY - rect.top;
         const newX = (relativeX / actualWidth) * 100;
@@ -363,16 +372,16 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
           dragStart.x - (rect.left + elementCenter.x)
         );
         const currentAngle = Math.atan2(
-          e.clientY - (rect.top + elementCenter.y),
-          e.clientX - (rect.left + elementCenter.x)
+          clientY - (rect.top + elementCenter.y),
+          clientX - (rect.left + elementCenter.x)
         );
         const deltaAngle = (currentAngle - startAngle) * (180 / Math.PI);
         const newRotation = dragStartPos.rotation + deltaAngle;
         onLayerUpdate(dragLayerId, { rotation: newRotation });
       } else if (dragMode?.startsWith("resize-")) {
         const corner = dragMode.split("-")[1];
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
+        const deltaX = clientX - dragStart.x;
+        const deltaY = clientY - dragStart.y;
         const rotation = dragStartPos.rotation || 0;
         const rotationRad = (rotation * Math.PI) / 180;
         const cos = Math.cos(-rotationRad);
@@ -458,8 +467,8 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
         const layer = layers.find((l) => l.id === dragLayerId);
         if (!layer || !isImageLayer(layer)) return;
 
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
+        const deltaX = clientX - dragStart.x;
+        const deltaY = clientY - dragStart.y;
         const deltaXPercent = (deltaX / actualWidth) * 100;
         const deltaYPercent = (deltaY / actualHeight) * 100;
 
@@ -597,10 +606,14 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
     };
 
     document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+document.addEventListener("mouseup", handleMouseUp);
+document.addEventListener("touchmove", handleMouseMove, { passive: false });
+document.addEventListener("touchend", handleMouseUp);
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+document.removeEventListener("mouseup", handleMouseUp);
+document.removeEventListener("touchmove", handleMouseMove);
+document.removeEventListener("touchend", handleMouseUp);
     };
   }, [
     dragMode,
@@ -652,14 +665,16 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
       pointerEvents: "none",
     },
     resizeHandle: {
-      position: "absolute",
-      width: "8px",
-      height: "8px",
-      backgroundColor: "#3b82f6",
-      border: "1px solid white",
-      borderRadius: "50%",
-      zIndex: 20,
-    },
+  position: "absolute",
+  width: "12px",
+  height: "12px",
+  backgroundColor: "#3b82f6",
+  border: "2px solid white",
+  borderRadius: "50%",
+  zIndex: 20,
+  touchAction: "none",
+  pointerEvents: "auto",
+},
     rotateHandle: {
       position: "absolute",
       top: "-30px",
@@ -906,6 +921,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
             onClick={(e) => handleClick(e, layer)}
             onDoubleClick={(e) => handleDoubleClick(e, layer)}
             onMouseDown={(e) => !isEditing && handleMouseDown(e, layer)}
+onTouchStart={(e) => !isEditing && handleMouseDown(e, layer)}
           >
 
            {isChatLayer && (() => {
@@ -1011,6 +1027,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: dragMode === "rotate" ? "grabbing" : "grab",
                   }}
                   onMouseDown={(e) => handleRotateStart(e, layer)}
+onTouchStart={(e) => handleRotateStart(e, layer)}
                 />
                 <div
                   style={{
@@ -1020,6 +1037,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "nw-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "tl")}
+onTouchStart={(e) => handleResizeStart(e, layer, "tl")}
                 />
                 <div
                   style={{
@@ -1029,6 +1047,7 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "ne-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "tr")}
+onTouchStart={(e) => handleResizeStart(e, layer, "tr")}
                 />
                 <div
                   style={{
@@ -1038,7 +1057,8 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "sw-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "bl")}
-                />
+onTouchStart={(e) => handleResizeStart(e, layer, "bl")}
+/>
                 <div
                   style={{
                     ...styles.resizeHandle,
@@ -1047,7 +1067,8 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "se-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "br")}
-                />
+onTouchStart={(e) => handleResizeStart(e, layer, "br")}
+/>
                 {/* Edge handles */}
                 <div
                   style={{
@@ -1061,7 +1082,8 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "ns-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "t")}
-                />
+onTouchStart={(e) => handleResizeStart(e, layer, "t")}
+/>
                 <div
                   style={{
                     ...styles.resizeHandle,
@@ -1074,7 +1096,8 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     cursor: "ns-resize",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, layer, "b")}
-                />
+onTouchStart={(e) => handleResizeStart(e, layer, "b")}
+/>
                 <div
                   style={{
                     ...styles.resizeHandle,
@@ -1086,8 +1109,9 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     borderRadius: "2px",
                     cursor: "ew-resize",
                   }}
-                  onMouseDown={(e) => handleResizeStart(e, layer, "l")}
-                />
+                 onMouseDown={(e) => handleResizeStart(e, layer, "l")}
+onTouchStart={(e) => handleResizeStart(e, layer, "l")}
+/>
                 <div
                   style={{
                     ...styles.resizeHandle,
@@ -1099,8 +1123,9 @@ export const DynamicPreviewOverlay: React.FC<DynamicPreviewOverlayProps> = ({
                     borderRadius: "2px",
                     cursor: "ew-resize",
                   }}
-                  onMouseDown={(e) => handleResizeStart(e, layer, "r")}
-                />
+                 onMouseDown={(e) => handleResizeStart(e, layer, "r")}
+onTouchStart={(e) => handleResizeStart(e, layer, "r")}
+/>
                 <span
                   style={{
                     ...styles.infoOverlay,
