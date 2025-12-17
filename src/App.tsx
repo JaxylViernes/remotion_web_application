@@ -68,7 +68,7 @@ import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminSetup } from "./pages/admin/AdminSetup";
 import { usePageTracking } from "./hooks/usePageTracking";
 import { AdminUserDetail } from "./pages/admin/AdminUserDetail";
-import { trackPageView } from "./utils/analytics";
+
 
 // ✅ UPDATED: Auth Provider with subscription check
 function AuthProvider({ children }: { children: React.ReactNode }) {
