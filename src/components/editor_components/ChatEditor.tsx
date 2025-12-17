@@ -260,7 +260,7 @@ export const ChatEditor: React.FC<ChatEditorProps> = ({
         />
       </div>
 
-      <div style={styles.formGroup}>
+      {/* <div style={styles.formGroup}>
         <label style={styles.checkboxLabel}>
           <input
             type="checkbox"
@@ -270,7 +270,7 @@ export const ChatEditor: React.FC<ChatEditorProps> = ({
           />
           This is your message (Right Side)
         </label>
-      </div>
+      </div> */}
 
       <button
         onClick={() => { 

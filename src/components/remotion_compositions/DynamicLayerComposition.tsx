@@ -651,12 +651,15 @@ const KenBurnsCarouselRenderer: React.FC<{
 
   const kbNext = slideProgress > 0 ? slideProgress * 0.001 : 0;
 
-  const cardWidth = Math.round(width * 0.75);
-  const cardHeight = Math.round(height * 0.75);
-  const cardLeft = Math.round((width - cardWidth) / 2);
-  const cardTop = Math.round((height - cardHeight) / 2);
-
   if (!currentLayer) return null;
+
+  const layerSize = currentLayer.size || { width: 75, height: 75 };
+const layerPosition = currentLayer.position || { x: 50, y: 50 };
+
+const cardWidth = Math.round((layerSize.width / 100) * width);
+const cardHeight = Math.round((layerSize.height / 100) * height);
+const cardLeft = Math.round(((layerPosition.x / 100) * width) - (cardWidth / 2));
+const cardTop = Math.round(((layerPosition.y / 100) * height) - (cardHeight / 2));
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>

@@ -136,8 +136,7 @@ export const Timeline: React.FC<TimelineProps> = ({
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // ✅ Adjusted to 70px to fit Icon + Eye + Lock comfortably
-      setLabelWidth(mobile ? 70 : 180);
+      setLabelWidth(mobile ? 85 : 180);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -510,8 +509,6 @@ export const Timeline: React.FC<TimelineProps> = ({
         onPlayPause();
       } else if (e.key === "Delete" && selectedTrackId) {
         handleDeleteTrack();
-      } else if (e.key.toLowerCase() === "c" && selectedTrackId && !e.ctrlKey && !e.metaKey) {
-        handleCutTrack();
       } else if (e.key === "Home") {
         onFrameChange(0);
       } else if (e.key === "End") {
@@ -593,7 +590,7 @@ export const Timeline: React.FC<TimelineProps> = ({
     trackLabelHidden: { opacity: 0.5 },
     trackLabelReordering: { backgroundColor: "rgba(59, 130, 246, 0.25)", boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)" },
     trackLabelIcon: { opacity: 0.6, fontSize: isMobile ? "14px" : "16px" },
-    trackLabelControls: { marginLeft: "auto", display: "flex", gap: isMobile ? "1px" : "2px" },
+    trackLabelControls: { marginLeft: "auto", display: "flex", gap: isMobile ? "4px" : "2px", minWidth: isMobile ? "60px" : "auto" },
     trackLabelButton: { width: isMobile ? "20px" : "22px", height: isMobile ? "20px" : "22px", border: "none", backgroundColor: "transparent", color: colors.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", transition: "all 0.15s", touchAction: "none", WebkitTouchCallout: 'none', WebkitUserSelect: 'none' },
     dragHandle: { width: isMobile ? "20px" : "16px", height: isMobile ? "24px" : "22px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "grab", color: colors.textMuted, transition: "color 0.15s", touchAction: "none", WebkitTouchCallout: 'none', WebkitUserSelect: 'none' },
     dragHandleActive: { cursor: "grabbing", color: "#3b82f6" },
@@ -753,9 +750,9 @@ export const Timeline: React.FC<TimelineProps> = ({
     position: "absolute",
     top: 0,
     bottom: 0,
-    right: 0,
-    width: isMobile ? "20px" : "6px", // Bigger on mobile
-    cursor: "ew-resize",
+    right: isMobile ? -10 : 0, 
+width: isMobile ? "12px" : "6px", 
+cursor: "ew-resize",
     zIndex: 10,
     backgroundColor: isResizingHorizontal ? 'rgba(59, 130, 246, 0.4)' : 'transparent',
     transition: 'background-color 0.15s',
