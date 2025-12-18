@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Search } from 'lucide-react';
-import { templateCategories } from '../../../../../data/DashboardCardsData';
+import { useState, useMemo, useEffect } from "react";
+import { Search } from "lucide-react";
+import { templateCategories } from "../../../../../data/DashboardCardsData";
+import { TEMPLATE_NAME_TO_ID } from "../../../../../utils/simpleTemplateRegistry";
+import toast from "react-hot-toast";
 
 interface Template {
   name: string;
@@ -13,7 +15,13 @@ interface Template {
 //   [key: string]: Template[];
 // }
 
-const TemplateCard = ({ template, index }: { template: Template; index: number }) => {
+const TemplateCard = ({
+  template,
+  index,
+}: {
+  template: Template;
+  index: number;
+}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -21,29 +29,44 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
       className="relative group w-full"
       style={{
         animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
-        cursor: template.available ? 'pointer' : 'default'
+        cursor: template.available ? "pointer" : "default",
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={template.available ? () => alert(`Opening ${template.name} template...`) : undefined}
+      onClick={
+        template.available
+          ? () => {
+              const templateId = TEMPLATE_NAME_TO_ID[template.name || ""];
+              if (templateId) {
+                const location = `/editor?template=${templateId}`;
+                window.location.assign(location);
+              } else {
+                toast.error("This template is currently unavailable");
+                return;
+              }
+            }
+          : undefined
+      }
     >
       <div
         className={`relative overflow-hidden rounded-2xl transition-all duration-500 ${
           template.available
-            ? 'bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-purple-600/10'
-            : 'bg-gradient-to-br from-gray-400/10 via-gray-500/10 to-gray-600/10'
+            ? "bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-purple-600/10"
+            : "bg-gradient-to-br from-gray-400/10 via-gray-500/10 to-gray-600/10"
         }`}
         style={{
-          backdropFilter: 'blur(10px)',
+          backdropFilter: "blur(10px)",
           border: template.available
-            ? '1px solid rgba(147, 51, 234, 0.2)'
-            : '1px solid rgba(156, 163, 175, 0.2)',
-          transform: isHovered ? 'translateY(-4px) scale(1.01)' : 'translateY(0) scale(1)',
+            ? "1px solid rgba(147, 51, 234, 0.2)"
+            : "1px solid rgba(156, 163, 175, 0.2)",
+          transform: isHovered
+            ? "translateY(-4px) scale(1.01)"
+            : "translateY(0) scale(1)",
           boxShadow: isHovered
             ? template.available
-              ? '0 12px 30px rgba(147, 51, 234, 0.25)'
-              : '0 12px 30px rgba(0, 0, 0, 0.1)'
-            : '0 4px 6px rgba(0, 0, 0, 0.05)'
+              ? "0 12px 30px rgba(147, 51, 234, 0.25)"
+              : "0 12px 30px rgba(0, 0, 0, 0.1)"
+            : "0 4px 6px rgba(0, 0, 0, 0.05)",
         }}
       >
         {/* Animated background gradient */}
@@ -51,9 +74,9 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
             background: template.available
-              ? 'linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.1))'
-              : 'linear-gradient(45deg, rgba(156, 163, 175, 0.1), rgba(107, 114, 128, 0.1))',
-            animation: isHovered ? 'shimmer 2s infinite' : 'none'
+              ? "linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(59, 130, 246, 0.1))"
+              : "linear-gradient(45deg, rgba(156, 163, 175, 0.1), rgba(107, 114, 128, 0.1))",
+            animation: isHovered ? "shimmer 2s infinite" : "none",
           }}
         />
 
@@ -64,15 +87,16 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
             alt={template.name}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             style={{
-              filter: template.available ? 'none' : 'grayscale(80%)'
+              filter: template.available ? "none" : "grayscale(80%)",
             }}
           />
-          
+
           {/* Overlay gradient */}
           <div
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3))'
+              background:
+                "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3))",
             }}
           />
         </div>
@@ -81,14 +105,14 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
         <div className="p-3 sm:p-5">
           <h3
             className={`text-base sm:text-lg font-bold mb-1 sm:mb-2 ${
-              template.available ? 'text-purple-900' : 'text-gray-600'
+              template.available ? "text-purple-900" : "text-gray-600"
             }`}
           >
             {template.name}
           </h3>
           <p
             className={`text-xs sm:text-sm ${
-              template.available ? 'text-gray-700' : 'text-gray-500'
+              template.available ? "text-gray-700" : "text-gray-500"
             }`}
           >
             {template.description}
@@ -101,22 +125,22 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
             <div
               className="absolute top-4 left-4 w-2 h-2 bg-purple-400 rounded-full"
               style={{
-                animation: 'sparkle 1.5s ease-in-out infinite',
-                animationDelay: '0s'
+                animation: "sparkle 1.5s ease-in-out infinite",
+                animationDelay: "0s",
               }}
             />
             <div
               className="absolute top-8 right-8 w-1.5 h-1.5 bg-blue-400 rounded-full"
               style={{
-                animation: 'sparkle 1.5s ease-in-out infinite',
-                animationDelay: '0.3s'
+                animation: "sparkle 1.5s ease-in-out infinite",
+                animationDelay: "0.3s",
               }}
             />
             <div
               className="absolute bottom-12 left-8 w-1 h-1 bg-purple-300 rounded-full"
               style={{
-                animation: 'sparkle 1.5s ease-in-out infinite',
-                animationDelay: '0.6s'
+                animation: "sparkle 1.5s ease-in-out infinite",
+                animationDelay: "0.6s",
               }}
             />
           </>
@@ -124,31 +148,38 @@ const TemplateCard = ({ template, index }: { template: Template; index: number }
       </div>
     </div>
   );
-}
+};
 
 interface TemplateWithCategory extends Template {
   category: string;
 }
 
 export const TemplateGallery = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const availableTemplates: TemplateWithCategory[] = useMemo(() => {
     const query = searchQuery.toLowerCase();
     const available: TemplateWithCategory[] = [];
     Object.entries(templateCategories).forEach(([category, templates]) => {
-      (templates as Template[]).filter(t => t.available && (t.name.toLowerCase().includes(query) || t.description.toLowerCase().includes(query))).forEach(template => {
-        available.push({ ...template, category });
-      });
+      (templates as Template[])
+        .filter(
+          (t) =>
+            t.available &&
+            (t.name.toLowerCase().includes(query) ||
+              t.description.toLowerCase().includes(query))
+        )
+        .forEach((template) => {
+          available.push({ ...template, category });
+        });
     });
     return available.sort(() => Math.random() - 0.5);
   }, [searchQuery]);
@@ -156,9 +187,11 @@ export const TemplateGallery = () => {
   const comingSoonTemplates: TemplateWithCategory[] = useMemo(() => {
     const soon: TemplateWithCategory[] = [];
     Object.entries(templateCategories).forEach(([category, templates]) => {
-      (templates as Template[]).filter(t => !t.available).forEach(template => {
-        soon.push({ ...template, category });
-      });
+      (templates as Template[])
+        .filter((t) => !t.available)
+        .forEach((template) => {
+          soon.push({ ...template, category });
+        });
     });
     return soon.sort(() => Math.random() - 0.5);
   }, []);
@@ -201,10 +234,11 @@ export const TemplateGallery = () => {
               <div
                 className="relative rounded-xl sm:rounded-2xl overflow-hidden"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.05), rgba(59, 130, 246, 0.05))',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(147, 51, 234, 0.2)',
-                  width: '300px'
+                  background:
+                    "linear-gradient(135deg, rgba(147, 51, 234, 0.05), rgba(59, 130, 246, 0.05))",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(147, 51, 234, 0.2)",
+                  width: "300px",
                 }}
               >
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 w-4 h-4" />
@@ -259,7 +293,9 @@ export const TemplateGallery = () => {
       {/* No results */}
       {availableTemplates.length === 0 && searchQuery && (
         <div className="text-center py-12 sm:py-20">
-          <p className="text-gray-500 text-base sm:text-lg">No templates found matching your search.</p>
+          <p className="text-gray-500 text-base sm:text-lg">
+            No templates found matching your search.
+          </p>
         </div>
       )}
 

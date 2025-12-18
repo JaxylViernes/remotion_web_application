@@ -121,7 +121,7 @@ interface ExploreTemplatesGridProps {
   onViewAll?: () => void;
 }
 
-const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onItemClick, onViewAll }) => {
+const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onItemClick }) => {
   const gridItems = items.slice(0, 6);
 
   return (
