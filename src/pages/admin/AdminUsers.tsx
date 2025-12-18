@@ -169,6 +169,7 @@ export const AdminUsers: React.FC = () => {
   };
 
   const getSubscriptionBadge = (status: string | null, plan: string | null) => {
+    console.log(plan);
     if (!status) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">

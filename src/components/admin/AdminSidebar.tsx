@@ -4,7 +4,6 @@ import { useAdmin } from "../../contexts/AdminContext";
 import {
   FiHome,
   FiUsers,
-  FiBarChart2,
   FiLogOut,
   FiMenu,
   FiX,
