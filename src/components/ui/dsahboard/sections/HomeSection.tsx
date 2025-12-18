@@ -14,6 +14,7 @@ const selectedTemplateNames = [
   "Quote Spotlight",
   "Fake Text Conversation",
   "Photo Collage",
+  "Ken Burns Carousel",
 ];
 
 // Filter and order templates based on selectedTemplateNames
@@ -62,7 +63,7 @@ const ProTemplateCard: React.FC<ProTemplateCardProps> = ({ name, url, onClick, c
   return (
     <div
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 ${className}`}
+      className={`group relative overflow-hidden rounded-lg cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 ${className}`}
     >
       {/* Background Image with Zoom Effect */}
       <img
@@ -84,25 +85,25 @@ const ProTemplateCard: React.FC<ProTemplateCardProps> = ({ name, url, onClick, c
       </div>
 
       {/* Content at Bottom */}
-      <div className="absolute bottom-0 left-0 p-4 sm:p-5 w-full">
+      <div className="absolute bottom-0 left-0 p-2 sm:p-3 w-full">
         {/* Title */}
-        <h3 className="text-lg sm:text-xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors duration-300">
+        <h3 className="text-sm sm:text-base font-bold text-white mb-0.5 group-hover:text-purple-300 transition-colors duration-300">
           {name}
         </h3>
 
         {/* Social Proof Stats */}
-        <div className="flex items-center text-slate-300 text-sm gap-3">
+        <div className="flex items-center text-slate-300 text-xs gap-2">
           {/* Views */}
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span className="flex items-center gap-0.5">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            {views} Views
+            {views}
           </span>
           {/* Duration */}
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span className="flex items-center gap-0.5">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {duration}
@@ -121,7 +122,7 @@ interface ExploreTemplatesGridProps {
 }
 
 const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onItemClick, onViewAll }) => {
-  const gridItems = items.slice(0, 5);
+  const gridItems = items.slice(0, 6);
 
   return (
     <div className="space-y-4">
@@ -129,69 +130,29 @@ const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onIt
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           Explore Templates
         </h2>
-        <button
-          onClick={onViewAll}
-          className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"
-        >
-          View All →
-        </button>
       </div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Featured Large Card - Spans 2 columns */}
-        {gridItems[0] && (
-          <ProTemplateCard
-            name={gridItems[0].name}
-            description={gridItems[0].description}
-            url={gridItems[0].url}
-            onClick={() => onItemClick(gridItems[0].name, gridItems[0].description)}
-            className="md:col-span-2 h-64 md:h-72"
-          />
-        )}
-
-        {/* Medium Card */}
-        {gridItems[1] && (
-          <ProTemplateCard
-            name={gridItems[1].name}
-            description={gridItems[1].description}
-            url={gridItems[1].url}
-            onClick={() => onItemClick(gridItems[1].name, gridItems[1].description)}
-            className="h-64 md:h-72"
-          />
-        )}
-
-        {/* Tall Card - Spans 2 rows */}
-        {gridItems[2] && (
-          <ProTemplateCard
-            name={gridItems[2].name}
-            description={gridItems[2].description}
-            url={gridItems[2].url}
-            onClick={() => onItemClick(gridItems[2].name, gridItems[2].description)}
-            className="h-64 md:row-span-2 md:h-auto"
-          />
-        )}
-
-        {/* Bottom Row - 2 smaller cards */}
-        {gridItems[3] && (
-          <ProTemplateCard
-            name={gridItems[3].name}
-            description={gridItems[3].description}
-            url={gridItems[3].url}
-            onClick={() => onItemClick(gridItems[3].name, gridItems[3].description)}
-            className="h-56 md:h-48"
-          />
-        )}
-
-        {gridItems[4] && (
-          <ProTemplateCard
-            name={gridItems[4].name}
-            description={gridItems[4].description}
-            url={gridItems[4].url}
-            onClick={() => onItemClick(gridItems[4].name, gridItems[4].description)}
-            className="md:col-span-2 h-56 md:h-48"
-          />
-        )}
+      {/* Horizontal Row with Alternating Vertical Offset Layout - All Cards Visible */}
+      <div className="flex flex-wrap lg:flex-nowrap gap-2 md:gap-3 lg:gap-3 justify-center items-start">
+        {gridItems.map((item, index) => (
+          <div
+            key={index}
+            className={`
+              w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.4rem)] lg:flex-1 lg:max-w-[320px] xl:max-w-[360px]
+              ${index % 2 === 0 ? '' : 'mt-6 md:mt-8 lg:mt-12'}
+              transition-all duration-300
+            `}
+            style={{ aspectRatio: '9/16' }}
+          >
+            <ProTemplateCard
+              name={item.name}
+              description={item.description}
+              url={item.url}
+              onClick={() => onItemClick(item.name, item.description)}
+              className="w-full h-full"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -295,7 +256,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
       </div>
 
       {/* === Main Content === */}
-      <div className="relative z-10 w-full space-y-12 pb-32">
+      <div className="relative z-10 w-full space-y-4 pb-0">
         {/* === Hero Section - Dynamic & Motion-Inspired === */}
         <div className="relative mx-1 sm:mx-2 lg:mx-3 min-h-[240px] sm:min-h-[280px] rounded-3xl overflow-hidden">
           {/* Layered Background with Depth */}
@@ -597,33 +558,21 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
             selectedDescription={selectedDescription}
           />
 
-          {/* === Explore Templates Section === */}
-          <ExploreTemplatesGrid
-            items={discoverViralMotions}
-            onItemClick={handleOpenPreview}
-            onViewAll={() => setNewProjectOpen?.(true)}
-          />
-
           {/* === AI Tools Section === */}
-          <div className="mt-12">
+          <div className="mb-6">
             {/* Section Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <h3 className="text-xl font-bold text-slate-800">AI Tools</h3>
-              <div className="h-px bg-slate-200 flex-grow" />
-              <button
-                onClick={handleToolsClick}
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"
-              >
-                View All →
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-2xl font-bold text-slate-800">Our Tools</h3>
             </div>
 
-            {/* AI Tools Grid - Available Tools */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* AI Tools Horizontal Carousel */}
+            <div className="relative group/carousel">
+              {/* Scrollable Container */}
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
               {/* AI Background Remover - Transparency Grid Design */}
               <div
                 onClick={handleToolsClick}
-                className="relative h-64 w-full rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20"
+                className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20"
               >
                 {/* Checkerboard Pattern Background */}
                 <div
@@ -647,20 +596,21 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 {/* Shine Effect on Hover */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 {/* Popular Badge */}
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg">
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="px-2 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg">
                     Popular
                   </span>
                 </div>
                 {/* Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
-                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-5 rounded-2xl mb-4 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-lg mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">AI Background Remover</h3>
-                  <p className="text-white/60 text-sm">Remove backgrounds instantly with AI precision</p>
+                  <h3 className="text-sm font-bold text-white mb-0.5">Image Generator (AI)</h3>
+                  <p className="text-white/60 text-[10px]">Create Al images and remove backgrounds
+automatically</p>
                 </div>
                 {/* Border Glow */}
                 <div className="absolute inset-0 rounded-2xl border border-purple-500/30 group-hover:border-purple-400/50 transition-colors duration-300" />
@@ -669,7 +619,7 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
               {/* VEO3 Video Generator - Neon Waveform Design */}
               <div
                 onClick={handleToolsClick}
-                className="relative h-64 w-full rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/20 bg-slate-900"
+                className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/20 bg-slate-900"
               >
                 {/* Dark Gradient Base */}
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
@@ -678,44 +628,42 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="absolute top-0 -right-4 w-48 h-48 bg-pink-600 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }} />
                 <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
                 {/* New Badge */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <span className="px-3 py-1.5 text-xs font-bold text-slate-900 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full shadow-lg">
+                <div className="absolute top-2 left-2 z-10 flex gap-2">
+                  <span className="px-2 py-1 text-[10px] font-bold text-slate-900 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full shadow-lg">
                     New
                   </span>
                 </div>
                 {/* Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
                   {/* Play Button */}
-                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-5 rounded-full mb-4 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
-                    <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-full mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
+                    <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">VEO3 Video Generator</h3>
-                  <p className="text-white/60 text-sm mb-4">Generate stunning videos with AI</p>
+                  <h3 className="text-sm font-bold text-white mb-0.5">Video Generator (AI)</h3>
+                  <p className="text-white/60 text-[10px]">Generate videos automatically from text
+or prompts.</p>
                 </div>
                 {/* Waveform Bars */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-end gap-1 z-10">
-                  <div className="w-1.5 h-4 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" />
-                  <div className="w-1.5 h-8 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-                  <div className="w-1.5 h-5 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-1.5 h-10 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.3s' }} />
-                  <div className="w-1.5 h-6 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                  <div className="w-1.5 h-3 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
-                  <div className="w-1.5 h-7 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.6s' }} />
-                  <div className="w-1.5 h-4 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.7s' }} />
-                  <div className="w-1.5 h-9 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
-                  <div className="w-1.5 h-5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.9s' }} />
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-end gap-0.5 z-10">
+                  <div className="w-1 h-2.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" />
+                  <div className="w-1 h-5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-1 h-3 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-1 h-6 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.3s' }} />
+                  <div className="w-1 h-4 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                  <div className="w-1 h-2 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="w-1 h-4.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.6s' }} />
+                  <div className="w-1 h-2.5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.7s' }} />
+                  <div className="w-1 h-5.5 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
+                  <div className="w-1 h-3 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.9s' }} />
                 </div>
                 {/* Border Glow */}
                 <div className="absolute inset-0 rounded-2xl border border-pink-500/30 group-hover:border-pink-400/50 transition-colors duration-300" />
               </div>
-            </div>
 
-            {/* Coming Soon Tools */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Coming Soon Tool 1: YouTube Video Downloader */}
-              <div className="relative h-48 w-full rounded-2xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
                 {/* Subtle Grid Pattern */}
                 <div className="absolute inset-0 opacity-10" style={{
                   backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
@@ -724,15 +672,15 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-orange-900/20" />
                 {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl mb-3">
-                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-300 mb-1">YouTube Downloader</h3>
-                  <p className="text-slate-500 text-sm mb-3">Download videos in high quality</p>
-                  <span className="inline-block px-4 py-1.5 text-xs font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Video Downloader</h3>
+                  <p className="text-slate-500 text-[10px] mb-1.5">Download videos from Youtube</p>
+                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
                     Coming Soon
                   </span>
                 </div>
@@ -740,33 +688,105 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
               </div>
 
-              {/* Coming Soon Tool 2: More AI Tools */}
-              <div className="relative h-48 w-full rounded-2xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+              {/* Coming Soon Tool 2: Smart Captions */}
+              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
                 {/* Subtle Grid Pattern */}
                 <div className="absolute inset-0 opacity-10" style={{
                   backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
                   backgroundSize: '20px 20px'
                 }} />
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-transparent to-blue-900/20" />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-indigo-900/20" />
                 {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl mb-3">
-                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-300 mb-1">More AI Tools</h3>
-                  <p className="text-slate-500 text-sm mb-3">Enhance your content creation</p>
-                  <span className="inline-block px-4 py-1.5 text-xs font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Smart Captions</h3>
+                  <p className="text-slate-500 text-[10px] mb-1.5">Auto-generate editable subtitles</p>
+                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
                     Coming Soon
                   </span>
                 </div>
                 {/* Border */}
                 <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
               </div>
+
+              {/* Coming Soon Tool 3: AI Story Narrator */}
+              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                {/* Subtle Grid Pattern */}
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+                  backgroundSize: '20px 20px'
+                }} />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-violet-900/20" />
+                {/* Lock Icon and Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">AI Story Narrator</h3>
+                  <p className="text-slate-500 text-[10px] mb-1.5">Convert text to speech or modify voices</p>
+                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                    Coming Soon
+                  </span>
+                </div>
+                {/* Border */}
+                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+              </div>
+
+              {/* Coming Soon Tool 4: Voice Studio */}
+              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                {/* Subtle Grid Pattern */}
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+                  backgroundSize: '20px 20px'
+                }} />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-teal-900/20" />
+                {/* Lock Icon and Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Voice Studio</h3>
+                  <p className="text-slate-500 text-[10px] mb-1.5">Transform recordings into different voice styles</p>
+                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                    Coming Soon
+                  </span>
+                </div>
+                {/* Border */}
+                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+              </div>
+              </div>
+
+              {/* Next Arrow Button */}
+              <button
+                onClick={(e) => {
+                  e.currentTarget.previousElementSibling?.scrollBy({ left: 300, behavior: 'smooth' });
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 hover:bg-slate-50 z-10"
+              >
+                <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
+
+          {/* === Explore Templates Section === */}
+          <ExploreTemplatesGrid
+            items={discoverViralMotions}
+            onItemClick={handleOpenPreview}
+            onViewAll={() => setNewProjectOpen?.(true)}
+          />
 
 {/* Recently Created Templates */}
           {/* {projects.length > 0 && (
