@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { backendPrefix } from "../../config";
+import toast from "react-hot-toast";
 
 export const useProjectHooks = () => {
   const [projects, setProjects] = useState<any[]>([]);
@@ -76,8 +77,11 @@ export const useProjectHooks = () => {
       setProjects((prev) =>
         prev.map((p) => (p.id === id ? { ...p, title: newTitle } : p))
       );
+
+      toast.success("Project renamed");
     } catch (err) {
       console.error("Error renaming project:", err);
+      toast.error("Error renaming project");
       throw err;
     }
   };

@@ -10,6 +10,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
@@ -35,6 +36,7 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingProject, setRenamingProject] = useState<any>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
 
   const {
     newProjectOpen,
@@ -82,15 +84,21 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
   };
 
   const handleRenameConfirm = async () => {
-    if (renamingProject && newTitle.trim()) {
-      try {
-        await onRename(renamingProject.id, newTitle.trim());
-        setRenameDialogOpen(false);
-        setRenamingProject(null);
-        setNewTitle("");
-      } catch (error) {
-        // Handle error if needed
-      }
+    if (!renamingProject || !newTitle.trim() || isRenaming) return;
+
+    try {
+      setIsRenaming(true);
+
+      await onRename(renamingProject.id, newTitle.trim());
+
+      setRenameDialogOpen(false);
+      setRenamingProject(null);
+      setNewTitle("");
+    } catch (error) {
+      // Optional: show snackbar / toast here
+      console.error("Failed to rename project", error);
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -321,7 +329,8 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
                         {project.title}
                       </h3>
                       <p className="text-gray-600 text-[10px] mb-2 drop-shadow-sm">
-                        Last edited: {new Date(project.lastUpdated).toLocaleDateString(
+                        Last edited:{" "}
+                        {new Date(project.lastUpdated).toLocaleDateString(
                           "en-US",
                           {
                             month: "short",
@@ -372,11 +381,12 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
       {/* Rename Dialog */}
       <Dialog
         open={renameDialogOpen}
-        onClose={() => setRenameDialogOpen(false)}
+        onClose={() => !isRenaming && setRenameDialogOpen(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Rename Project</DialogTitle>
+
         <DialogContent>
           <TextField
             autoFocus
@@ -385,18 +395,33 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
             fullWidth
             variant="outlined"
             value={newTitle}
+            disabled={isRenaming}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !isRenaming) {
                 handleRenameConfirm();
               }
             }}
           />
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setRenameDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleRenameConfirm} variant="contained">
-            Rename
+          <Button
+            onClick={() => setRenameDialogOpen(false)}
+            disabled={isRenaming}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleRenameConfirm}
+            variant="contained"
+            disabled={isRenaming || !newTitle.trim()}
+            startIcon={
+              isRenaming ? <CircularProgress size={18} color="inherit" /> : null
+            }
+          >
+            {isRenaming ? "Renaming..." : "Rename"}
           </Button>
         </DialogActions>
       </Dialog>
