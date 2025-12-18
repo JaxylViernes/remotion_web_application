@@ -27,14 +27,14 @@ export const useRendersHooks = () =>{
               setRenders(sortedRenders);
             }
 
-            console.log("rendersdata", data);
+            // console.log("rendersdata", data);
           })
           .catch((err) => console.error("❌ Failed to fetch renders:", err))
           .finally(() => setLoadingRenders(false));
       };
     
       const handleDeleteRenders = async () => {
-        console.log("DELETE")
+        // console.log("DELETE")
         try {
           await Promise.all(
             selectedRenders.map((id) =>

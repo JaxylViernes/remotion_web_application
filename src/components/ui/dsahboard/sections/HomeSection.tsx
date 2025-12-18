@@ -31,7 +31,7 @@ interface VideoItem {
 // Mock view counts for social proof
 const templateViews: Record<string, string> = {
   "Split Screen": "12.5k",
-  "Reddit Post Narration": "8.2k",
+  "Dancing People": "8.2k",
   "Quote Spotlight": "15.3k",
   "Fake Text Conversation": "6.1k",
   "Photo Collage": "9.7k",
@@ -40,7 +40,7 @@ const templateViews: Record<string, string> = {
 // Template durations
 const templateDurations: Record<string, string> = {
   "Split Screen": "30s",
-  "Reddit Post Narration": "60s",
+  "Dancing People": "60s",
   "Quote Spotlight": "15s",
   "Fake Text Conversation": "45s",
   "Photo Collage": "20s",

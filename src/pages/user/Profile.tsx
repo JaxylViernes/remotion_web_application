@@ -85,7 +85,6 @@ interface ProfilePageProps {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   userData,
-  userDatasets,
   userUploads,
   projects,
   renders,
@@ -604,7 +603,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <Tab.Panel>
             {/* Stats Grid */}
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
               layout
             >
               {[
@@ -629,13 +628,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   color: "text-purple-500",
                   action: () => console.log("Navigate to uploads"),
                 },
-                {
-                  label: "Datasets",
-                  value: userDatasets.length,
-                  icon: <FiTrendingUp />,
-                  color: "text-green-500",
-                  action: () => console.log("Navigate to datasets"),
-                },
               ].map((stat, idx) => (
                 <motion.div
                   key={idx}
@@ -646,7 +638,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-sm text-gray-500 mb-2">{stat.label}</p>
-                      <p className="text-3xl font-bold text-gray-800">
+                      <p className="text-2xl font-bold text-gray-800">
                         {stat.value}
                       </p>
                     </div>
@@ -711,10 +703,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
                 >
                   <h3 className="font-semibold text-gray-800 mb-2">
-                    Rendering History
+                    Exporting History
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Your daily render count.
+                    Your daily export count.
                   </p>
 
                   {filteredRenderingData.every((d) => d.renders === 0) ? (
@@ -771,7 +763,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                             <p className="text-xs text-blue-700 mt-1">
                               {chartTimeRange === "all" ? (
                                 <>
-                                  You've rendered{" "}
+                                  You've exported{" "}
                                   {filteredRenderingData.reduce(
                                     (sum, d) => sum + d.renders,
                                     0
@@ -783,11 +775,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                       (d) => d.renders
                                     )
                                   )}{" "}
-                                  renders.
+                                  exports.
                                 </>
                               ) : (
                                 <>
-                                  You rendered{" "}
+                                  You exported{" "}
                                   {filteredRenderingData.reduce(
                                     (sum, d) => sum + d.renders,
                                     0
@@ -898,10 +890,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 {/* Rendering History Chart - Mobile */}
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <h4 className="font-semibold text-gray-800 mb-2">
-                    Rendering History
+                    Exporting History
                   </h4>
                   <p className="text-xs text-gray-500 mb-4">
-                    Your daily render count.
+                    Your daily export count.
                   </p>
 
                   {filteredRenderingData.every((d) => d.renders === 0) ? (
@@ -985,7 +977,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                                       (d) => d.renders
                                     )
                                   )}{" "}
-                                  renders.
+                                  exports.
                                 </>
                               )}
                             </p>

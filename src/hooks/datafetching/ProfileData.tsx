@@ -20,7 +20,7 @@ export const useProfileHooks = () => {
           return res.json();
         })
         .then((data) => {
-          console.log("User data: ", data);
+          // console.log("User data: ", data);
           
           
           if (data.success && data.user) {

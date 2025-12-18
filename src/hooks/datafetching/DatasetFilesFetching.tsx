@@ -18,7 +18,7 @@ export const useDatasetsFetching = () => {
         return res.json();
       })
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         setUserDatasets(data);
       })
       .catch((err) => console.error("❌ Failed to fetch user uploads:", err))
