@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiSearch,
   FiImage,
@@ -7,7 +8,7 @@ import {
   FiCheckSquare,
   FiSquare,
   FiVideo,
-  FiDownload,
+  FiEdit,
   FiX,
 } from "react-icons/fi";
 
@@ -28,41 +29,42 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
   setSelectedUploads,
   handleDeleteUploads,
 }) => {
+  const navigate = useNavigate();
   const [currentFolder, setCurrentFolder] = useState<FolderType>("videos");
   const [deleting, setDeleting] = useState(false);
   const [isFileSelectMode, setIsFileSelectMode] = useState(false);
   const [previewMedia, setPreviewMedia] = useState<any | null>(null);
+  const [videoDurations, setVideoDurations] = useState<Record<number, number>>({});
 
   const [mediaSearchQuery, setMediaSearchQuery] = useState("");
-  const [mediaDateFilter, setMediaDateFilter] = useState<"all" | "today" | "week" | "month" | "year">("all");
-  const [mediaSizeFilter, setMediaSizeFilter] = useState<"all" | "small" | "medium" | "large">("all");
+  const [mediaSourceFilter, setMediaSourceFilter] = useState<"all" | "uploads" | "stock">("all");
   const [mediaSortBy, setMediaSortBy] = useState<"date" | "size" | "name">("date");
 
-  const isWithinDateRange = (date: Date, range: string) => {
-    const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+  // const isWithinDateRange = (date: Date, range: string) => {
+  //   const now = new Date();
+  //   const diffTime = now.getTime() - date.getTime();
+  //   const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-    switch (range) {
-      case "today":
-        return diffDays < 1;
-      case "week":
-        return diffDays < 7;
-      case "month":
-        return diffDays < 30;
-      case "year":
-        return diffDays < 365;
-      default:
-        return true;
-    }
-  };
+  //   switch (range) {
+  //     case "today":
+  //       return diffDays < 1;
+  //     case "week":
+  //       return diffDays < 7;
+  //     case "month":
+  //       return diffDays < 30;
+  //     case "year":
+  //       return diffDays < 365;
+  //     default:
+  //       return true;
+  //   }
+  // };
 
-  const getSizeCategory = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    if (mb < 1) return "small";
-    if (mb < 10) return "medium";
-    return "large";
-  };
+  // const getSizeCategory = (bytes: number) => {
+  //   const mb = bytes / (1024 * 1024);
+  //   if (mb < 1) return "small";
+  //   if (mb < 10) return "medium";
+  //   return "large";
+  // };
 
   const formatFileSize = (bytes: number) => {
     if (!bytes) return "Unknown";
@@ -95,6 +97,12 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
     });
   };
 
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const filteredUploads = useMemo(() => {
     if (!uploads || uploads.length === 0) return [];
 
@@ -114,18 +122,11 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
       });
     }
 
-    if (mediaDateFilter !== "all") {
+    if (mediaSourceFilter !== "all") {
       filtered = filtered.filter((u) => {
-        if (!u.uploadedAt) return false;
-        const date = new Date(u.uploadedAt);
-        return isWithinDateRange(date, mediaDateFilter);
-      });
-    }
-
-    if (mediaSizeFilter !== "all") {
-      filtered = filtered.filter((u) => {
-        if (!u.size) return false;
-        return getSizeCategory(u.size) === mediaSizeFilter;
+        if (mediaSourceFilter === "uploads") return u.source === "upload" || u.url?.includes("cloudinary");
+        if (mediaSourceFilter === "stock") return u.source === "stock";
+        return true;
       });
     }
 
@@ -147,7 +148,7 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
     });
 
     return filtered;
-  }, [uploads, currentFolder, mediaSearchQuery, mediaDateFilter, mediaSizeFilter, mediaSortBy]);
+  }, [uploads, currentFolder, mediaSearchQuery, mediaSourceFilter, mediaSortBy]);
 
   const startDelete = async () => {
     setDeleting(true);
@@ -191,12 +192,26 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
 
   const clearMediaFilters = () => {
     setMediaSearchQuery("");
-    setMediaDateFilter("all");
-    setMediaSizeFilter("all");
+    setMediaSourceFilter("all");
     setMediaSortBy("date");
   };
 
-  const hasActiveMediaFilters = mediaSearchQuery || mediaDateFilter !== "all" || mediaSizeFilter !== "all" || mediaSortBy !== "date";
+
+  const handleEdit = (media: any) => {
+  navigate('/editor', {
+    state: {
+      fromMyFiles: true,
+      mediaData: {
+        url: media.url,
+        type: media.type,
+        name: media.url?.split('/').pop() || 'media',
+        id: media.id,
+      }
+    }
+  });
+};
+
+  const hasActiveMediaFilters = mediaSearchQuery || mediaSourceFilter !== "all" || mediaSortBy !== "date";
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -260,52 +275,24 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
                   className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-2 flex-1">
-                <select
-                  value={mediaDateFilter}
-                  onChange={(e) => setMediaDateFilter(e.target.value as "all" | "today" | "week" | "month" | "year")}
-                  className="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="year">This Year</option>
-                </select>
-                <select
-                  value={mediaSizeFilter}
-                  onChange={(e) => setMediaSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
-                  className="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-                >
-                  <option value="all">All Sizes</option>
-                  <option value="small">Small (&lt; 1MB)</option>
-                  <option value="medium">Medium (1-10MB)</option>
-                  <option value="large">Large (&gt; 10MB)</option>
-                </select>
-                <select
-                  value={mediaSortBy}
-                  onChange={(e) => setMediaSortBy(e.target.value as "date" | "size" | "name")}
-                  className="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-                >
-                  <option value="date">Sort: Date</option>
-                  <option value="size">Sort: Size</option>
-                  <option value="name">Sort: Name</option>
-                </select>
-                {hasActiveMediaFilters && (
-                  <button
-                    onClick={clearMediaFilters}
-                    className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium whitespace-nowrap"
-                  >
-                    Clear filters
-                  </button>
-                )}
-                <span className="hidden lg:block ml-auto text-sm text-gray-600 whitespace-nowrap">
-                  {filteredUploads.length} of {uploads.length}
-                </span>
-              </div>
-            </div>
-            <div className="lg:hidden text-sm text-gray-600 text-right">
-              {filteredUploads.length} of {uploads.length} files
+             <select
+                value={mediaSourceFilter}
+                onChange={(e) => setMediaSourceFilter(e.target.value as "all" | "uploads" | "stock")}
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+              >
+                <option value="all">{currentFolder === "videos" ? "All Videos" : "All Images"}</option>
+                <option value="uploads">User Uploads</option>
+                <option value="stock">{currentFolder === "videos" ? "Stock Videos" : "Stock Images"}</option>
+              </select>
+              <select
+                value={mediaSortBy}
+                onChange={(e) => setMediaSortBy(e.target.value as "date" | "size" | "name")}
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+              >
+                <option value="date">Sort: Date</option>
+                <option value="size">Sort: Size</option>
+                <option value="name">Sort: Name</option>
+              </select>
             </div>
           </div>
         )}
@@ -336,15 +323,15 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
                 {filteredUploads.map((u) => {
                   const selected = selectedUploads.includes(u.id);
                   return (
                     <div
-                      key={u.id}
-                      onClick={() => handleMediaClick(u)}
-                      onContextMenu={(e) => handleMediaRightClick(u, e)}
-                      className={`relative rounded-xl border transition-all cursor-pointer bg-white hover:shadow-md overflow-hidden ${
+  key={u.id}
+  onClick={() => handleMediaClick(u)}
+  onContextMenu={(e) => handleMediaRightClick(u, e)}
+  className={`relative rounded-xl border transition-all cursor-pointer bg-white hover:shadow-md overflow-hidden ${
                         selected
                           ? "border-indigo-400 ring-2 ring-indigo-200"
                           : "border-gray-200"
@@ -355,7 +342,7 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
                           <FiCheck size={14} />
                         </div>
                       )}
-                      <div className="w-full h-40 bg-gray-100 overflow-hidden relative">
+                      <div className="w-full bg-gray-200 overflow-hidden relative rounded-2xl">
                         {u.type === "image" ? (
                           <img
                             src={u.url}
@@ -363,37 +350,31 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <video
-                            src={u.url}
-                            muted
-                            playsInline
-                            className="w-full h-full object-cover"
-                            onMouseOver={(e) => {
-                              e.currentTarget.play();
-                              e.currentTarget.playbackRate = 2;
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.pause();
-                              e.currentTarget.currentTime = 0;
-                            }}
-                          />
-                        )}
-                      </div>
-                      <div className="p-3 border-t border-gray-100 bg-white">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold text-gray-800 uppercase">
-                            {u.type}
-                          </span>
-                          {u.size && (
-                            <span className="text-xs text-gray-500">
-                              {formatFileSize(u.size)}
-                            </span>
-                          )}
-                        </div>
-                        {u.uploadedAt && (
-                          <p className="text-xs text-gray-400">
-                            {formatDate(u.uploadedAt)}
-                          </p>
+                          <>
+                            <video
+                              src={u.url}
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover"
+                              onLoadedMetadata={(e) => {
+                                const duration = e.currentTarget.duration;
+                                setVideoDurations((prev) => ({ ...prev, [u.id]: duration }));
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.play();
+                                e.currentTarget.playbackRate = 2;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.pause();
+                                e.currentTarget.currentTime = 0;
+                              }}
+                            />
+                            {videoDurations[u.id] && (
+                              <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+                                {formatDuration(videoDurations[u.id])}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -436,15 +417,15 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
           onClick={() => setPreviewMedia(null)}
         >
           <div
-            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+            className="bg-white rounded-2xl max-w-[90vw] max-h-[90vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {previewMedia.type === "image" ? "Image Preview" : "Video Preview"}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-800 truncate max-w-md">
+  {previewMedia.url?.split('/').pop() || 'File Preview'}
+</h3>
                 <p className="text-sm text-gray-500">
                   {formatDate(previewMedia.uploadedAt)} • {formatFileSize(previewMedia.size)}
                 </p>
@@ -458,20 +439,20 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
             </div>
 
             {/* Media Content */}
-            <div className="p-4 bg-gray-50">
-              <div className="flex items-center justify-center max-h-[60vh] overflow-hidden rounded-lg">
+            <div className="p-2 bg-gray-50">
+              <div className="flex items-center justify-center overflow-hidden rounded-lg">
                 {previewMedia.type === "image" ? (
                   <img
                     src={previewMedia.url}
                     alt="Preview"
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                    className="max-w-[80vw] max-h-[70vh] object-contain rounded-lg"
                   />
                 ) : (
                   <video
                     src={previewMedia.url}
                     controls
                     autoPlay
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                    className="max-w-[80vw] max-h-[70vh] object-contain rounded-lg"
                   />
                 )}
               </div>
@@ -479,16 +460,17 @@ export const MyFilesSection: React.FC<MyFilesSectionProps> = ({
 
             {/* Footer with Download Button */}
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-              <a
-                href={previewMedia.url}
-                download={`${previewMedia.type}-${previewMedia.id || Date.now()}.${previewMedia.type === "image" ? "png" : "mp4"}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90 transition shadow-md"
-              >
-                <FiDownload size={18} />
-                Download
-              </a>
+              
+               <button
+  onClick={() => {
+    setPreviewMedia(null);
+    handleEdit(previewMedia);
+  }}
+  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90 transition shadow-md"
+>
+  <FiEdit size={18} />
+  Edit
+</button>
             </div>
           </div>
         </div>

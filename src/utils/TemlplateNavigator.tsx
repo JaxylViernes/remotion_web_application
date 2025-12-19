@@ -22,7 +22,7 @@ export const getTemplateRoute = (templateId: number, projectId: number) => {
     case 9: // Fake Text Conversation
       return `/project/${projectId}/fakechat`;
     case 10: // Reddit Narration
-      return `/project/${projectId}/redditvideo`;
+      return `/project/${projectId}/reddit-wizard`;
     case 11: // Story Narration
       return `/project/${projectId}/storytelling`;
     case 12: // Kinetic Text

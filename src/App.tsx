@@ -20,6 +20,7 @@ import LoginLoading from "./pages/auth/LoginLoader.tsx";
 import Dashboard from "./pages/user/D2.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
 import DynamicLayerEditor from "./components/editors/DynamicLayerEditor.tsx";
+import RedditVideoWizard from "./components/editors/RedditVideoWizard.tsx";
 import SubscriptionPage from "./pages/subscription/SubscriptionPage.tsx";
 
 // Editors
@@ -434,6 +435,16 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <DynamicLayerEditor />
+          </ProtectedRoute>
+        }
+      />
+
+
+        <Route
+        path="/reddit-wizard"
+        element={
+          <ProtectedRoute>
+            <RedditVideoWizard />
           </ProtectedRoute>
         }
       />

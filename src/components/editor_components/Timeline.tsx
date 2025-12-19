@@ -259,11 +259,21 @@ export const Timeline: React.FC<TimelineProps> = ({
     }
   }, [onTrackSelect]);
 
-  const handleTimelineClick = useCallback((_e: React.MouseEvent) => {
-    if (onTrackSelect) {
-      onTrackSelect(null);
-    }
-  }, [onTrackSelect]);
+  
+
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+  const rect = trackAreaRef.current?.getBoundingClientRect();
+  if (rect) {
+    const x = e.clientX - rect.left + (trackAreaRef.current?.scrollLeft || 0);
+    const frame = pixelToFrame(x);
+    onFrameChange(Math.max(0, Math.min(totalFrames, frame)));
+  }
+  if (onTrackSelect) {
+    onTrackSelect(null);
+  }
+}, [onTrackSelect, pixelToFrame, totalFrames, onFrameChange]);
+
+
 
   const handleRulerClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const rect = rulerRef.current?.getBoundingClientRect();

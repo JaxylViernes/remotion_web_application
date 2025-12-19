@@ -2,10 +2,15 @@ import { useEffect, useRef, useCallback } from "react";
 import type { Layer } from "../../components/remotion_compositions/DynamicLayerComposition";
 
 const STORAGE_PREFIX = "editor_state_";
+const EXPIRATION_MS = 1 * 60 * 1000; 
 
 interface PersistedState {
   layers: Layer[];
   savedAt: number;
+}
+
+function isExpired(savedAt: number): boolean {
+  return Date.now() - savedAt > EXPIRATION_MS;
 }
 
 export function getPersistedLayersForTemplate(templateId: number): Layer[] | null {
@@ -15,6 +20,14 @@ export function getPersistedLayersForTemplate(templateId: number): Layer[] | nul
     if (!stored) return null;
     const parsed: PersistedState = JSON.parse(stored);
     if (!parsed.layers || parsed.layers.length === 0) return null;
+    
+    // Check if the saved state has expired (30 minutes)
+    if (isExpired(parsed.savedAt)) {
+      console.log("⏰ Persisted state expired for template:", templateId);
+      localStorage.removeItem(key);
+      return null;
+    }
+    
     console.log("📂 Found persisted state for template:", templateId);
     return parsed.layers;
   } catch {

@@ -1,6 +1,7 @@
 import React from 'react';
-import type { Layer, VideoLayer, ImageLayer } from '../components/remotion_compositions/DynamicLayerComposition';
+import type { Layer, VideoLayer, ImageLayer, TextLayer, AudioLayer } from '../components/remotion_compositions/DynamicLayerComposition';
 import { DynamicLayerComposition } from '../components/remotion_compositions/DynamicLayerComposition';
+import { MyRedditVideo } from '../components/remotion_compositions/RedditTemplate';
 import { generateId } from '../utils/layerHelper';
 
 export interface TemplateDefinition {
@@ -352,7 +353,242 @@ export const TEMPLATES: Record<number, TemplateDefinition> = {
     calculateDuration: (layers) => Math.max(...layers.map(l => l.endFrame)),
   },
 
-  // ... [Keep Templates 19, 9, 30 as they were] ...
+
+
+  10: {
+    id: 10,
+    name: 'redditnarration',
+    displayName: 'Reddit Post Narration',
+    description: 'Convert Reddit posts into AI narrated videos with karaoke text',
+    category: 'Voiceover',
+    thumbnailUrl: '/template_previews/RedditNarration.mp4',
+    
+    // Use MyRedditVideo composition
+    composition: MyRedditVideo,
+    compositionId: 'MyRedditVideo',
+    
+    createDefaultLayers: () => {
+      // Check if coming from wizard - clear any persisted layers
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromWizard = urlParams.get('fromWizard') === 'true';
+        
+        if (fromWizard) {
+          // Clear persisted layers for template 10 to force fresh creation
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('template-10') || key.includes('editor-layers-10') || key.includes('persisted') && key.includes('10'))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          console.log("🧹 Cleared persisted layers for template 10 (fromWizard)");
+        }
+      }
+
+      // Get config from wizard
+      const storedConfig = typeof window !== 'undefined' 
+        ? sessionStorage.getItem('redditVideoConfig') 
+        : null;
+      
+      let config: any = null;
+      if (storedConfig) {
+        try {
+          config = JSON.parse(storedConfig);
+          console.log("📦 Template 10 loaded config:", {
+            hasVoiceover: !!config?.audio?.voiceoverPath,
+            voiceoverLength: config?.audio?.voiceoverPath?.length || 0,
+            wordsCount: config?.script?.words?.length || 0,
+          });
+        } catch (e) {
+          console.error('Failed to parse reddit config:', e);
+        }
+      }
+
+      // Calculate duration
+      const scriptDuration = config?.script?.duration || 30;
+      const introDuration = 3;
+      const totalDuration = introDuration + scriptDuration;
+      const totalFrames = Math.ceil(totalDuration * 30);
+
+      // Create timeline layers
+      const layers: Layer[] = [
+        {
+          id: 'reddit-bg-video',
+          type: 'video',
+          name: '🎬 Background Video',
+          startFrame: 0,
+          endFrame: totalFrames,
+          visible: true,
+          locked: false,
+          src: config?.video?.backgroundVideo || 'https://res.cloudinary.com/dcu9xuof0/video/upload/v1765260195/Subway_Surfers_2024_-_Gameplay_4K_9x16_No_Copyright_n4ym8w.mp4',
+          position: { x: 50, y: 50 },
+          size: { width: 100, height: 100 },
+          rotation: 0,
+          opacity: 1,
+          volume: 0,
+          loop: true,
+          objectFit: 'cover',
+        } as VideoLayer,
+
+        {
+          id: 'reddit-card-intro',
+          type: 'text',
+          name: '📋 Reddit Card (Intro)',
+          startFrame: 0,
+          endFrame: introDuration * 30,
+          visible: true,
+          locked: true,
+          content: config?.script?.title || 'Reddit Post Title',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 3,
+          fontColor: '#1a1a1b',
+          fontWeight: '700',
+          textAlign: 'center',
+          position: { x: 50, y: 50 },
+          size: { width: 80, height: 20 },
+          rotation: 0,
+          opacity: 1,
+        } as TextLayer,
+
+        {
+          id: 'reddit-karaoke-story',
+          type: 'text',
+          name: '📖 Karaoke Story',
+          startFrame: introDuration * 30,
+          endFrame: totalFrames,
+          visible: true,
+          locked: true,
+          content: `Story with ${config?.script?.words?.length || 0} timed words`,
+          fontFamily: config?.style?.fontFamily || 'Montserrat, sans-serif',
+          fontSize: 3,
+          fontColor: config?.style?.fontColor || '#ffffff',
+          fontWeight: '700',
+          textAlign: 'center',
+          position: { x: 50, y: 50 },
+          size: { width: 85, height: 60 },
+          rotation: 0,
+          opacity: 1,
+        } as TextLayer,
+
+        // VOICEOVER - Always present in timeline
+        {
+          id: 'reddit-voiceover',
+          type: 'audio',
+          name: '🎙️ AI Voiceover',
+          startFrame: introDuration * 30,
+          endFrame: totalFrames,
+          visible: true,
+          locked: false,
+          src: config?.audio?.voiceoverPath || '',
+          volume: 1,
+        } as AudioLayer,
+      ];
+
+      // Background music (optional)
+      if (config?.audio?.backgroundMusicPath && config.audio.backgroundMusicPath !== '') {
+        layers.push({
+          id: 'reddit-bgmusic',
+          type: 'audio',
+          name: '🎵 Background Music',
+          startFrame: 0,
+          endFrame: totalFrames,
+          visible: true,
+          locked: false,
+          src: config.audio.backgroundMusicPath,
+          volume: config.audio.musicVolume || 0.15,
+          loop: true,
+        } as AudioLayer);
+      }
+
+      console.log("✅ Template 10 layers created:", layers.map(l => l.name));
+      return layers;
+    },
+    
+    layersToProps: (layers) => {
+  const audioLayer = layers.find(l => l.type === 'audio' && l.name?.includes('Voiceover')) as AudioLayer | undefined;
+  const voiceoverFromLayer = audioLayer?.src || '';
+  
+  // NEW: Get voiceover start frame from the layer for syncing captions
+  const voiceoverStartFrame = audioLayer?.startFrame ?? (3 * 30); // default: after 3s intro
+  
+  const storedConfig = typeof window !== 'undefined' 
+    ? sessionStorage.getItem('redditVideoConfig') 
+    : null;
+  
+  let config: any = null;
+  if (storedConfig) {
+    try {
+      config = JSON.parse(storedConfig);
+    } catch (e) {
+      console.error('Failed to parse reddit config:', e);
+    }
+  }
+
+  const voiceoverPath = voiceoverFromLayer || config?.audio?.voiceoverPath || '';
+  
+  console.log("🎙️ layersToProps - Voiceover:", {
+    fromLayer: !!voiceoverFromLayer,
+    fromSession: !!config?.audio?.voiceoverPath,
+    finalPath: voiceoverPath ? voiceoverPath.substring(0, 50) + '...' : 'NONE',
+    voiceoverStartFrame, // NEW: log this
+  });
+
+  const script = {
+    title: config?.script?.title || 'AITA for refusing to help my grandparents?',
+    text: config?.script?.text || 'Me, a 21 year old female, I am a university student.',
+    story: config?.script?.story || 'Story text goes here...',
+    duration: config?.script?.duration || 30,
+    words: config?.script?.words || [],
+  };
+
+  const redditCard = {
+    subredditName: config?.redditCard?.subredditName || 'AmItheAsshole',
+    posterUsername: config?.redditCard?.posterUsername || 'throwaway',
+    timePosted: config?.redditCard?.timePosted || '10h',
+    upvotes: config?.redditCard?.upvotes || '12.4k',
+    commentCount: config?.redditCard?.commentCount || '2.3k',
+    awardsCount: config?.redditCard?.awardsCount || '1',
+    avatarUrl: config?.redditCard?.avatarUrl || '',
+  };
+
+  const videoLayer = layers.find(l => l.type === 'video') as VideoLayer | undefined;
+  const musicLayer = layers.find(l => l.type === 'audio' && l.name?.includes('Music')) as AudioLayer | undefined;
+  
+  const props = {
+    script,
+    redditCard,
+    voiceoverPath: voiceoverPath, 
+    voiceoverStartFrame, // NEW: pass this to the template
+    duration: config?.script?.duration || 30,
+    fontSize: config?.style?.fontSize || 48,
+    fontFamily: config?.style?.fontFamily || 'Montserrat, sans-serif',
+    fontColor: config?.style?.fontColor || '#ffffff',
+    sentenceBgColor: config?.style?.sentenceBgColor || '#FF4500',
+    backgroundOverlayColor: config?.style?.backgroundOverlayColor || 'rgba(0,0,0,0.5)',
+    backgroundVideo: videoLayer?.src || config?.video?.backgroundVideo || 'https://res.cloudinary.com/dcu9xuof0/video/upload/v1765260195/Subway_Surfers_2024_-_Gameplay_4K_9x16_No_Copyright_n4ym8w.mp4',
+    backgroundMusicPath: musicLayer?.src || config?.audio?.backgroundMusicPath || '',
+    musicVolume: musicLayer?.volume || config?.audio?.musicVolume || 0.15,
+  };
+  
+  console.log("📤 layersToProps returning:", {
+    hasVoiceover: !!props.voiceoverPath,
+    voiceoverLength: props.voiceoverPath?.length || 0,
+    hasWords: props.script.words.length,
+    duration: props.duration,
+    voiceoverStartFrame: props.voiceoverStartFrame, 
+  });
+  
+  return props;
+},
+    
+    calculateDuration: (layers) => {
+      if (layers.length === 0) return 990;
+      return Math.max(...layers.map(l => l.endFrame));
+    },
+  },
+
   19: {
     id: 19,
     name: 'photocollage',
@@ -722,6 +958,7 @@ export const TEMPLATE_NAME_TO_ID: Record<string, number> = {
   'Ken Burns Carousel': 8,
   'Photo Collage': 19,
   'Fake Text Conversation' : 9,
+  'Reddit Post Narration': 10,
   'Dancing People':  30
 };
 

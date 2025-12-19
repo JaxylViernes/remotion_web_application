@@ -18,7 +18,7 @@ export const TemplateNavigator = (template: string) => {
       case "Fake Text Conversation":
         return leading + "/fakechat";
       case "Reddit Post Narration":
-        return leading + "/redditvideo";
+        return "/reddit-wizard"; 
       case "Ai Story Narration":
         return leading + "/storytelling";
       case "Curve Line Trend":
