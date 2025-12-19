@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiTrendingUp,
@@ -9,7 +9,8 @@ import {
   FiPackage,
   FiZap,
   FiX,
-  FiDollarSign
+  FiDollarSign,
+  FiMoreVertical, // ✅ NEW: Three-dot icon
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -47,13 +48,17 @@ const formatStatus = (status: string, cancelAtPeriodEnd: boolean): string => {
 };
 
 const SubscriptionPlan: React.FC = () => {
-  
   const [openCancelModal, setOpenCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelFeedback, setCancelFeedback] = useState("");
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // ✅ NEW: Three-dot menu state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,7 +77,20 @@ const SubscriptionPlan: React.FC = () => {
     fetchSub();
   }, []);
 
+  // ✅ NEW: Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleManageBilling = async () => {
+    setMenuOpen(false); // ✅ Close menu
     setIsProcessing(true);
     try {
       const token = localStorage.getItem("token");
@@ -88,7 +106,6 @@ const SubscriptionPlan: React.FC = () => {
 
       if (data.success && data.url) {
         toast.success("Redirecting to billing portal...", { icon: "🔗" });
-        // Open Stripe portal in new tab
         window.open(data.url, "_blank");
       } else {
         throw new Error(data.error || "Failed to create portal session");
@@ -101,7 +118,6 @@ const SubscriptionPlan: React.FC = () => {
     }
   };
 
-  // Handler: Cancel Subscription
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
     try {
@@ -125,21 +141,17 @@ const SubscriptionPlan: React.FC = () => {
           }
         );
 
-        // Send feedback to backend (optional)
         if (cancelReason || cancelFeedback) {
           console.log("Cancellation feedback:", {
             reason: cancelReason,
             feedback: cancelFeedback,
           });
-          // You can add an API endpoint to save this feedback
         }
 
-        // Close modal
         setOpenCancelModal(false);
         setCancelReason("");
         setCancelFeedback("");
 
-        // Refresh subscription data
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -177,7 +189,6 @@ const SubscriptionPlan: React.FC = () => {
           duration: 4000,
         });
 
-        // Refresh page to show updated status
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -192,7 +203,6 @@ const SubscriptionPlan: React.FC = () => {
     }
   };
 
-  // ✅ Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-8 py-4 pt-16 md:pt-4 flex items-center justify-center">
@@ -220,10 +230,7 @@ const SubscriptionPlan: React.FC = () => {
     );
   }
 
-  // ✅ PROPERLY USE THE SUBSCRIPTION STATUS VARIABLES
   const isFreeTrialOnly = subscription.status === "free_trial";
-  // const hasPaidSubscription =
-  //   subscription.status === "active" || subscription.status === "trialing";
 
   return (
     <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-8 py-4 pt-16 md:pt-4">
@@ -309,7 +316,6 @@ const SubscriptionPlan: React.FC = () => {
                   "linear-gradient(135deg, var(--primary-1), var(--primary-2) 55%, var(--primary-3))",
               }}
             >
-              {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
 
@@ -332,7 +338,7 @@ const SubscriptionPlan: React.FC = () => {
                       }`}
                     >
                       <FiZap className="text-base sm:text-lg" />
-                     {formatStatus(
+                      {formatStatus(
                         subscription.status,
                         subscription.cancelAtPeriodEnd
                       )}
@@ -372,7 +378,7 @@ const SubscriptionPlan: React.FC = () => {
               </div>
             </div>
 
-             {/* Trial Expiry Display */}
+            {/* Trial Expiry Display */}
             {(subscription.status === "trialing" ||
               subscription.status === "free_trial") &&
               subscription.trialEnd && (
@@ -380,7 +386,7 @@ const SubscriptionPlan: React.FC = () => {
                   <p className="text-sm text-gray-700">
                     {subscription.status === "free_trial" ? (
                       <>
-              <span className="font-semibold">Free trial ends:</span>{" "}
+                        <span className="font-semibold">Free trial ends:</span>{" "}
                         {new Date(subscription.trialEnd).toLocaleDateString(
                           "en-US",
                           {
@@ -403,10 +409,11 @@ const SubscriptionPlan: React.FC = () => {
                             year: "numeric",
                           }
                         )}
-                      </>)}
+                      </>
+                    )}
                   </p>
                 </div>
-            )}
+              )}
           </motion.div>
 
           {/* Payment Method & Billing Info */}
@@ -423,13 +430,12 @@ const SubscriptionPlan: React.FC = () => {
                 <h4 className="font-bold text-gray-800">Payment Method</h4>
               </div>
               {isFreeTrialOnly ? (
-                // ✅ FREE TRIAL: Show "Add Payment Method" CTA
                 <div className="p-5 rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-indigo-50">
                   <div className="text-center py-4">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
                       <FiCreditCard className="text-indigo-600 text-2xl" />
                     </div>
-                     <p className="text-sm font-semibold text-gray-800 mb-2">
+                    <p className="text-sm font-semibold text-gray-800 mb-2">
                       No Payment Method Added
                     </p>
                     <p className="text-xs text-gray-600 mb-4 leading-relaxed">
@@ -445,8 +451,7 @@ const SubscriptionPlan: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                // ✅ PAID SUBSCRIPTION: Show actual payment method
-                <div className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-gray-50">
+                <div className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-gray-50" >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
@@ -501,14 +506,71 @@ const SubscriptionPlan: React.FC = () => {
               )}
             </div>
 
-            {/* Next Billing */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <FiDollarSign className="text-green-600 text-xl" />
-                <h4 className="font-bold text-gray-800">
-                  {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
-                </h4>
+            {/* ✅ Next Billing with Three-Dot Menu */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <FiDollarSign className="text-green-600 text-xl" />
+                  <h4 className="font-bold text-gray-800">
+                    {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
+                  </h4>
+                </div>
+
+                {/* ✅ Three-Dot Menu (only show for paid subscriptions) */}
+                {!isFreeTrialOnly && (
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setMenuOpen(!menuOpen)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <FiMoreVertical className="text-gray-600 text-xl" />
+                    </button>
+
+                    {/* ✅ CORRECTED: Dropdown Menu - Only Cancel/Reactivate */}
+                    <AnimatePresence>
+                      {menuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
+                        >
+                          {subscription.cancelAtPeriodEnd ? (
+                            <button
+                              onClick={() => {
+                                setMenuOpen(false);
+                                handleReactivateSubscription();
+                              }}
+                              disabled={isProcessing}
+                              className="w-full px-4 py-3 text-left text-sm text-green-700 hover:bg-green-50 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <FiZap className="text-green-600" />
+                              <span className="font-medium">
+                                Reactivate Subscription
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setMenuOpen(false);
+                                setOpenCancelModal(true);
+                              }}
+                              className="w-full px-4 py-3 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                            >
+                              <FiAlertCircle className="text-red-600" />
+                              <span className="font-medium">
+                                Cancel Subscription
+                              </span>
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
+
               <div
                 className={`p-5 rounded-xl border-2 ${
                   isFreeTrialOnly
@@ -517,7 +579,6 @@ const SubscriptionPlan: React.FC = () => {
                 }`}
               >
                 {isFreeTrialOnly ? (
-                  // ✅ FREE TRIAL: Show trial end date
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-gray-600 font-medium">
@@ -536,8 +597,7 @@ const SubscriptionPlan: React.FC = () => {
                       subscription
                     </p>
                   </div>
-                  ) : (
-                  // ✅ PAID SUBSCRIPTION: Show billing info
+                ) : (
                   <>
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-gray-600 font-medium">Amount</span>
@@ -545,7 +605,7 @@ const SubscriptionPlan: React.FC = () => {
                         ${SUBSCRIPTION_PRICE}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                       <span className="text-gray-600 font-medium">
                         Billing Date
                       </span>
@@ -559,13 +619,52 @@ const SubscriptionPlan: React.FC = () => {
                         })}
                       </span>
                     </div>
+
+                    {/* ✅ NEW: Manage Billing Portal Link BELOW billing date */}
+                    <div className="mt-4">
+                      <button
+                        onClick={handleManageBilling}
+                        disabled={isProcessing}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-indigo-300 rounded-lg text-indigo-700 font-medium hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <svg
+                              className="animate-spin h-4 w-4"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <FiExternalLink />
+                            Manage Billing Portal
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
             </div>
           </motion.div>
 
-          {/* ✅ Free Trial Info Box - SEPARATE FROM BUTTONS */}
+          {/* Free Trial Info Box */}
           {isFreeTrialOnly && (
             <motion.div
               className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl"
@@ -576,8 +675,8 @@ const SubscriptionPlan: React.FC = () => {
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                   <FiZap className="text-green-600 text-xl" />
-               </div>
-               <div className="flex-1">
+                </div>
+                <div className="flex-1">
                   <p className="text-sm font-bold text-green-900 mb-2">
                     Your Trial Period is Protected
                   </p>
@@ -603,18 +702,17 @@ const SubscriptionPlan: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Action Buttons - CONDITIONAL RENDERING */}
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            {isFreeTrialOnly ? (
-              // ✅ FREE TRIAL: Only show "Subscribe Now" button
+          {/* ✅ REMOVED: Bottom Action Buttons */}
+          {/* Only show "Subscribe" button for free trial users */}
+          {isFreeTrialOnly && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               <button
                 onClick={() => navigate("/subscription")}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl"
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--primary-1), var(--primary-2) 55%, var(--primary-3))",
@@ -623,93 +721,8 @@ const SubscriptionPlan: React.FC = () => {
                 <FiZap />
                 Subscribe to Continue After Trial
               </button>
-            ) : (
-              // ✅ PAID SUBSCRIPTION: Show management buttons
-              <>
-                <button
-                  onClick={handleManageBilling}
-                  disabled={isProcessing}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--primary-1), var(--primary-2) 55%, var(--primary-3))",
-                  }}
-                >
-                  {isProcessing ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Opening...
-                    </>
-                  ) : (
-                     <>
-                      <FiExternalLink />
-                      Manage Billing Portal
-                    </>
-                  )}
-                </button>
-              
-            
-{subscription.cancelAtPeriodEnd ? (
-                  <button
-                    onClick={handleReactivateSubscription}
-                    disabled={isProcessing}
-                    className="flex-1 px-6 py-4 bg-white border-2 border-green-500 rounded-xl text-green-600 font-bold hover:bg-green-50 transition-all duration-300 hover:border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg
-                          className="animate-spin h-5 w-5"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Reactivating...
-                      </span>
-                    ) : (
-                      "Reactivate Subscription"
-                    )}
-            </button>
-
-          
-                ) : (
-                  <button
-                    onClick={() => setOpenCancelModal(true)}
-                    className="flex-1 px-6 py-4 bg-white border-2 border-red-300 rounded-xl text-red-600 font-bold hover:bg-red-50 transition-all duration-300 hover:border-red-400"
-                  >
-                    Cancel Subscription
-                  </button>
-                )}
-              </>
-            )}
-          </motion.div>
+            </motion.div>
+          )}
         </div>
       </div>
 

@@ -264,13 +264,13 @@ export const AccountTab: React.FC<AccountTabProps> = ({
             </button>
           </div>
 
-          {/* Account Created */}
+          {/* Account Created
           <div className="p-4 bg-gray-50 rounded-xl">
             <p className="text-sm text-gray-500 mb-1">Account Created</p>
             <p className="text-sm font-semibold text-gray-800">
               {formattedDate}
             </p>
-          </div>
+          </div> */}
 
           {/* Last Login */}
           {userData.lastLogin && (

@@ -11,10 +11,6 @@ interface Template {
   url: string;
 }
 
-// interface TemplateCategories {
-//   [key: string]: Template[];
-// }
-
 const TemplateCard = ({
   template,
   index,
@@ -28,6 +24,7 @@ const TemplateCard = ({
     <div
       className="relative group w-full"
       style={{
+        aspectRatio: '9/16',
         animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
         cursor: template.available ? "pointer" : "default",
       }}
@@ -38,6 +35,11 @@ const TemplateCard = ({
           ? () => {
               const templateId = TEMPLATE_NAME_TO_ID[template.name || ""];
               if (templateId) {
+                // Save to recently used
+                const recentlyUsed = JSON.parse(localStorage.getItem('recentlyUsedTemplates') || '[]');
+                const updated = [template.name, ...recentlyUsed.filter((n: string) => n !== template.name)].slice(0, 6);
+                localStorage.setItem('recentlyUsedTemplates', JSON.stringify(updated));
+                
                 const location = `/editor?template=${templateId}`;
                 window.location.assign(location);
               } else {
@@ -49,7 +51,7 @@ const TemplateCard = ({
       }
     >
       <div
-        className={`relative overflow-hidden rounded-2xl transition-all duration-500 ${
+        className={`relative h-full overflow-hidden rounded-2xl transition-all duration-500 ${
           template.available
             ? "bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-purple-600/10"
             : "bg-gradient-to-br from-gray-400/10 via-gray-500/10 to-gray-600/10"
@@ -80,8 +82,8 @@ const TemplateCard = ({
           }}
         />
 
-        {/* GIF container */}
-        <div className="relative h-40 sm:h-48 overflow-hidden bg-black/5">
+        {/* GIF container - Full height vertical */}
+        <div className="relative h-full overflow-hidden bg-black/5">
           <img
             src={template.url}
             alt={template.name}
@@ -91,32 +93,32 @@ const TemplateCard = ({
             }}
           />
 
-          {/* Overlay gradient */}
+          {/* Gradient Overlay - Bottom focused */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3))",
+                "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.7))",
             }}
           />
-        </div>
-
-        {/* Content */}
-        <div className="p-3 sm:p-5">
-          <h3
-            className={`text-base sm:text-lg font-bold mb-1 sm:mb-2 ${
-              template.available ? "text-purple-900" : "text-gray-600"
-            }`}
-          >
-            {template.name}
-          </h3>
-          <p
-            className={`text-xs sm:text-sm ${
-              template.available ? "text-gray-700" : "text-gray-500"
-            }`}
-          >
-            {template.description}
-          </p>
+          
+          {/* Content - Bottom aligned */}
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <h3
+              className={`text-sm font-bold mb-1 ${
+                template.available ? "text-white" : "text-gray-400"
+              }`}
+            >
+              {template.name}
+            </h3>
+            <p
+              className={`text-xs line-clamp-2 ${
+                template.available ? "text-white/80" : "text-gray-500"
+              }`}
+            >
+              {template.description}
+            </p>
+          </div>
         </div>
 
         {/* Sparkle effect on hover */}
@@ -158,11 +160,19 @@ export const TemplateGallery = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [recentlyUsedNames, setRecentlyUsedNames] = useState<string[]>([]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
+    
+    // Load recently used templates from localStorage
+    const stored = localStorage.getItem('recentlyUsedTemplates');
+    if (stored) {
+      setRecentlyUsedNames(JSON.parse(stored));
+    }
+    
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -181,8 +191,21 @@ export const TemplateGallery = () => {
           available.push({ ...template, category });
         });
     });
-    return available.sort(() => Math.random() - 0.5);
+    return available;
   }, [searchQuery]);
+
+  const recentlyUsedTemplates: TemplateWithCategory[] = useMemo(() => {
+    const recent: TemplateWithCategory[] = [];
+    recentlyUsedNames.forEach((name) => {
+      Object.entries(templateCategories).forEach(([category, templates]) => {
+        const found = (templates as Template[]).find((t) => t.name === name && t.available);
+        if (found) {
+          recent.push({ ...found, category });
+        }
+      });
+    });
+    return recent;
+  }, [recentlyUsedNames]);
 
   const comingSoonTemplates: TemplateWithCategory[] = useMemo(() => {
     const soon: TemplateWithCategory[] = [];
@@ -193,11 +216,11 @@ export const TemplateGallery = () => {
           soon.push({ ...template, category });
         });
     });
-    return soon.sort(() => Math.random() - 0.5);
+    return soon;
   }, []);
 
   return (
-    <div className="min-h-screen pt-0 p-1 sm:p-2 lg:p-4">
+    <div className="min-h-screen pt-0 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
       <style>
         {`
           @keyframes fadeInUp {
@@ -223,9 +246,44 @@ export const TemplateGallery = () => {
         `}
       </style>
 
+      {/* Recently Used Templates Section - Always Show */}
+<div className="max-w-[1920px] mx-auto mb-8 sm:mb-12">
+  <div className="flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
+    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-900">
+      Recently Used
+    </h2>
+  </div>
+
+  {recentlyUsedTemplates.length > 0 ? (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+      {recentlyUsedTemplates.map((template, index) => (
+        <TemplateCard
+          key={template.name}
+          template={template}
+          index={index}
+        />
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-dashed border-purple-200">
+      <div className="w-16 h-16 mb-4 rounded-full bg-purple-100 flex items-center justify-center">
+        <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <p className="text-gray-600 text-sm sm:text-base font-medium mb-1">
+        No recently used templates yet
+      </p>
+      <p className="text-gray-500 text-xs sm:text-sm text-center max-w-md">
+        Start using templates below and they'll appear here for quick access
+      </p>
+    </div>
+  )}
+</div>
+
       {/* Available Templates Section */}
       {availableTemplates.length > 0 && (
-        <div className="max-w-7xl mx-auto mb-8 sm:mb-12">
+        <div className="max-w-[1920px] mx-auto mb-8 sm:mb-12">
           {!isMobile ? (
             <div className="flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
               <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-900">
@@ -244,10 +302,10 @@ export const TemplateGallery = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search templates..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-1 bg-transparent outline-none text-gray-800 placeholder-gray-400 text-sm"
+                  className="w-full pl-10 pr-4 py-2 bg-transparent outline-none text-gray-800 placeholder-gray-400 text-sm"
                 />
               </div>
             </div>
@@ -259,7 +317,7 @@ export const TemplateGallery = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
             {availableTemplates.map((template, index) => (
               <TemplateCard
                 key={template.name}
@@ -273,12 +331,12 @@ export const TemplateGallery = () => {
 
       {/* Coming Soon Section */}
       {comingSoonTemplates.length > 0 && (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1920px] mx-auto mb-8 sm:mb-12">
           <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-6 lg:mb-8 text-gray-700">
             Coming Soon
           </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
             {comingSoonTemplates.map((template, index) => (
               <TemplateCard
                 key={template.name}
@@ -333,5 +391,3 @@ export const TemplateGallery = () => {
     </div>
   );
 };
-
-// export default TemplateGallery;

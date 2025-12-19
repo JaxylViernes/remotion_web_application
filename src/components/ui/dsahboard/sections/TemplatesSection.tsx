@@ -7,13 +7,14 @@ import {
   FiMic,
   FiBarChart2,
   FiGrid,
+  FiClock,
 } from "react-icons/fi";
 
 interface TemplatesSectionProps {
   onTry: (template: string, description: string) => void;
 }
 
-// Category cards data for the colorful pills - mapped to templateCategories keys
+// Category cards data
 const categoryCards = [
   {
     id: "all",
@@ -67,15 +68,28 @@ const categoryCards = [
   },
 ];
 
+// Mock recent templates - Replace with actual usage tracking
+const recentlyUsedTemplates = [
+  "Split Screen",
+  "Quote Spotlight",
+  "Fake Text Conversation",
+];
+
 export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
 
-  // Track if grid is expanded (a category has been selected)
   const isExpanded = selectedCategory !== null;
 
-  // Get all templates or filter by category
+  // Get all templates
   const allTemplates = Object.values(templateCategories).flat();
+  
+  // Get recently used templates
+  const recentTemplates = allTemplates.filter((template) =>
+    recentlyUsedTemplates.includes(template.name)
+  );
+
+  // Get displayed templates based on category
   const displayedTemplates =
     selectedCategory === "all" || selectedCategory === null
       ? allTemplates
@@ -88,98 +102,151 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => 
       t.description.toLowerCase().includes(search.toLowerCase())
   );
 
-
   return (
-    
-    <section>
-      {/* === Explore Templates Header === */}
-      <h2 className="text-1xl sm:text-2xl font-bold text-gray-900">
-        Explore templates
-      </h2>
-      {/* === Colorful Category Cards with Canva Glow === */}
-      <div className="relative overflow-hidden rounded-2xl p-2 sm:p-3">
-        {/* Smooth Canva Glow Background */}
-        <div
-          className="absolute -top-10 -left-10 w-[250px] h-[250px] rounded-full
-            bg-cyan-200 opacity-50 blur-[80px]"
-        />
-        <div
-          className="absolute -top-5 right-0 w-[200px] h-[200px] rounded-full
-            bg-fuchsia-200 opacity-50 blur-[80px]"
-        />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] rounded-full
-            bg-violet-200 opacity-40 blur-[100px]"
-        />
-        {/* White overlay for softness */}
-        <div className="absolute inset-0 bg-white/40 rounded-2xl" />
-
-        {/* Category Cards Grid */}
-        <div className="relative z-10 flex flex-wrap gap-3">
-          {categoryCards.map((category) => {
-          const IconComponent = category.icon;
-          const isActive = selectedCategory === category.id;
-          const handleClick = () => {
-            // Toggle: if clicking the same category, collapse; otherwise expand with new category
-            if (selectedCategory === category.id) {
-              setSelectedCategory(null);
-            } else {
-              setSelectedCategory(category.id);
-            }
-          };
-          return (
-            <div
-              key={category.id}
-              onClick={handleClick}
-              className={`relative ${isActive ? category.activeColor : category.color}
-                rounded-2xl h-20 sm:h-24 w-28 sm:w-36 p-3
-                cursor-pointer overflow-hidden group
-                hover:shadow-lg hover:-translate-y-1
-                transition-all duration-300
-                ${isActive ? "ring-2 ring-indigo-500 shadow-lg" : ""}`}
-            >
-              {/* Canva Glow Effect - Based on card's color */}
+    <section className="px-6 py-6 space-y-8">
+      {/* Recently Used Templates Section */}
+      {recentTemplates.length > 0 && !isExpanded && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FiClock className="text-indigo-600" size={20} />
+            <h3 className="text-xl font-bold text-gray-900">
+              Recently Used Templates
+            </h3>
+          </div>
+          
+          {/* Horizontal scrollable cards - Same design as HomePage */}
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {recentTemplates.map((template, index) => (
               <div
-                className={`absolute -top-6 -left-6 w-20 h-20 rounded-full
-                  ${category.glowColor} ${isActive ? "opacity-60" : "opacity-30"}
-                  blur-xl group-hover:opacity-50 transition-opacity duration-300`}
-              />
-              <div
-                className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full
-                  ${category.glowColor} ${isActive ? "opacity-50" : "opacity-20"}
-                  blur-lg group-hover:opacity-40 transition-opacity duration-300`}
-              />
+                key={template.name}
+                className="flex-shrink-0"
+                style={{ 
+                  width: '200px',
+                  aspectRatio: '9/16'
+                }}
+              >
+                <div
+                  onClick={() => onTry(template.name, template.description)}
+                  className="group relative overflow-hidden rounded-lg cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 h-full"
+                >
+                  {/* Background Image with Zoom Effect */}
+                  <img
+                    src={template.url}
+                    alt={template.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
 
-              {/* Category Title */}
-              <div className="absolute bottom-2 left-3 z-10">
-                <h3 className={`font-semibold text-xs sm:text-sm ${category.textColor}`}>
-                  {category.title}
-                </h3>
-              </div>
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-80" />
 
-              {/* Icon on the right */}
-              <div className="absolute top-2 right-2 z-10">
-                <IconComponent
-                  className={`w-8 h-8 sm:w-10 sm:h-10 ${category.iconColor}
-                    ${isActive ? "opacity-100" : "opacity-60"} group-hover:opacity-80
-                    transform rotate-12 group-hover:rotate-6
-                    transition-all duration-300`}
-                />
+                  {/* Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full p-3 shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                      <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="absolute bottom-0 left-0 p-3 w-full">
+                    <h3 className="text-sm font-bold text-white mb-0.5 group-hover:text-purple-300 transition-colors duration-300">
+                      {template.name}
+                    </h3>
+                    <div className="flex items-center text-slate-300 text-xs gap-2">
+                      <span className="flex items-center gap-0.5">
+                        <FiClock className="w-3 h-3" />
+                        Recently used
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Explore Templates Header */}
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+          {isExpanded ? "Available Templates" : "Explore Templates"}
+        </h2>
+
+        {/* Category Cards with Canva Glow */}
+        <div className="relative overflow-hidden rounded-2xl p-2 sm:p-3">
+          {/* Glow Background */}
+          <div className="absolute -top-10 -left-10 w-[250px] h-[250px] rounded-full bg-cyan-200 opacity-50 blur-[80px]" />
+          <div className="absolute -top-5 right-0 w-[200px] h-[200px] rounded-full bg-fuchsia-200 opacity-50 blur-[80px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] rounded-full bg-violet-200 opacity-40 blur-[100px]" />
+          <div className="absolute inset-0 bg-white/40 rounded-2xl" />
+
+          {/* Category Cards Grid */}
+          <div className="relative z-10 flex flex-wrap gap-3">
+            {categoryCards.map((category) => {
+              const IconComponent = category.icon;
+              const isActive = selectedCategory === category.id;
+              const handleClick = () => {
+                if (selectedCategory === category.id) {
+                  setSelectedCategory(null);
+                } else {
+                  setSelectedCategory(category.id);
+                }
+              };
+              return (
+                <div
+                  key={category.id}
+                  onClick={handleClick}
+                  className={`relative ${isActive ? category.activeColor : category.color}
+                    rounded-2xl h-20 sm:h-24 w-28 sm:w-36 p-3
+                    cursor-pointer overflow-hidden group
+                    hover:shadow-lg hover:-translate-y-1
+                    transition-all duration-300
+                    ${isActive ? "ring-2 ring-indigo-500 shadow-lg" : ""}`}
+                >
+                  {/* Glow Effect */}
+                  <div
+                    className={`absolute -top-6 -left-6 w-20 h-20 rounded-full
+                      ${category.glowColor} ${isActive ? "opacity-60" : "opacity-30"}
+                      blur-xl group-hover:opacity-50 transition-opacity duration-300`}
+                  />
+                  <div
+                    className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full
+                      ${category.glowColor} ${isActive ? "opacity-50" : "opacity-20"}
+                      blur-lg group-hover:opacity-40 transition-opacity duration-300`}
+                  />
+
+                  {/* Title */}
+                  <div className="absolute bottom-2 left-3 z-10">
+                    <h3 className={`font-semibold text-xs sm:text-sm ${category.textColor}`}>
+                      {category.title}
+                    </h3>
+                  </div>
+
+                  {/* Icon */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <IconComponent
+                      className={`w-8 h-8 sm:w-10 sm:h-10 ${category.iconColor}
+                        ${isActive ? "opacity-100" : "opacity-60"} group-hover:opacity-80
+                        transform rotate-12 group-hover:rotate-6
+                        transition-all duration-300`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* === Collapsible Search & Grid Section === */}
+      {/* Collapsible Grid Section */}
       <div
         className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="space-y-8">
-          {/* === Search Section === */}
+        <div className="space-y-6">
+          {/* Search & Count */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
               {selectedCategory === "all" ? "All Templates" : `${selectedCategory} Templates`}
@@ -200,17 +267,8 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => 
             />
           </div>
 
-          {/* === Template Grid === */}
-          <div
-            className="
-              grid gap-2 sm:gap-5
-              grid-cols-2
-              sm:grid-cols-2
-              md:grid-cols-3
-              lg:grid-cols-4
-              2xl:grid-cols-5
-            "
-          >
+          {/* Template Grid - Matching HomePage style */}
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filteredTemplates.map((template) => (
               <TemplateCard
                 key={template.name}
@@ -223,24 +281,17 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => 
             ))}
           </div>
 
-          {/* Empty state */}
+          {/* Empty State */}
           {filteredTemplates.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No templates found matching your search.</p>
+              <p className="text-gray-500 text-lg mb-2">No templates found</p>
+              <p className="text-sm text-gray-400">
+                Try a different search term or category
+              </p>
             </div>
           )}
         </div>
       </div>
-
-      {/* No Results */}
-      {filteredTemplates.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No templates found</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Try a different search term
-          </p>
-        </div>
-      )}
     </section>
   );
 };
