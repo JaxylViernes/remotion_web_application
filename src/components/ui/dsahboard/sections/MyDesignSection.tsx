@@ -136,7 +136,7 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search your projects..."
-              className="w-full bg-gray-50 rounded-lg pl-10 pr-4 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className="w-full bg-white rounded-lg pl-10 pr-4 py-2.5 text-sm border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
             />
           </div>
         </div>
@@ -197,12 +197,13 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="flex flex-wrap lg:flex-nowrap gap-2 md:gap-3 lg:gap-4 justify-center items-start">
             {/* Create New Project Card */}
             <button
-              onClick={() => setNewProjectOpen(true)}
-              className="relative aspect-square rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group cursor-pointer hidden sm:block"
-            >
+  onClick={() => setNewProjectOpen(true)}
+  className="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:flex-1 lg:max-w-[280px] relative rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group cursor-pointer hidden sm:block"
+  style={{ aspectRatio: '9/16' }}
+>
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
                 <div className="absolute inset-0 backdrop-blur-[2px]"></div>
               </div>
@@ -234,21 +235,21 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
             {/* Project Cards */}
             {filteredProjects.map((project) => (
               <div
-                key={project.id}
-                className="group relative cursor-pointer"
-                onMouseEnter={() => setHoveredId(project.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                onClick={() => {
-                  if (openMenuId === project.id) {
-                    handleMenuClose();
-                  } else {
-                    const location = `/editor?project=${project.id}`;
-                    window.location.assign(location);
-                  }
-                }}
-              >
+  key={project.id}
+  className="group relative cursor-pointer w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:flex-1 lg:max-w-[280px]"
+  onMouseEnter={() => setHoveredId(project.id)}
+  onMouseLeave={() => setHoveredId(null)}
+  onClick={() => {
+    if (openMenuId === project.id) {
+      handleMenuClose();
+    } else {
+      const location = `/editor?project=${project.id}`;
+      window.location.assign(location);
+    }
+  }}
+>
                 {/* Card with Image Background */}
-                <div className="relative aspect-square rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                <div className="relative rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl" style={{ aspectRatio: '9/16' }}>
                   {/* Background Image/Video */}
                   {project.projectVidUrl ? (
                     <video
@@ -274,11 +275,8 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
                     />
                   )}
 
-                  {/* Glossy Overlay - Always visible with glassmorphism */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20">
-                    {/* Glassmorphism effect */}
-                    <div className="absolute inset-0 backdrop-blur-[2px]"></div>
-                  </div>
+                  {/* Gradient Overlay */}
+<div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-80" />
 
                   {/* 3-Dots Menu - Top Right */}
                   <div className="absolute top-2 right-2 z-20">
@@ -321,29 +319,26 @@ export const MyProjectsSection: React.FC<MyDesignProps> = ({
                     </div>
                   )}
 
-                  {/* Content Overlay - Bottom with Glassmorphism */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2">
-                    {/* Glassmorphism Card */}
-                    <div className="bg-gray-50/95 backdrop-blur-md rounded-lg p-2 border border-white/30 shadow-2xl">
-                      <h3 className="font-bold text-gray-900 text-xs mb-0.5 truncate drop-shadow-sm">
-                        {project.title}
-                      </h3>
-                      <p className="text-gray-600 text-[10px] mb-2 drop-shadow-sm">
-                        Last edited:{" "}
-                        {new Date(project.lastUpdated).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true,
-                          }
-                        )}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Content at Bottom */}
+<div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
+  <h3 className="text-sm sm:text-base font-bold text-white mb-0.5 truncate group-hover:text-purple-300 transition-colors duration-300">
+    {project.title}
+  </h3>
+  <p className="text-slate-300 text-xs">
+    Last edited:{" "}
+    {new Date(project.lastUpdated).toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }
+    )}
+  </p>
+</div>
 
                   {/* Shine effect on hover */}
                   <div

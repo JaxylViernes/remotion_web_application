@@ -856,6 +856,73 @@ const DynamicLayerEditor: React.FC = () => {
       return;
     }
 
+
+// ✅ Handle MyFiles redirect
+    if (
+      location.state?.fromMyFiles &&
+      location.state?.mediaData &&
+      !hasLoadedTemplate.current
+    ) {
+      hasLoadedTemplate.current = true;
+      const mediaData = location.state.mediaData;
+
+      if (mediaData.type === "video") {
+        // Create video layer
+        const newLayer: VideoLayer = {
+          id: generateId(),
+          type: "video",
+          name: mediaData.name || "My Video",
+          visible: true,
+          locked: false,
+          startFrame: 0,
+          endFrame: 300,
+          position: { x: 50, y: 50 },
+          size: { width: 100, height: 100 },
+          rotation: 0,
+          opacity: 1,
+          src: mediaData.url,
+          objectFit: "cover",
+          volume: 1,
+          filter: "",
+          animation: { entrance: "none", entranceDuration: 0 },
+        };
+
+        setProjectTitle(mediaData.name || "My Video Project");
+        pushState([newLayer]);
+        setSelectedLayerId(newLayer.id);
+        setDuration(10);
+      } else {
+        // Create image layer
+        const newLayer: ImageLayer = {
+          id: generateId(),
+          type: "image",
+          name: mediaData.name || "My Image",
+          visible: true,
+          locked: false,
+          startFrame: 0,
+          endFrame: 300,
+          position: { x: 50, y: 50 },
+          size: { width: 100, height: 100 },
+          rotation: 0,
+          opacity: 1,
+          src: mediaData.url,
+          isBackground: true,
+          objectFit: "cover",
+          filter: "",
+          animation: { entrance: "fade", entranceDuration: 30 },
+        };
+
+        setProjectTitle(mediaData.name || "My Image Project");
+        pushState([newLayer]);
+        setSelectedLayerId(newLayer.id);
+        setDuration(10);
+      }
+
+      toast.success("Media loaded from My Files! 🎬");
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
     // ✅ Normal template loading
     if (templateIdParam && !hasLoadedTemplate.current) {
       hasLoadedTemplate.current = true;
@@ -880,6 +947,13 @@ const DynamicLayerEditor: React.FC = () => {
           toast.success("Your previous edits have been restored!");
         } else {
           const defaultLayers = templateDef.createDefaultLayers();
+
+          const audioLayers = defaultLayers.filter(l => l.type === 'audio');
+console.log("🔊 Audio layers created:", audioLayers.map(l => ({
+  name: l.name,
+  src: (l as any).src?.substring(0, 50) + '...',
+})));
+
           pushState(defaultLayers);
           
           if (templateDef.calculateDuration) {

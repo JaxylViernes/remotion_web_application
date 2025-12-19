@@ -105,7 +105,7 @@ export const templateCategories = {
     {
       name: "Reddit Post Narration",
       description: "Convert reddit posts into entertaining ai voice over narration using only posts links",
-      available: false,
+      available: true,
       url: "https://res.cloudinary.com/dcu9xuof0/image/upload/v1763457722/de7c1c4a-1bc8-4131-8a8a-d6452c913706_foiabz.gif",
     },
     {
