@@ -56,7 +56,12 @@ interface ProTemplateCardProps {
   className?: string;
 }
 
-const ProTemplateCard: React.FC<ProTemplateCardProps> = ({ name, url, onClick, className = "" }) => {
+const ProTemplateCard: React.FC<ProTemplateCardProps> = ({
+  name,
+  url,
+  onClick,
+  className = "",
+}) => {
   const views = templateViews[name] || "1k";
   const duration = templateDurations[name] || "15s";
 
@@ -78,7 +83,11 @@ const ProTemplateCard: React.FC<ProTemplateCardProps> = ({ name, url, onClick, c
       {/* Play Button - Appears on hover */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full p-3 shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
-          <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-8 h-8 text-white ml-1"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path d="M8 5v14l11-7z" />
           </svg>
         </div>
@@ -95,16 +104,41 @@ const ProTemplateCard: React.FC<ProTemplateCardProps> = ({ name, url, onClick, c
         <div className="flex items-center text-slate-300 text-xs gap-2">
           {/* Views */}
           <span className="flex items-center gap-0.5">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
             </svg>
             {views}
           </span>
           {/* Duration */}
           <span className="flex items-center gap-0.5">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             {duration}
           </span>
@@ -121,7 +155,10 @@ interface ExploreTemplatesGridProps {
   onViewAll?: () => void;
 }
 
-const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onItemClick }) => {
+const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({
+  items,
+  onItemClick,
+}) => {
   const gridItems = items.slice(0, 6);
 
   return (
@@ -139,10 +176,10 @@ const ExploreTemplatesGrid: React.FC<ExploreTemplatesGridProps> = ({ items, onIt
             key={index}
             className={`
               w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.4rem)] lg:flex-1 lg:max-w-[320px] xl:max-w-[360px]
-              ${index % 2 === 0 ? '' : 'mt-6 md:mt-8 lg:mt-12'}
+              ${index % 2 === 0 ? "" : "mt-6 md:mt-8 lg:mt-12"}
               transition-all duration-300
             `}
-            style={{ aspectRatio: '9/16' }}
+            style={{ aspectRatio: "9/16" }}
           >
             <ProTemplateCard
               name={item.name}
@@ -215,7 +252,6 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
     }
   };
 
-
   const handleToolsClick = () => {
     if (onNavigate) {
       onNavigate("tools");
@@ -265,43 +301,56 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
           {/* Animated Gradient Orbs - Pulsing and Moving */}
           <div
             className="absolute w-[300px] h-[300px] rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 blur-[80px]"
-            style={{ animation: 'floatOrb1 15s ease-in-out infinite, pulseOrb 3s ease-in-out infinite' }}
+            style={{
+              animation:
+                "floatOrb1 15s ease-in-out infinite, pulseOrb 3s ease-in-out infinite",
+            }}
           />
           <div
             className="absolute w-[250px] h-[250px] rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 blur-[70px]"
-            style={{ animation: 'floatOrb2 18s ease-in-out infinite, pulseOrb 3s ease-in-out infinite 1s' }}
+            style={{
+              animation:
+                "floatOrb2 18s ease-in-out infinite, pulseOrb 3s ease-in-out infinite 1s",
+            }}
           />
           <div
             className="absolute w-[200px] h-[200px] rounded-full bg-gradient-to-br from-violet-500 to-purple-600 blur-[60px]"
-            style={{ animation: 'floatOrb3 20s ease-in-out infinite, pulseOrb 3s ease-in-out infinite 2s' }}
+            style={{
+              animation:
+                "floatOrb3 20s ease-in-out infinite, pulseOrb 3s ease-in-out infinite 2s",
+            }}
           />
 
           {/* Subtle Grid Pattern for Texture */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }} />
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
 
           {/* Motion Lines - Animated diagonal streaks */}
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
             <div
               className="absolute top-[20%] w-[80%] h-[2px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent rotate-[-15deg]"
               style={{
-                animation: 'motionLine1 4s ease-in-out infinite',
+                animation: "motionLine1 4s ease-in-out infinite",
               }}
             />
             <div
               className="absolute top-[40%] w-[70%] h-[1.5px] bg-gradient-to-r from-transparent via-fuchsia-400/40 to-transparent rotate-[-15deg]"
               style={{
-                animation: 'motionLine2 5s ease-in-out infinite',
-                animationDelay: '1s',
+                animation: "motionLine2 5s ease-in-out infinite",
+                animationDelay: "1s",
               }}
             />
             <div
               className="absolute top-[60%] w-[90%] h-[1px] bg-gradient-to-r from-transparent via-violet-400/35 to-transparent rotate-[-15deg]"
               style={{
-                animation: 'motionLine3 6s ease-in-out infinite',
-                animationDelay: '2s',
+                animation: "motionLine3 6s ease-in-out infinite",
+                animationDelay: "2s",
               }}
             />
           </div>
@@ -408,7 +457,6 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
           {/* Content Container - Two Column Layout */}
           <div className="relative z-10 h-full flex flex-col lg:flex-row items-center justify-between px-6 sm:px-12 lg:px-16 py-8 sm:py-10">
-
             {/* Left Side - Text Content */}
             <div className="flex-1 flex flex-col justify-center">
               {/* Eyebrow Text */}
@@ -423,8 +471,8 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <span
                   className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
                   style={{
-                    backgroundSize: '200% 100%',
-                    animation: 'gradientWave 3s ease-in-out infinite',
+                    backgroundSize: "200% 100%",
+                    animation: "gradientWave 3s ease-in-out infinite",
                   }}
                 >
                   Into Motion
@@ -433,7 +481,8 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
               {/* Subheadline */}
               <p className="text-slate-400 text-xs sm:text-sm max-w-md mb-6">
-                Create stunning viral videos in minutes with AI-powered templates and one-click animations.
+                Create stunning viral videos in minutes with AI-powered
+                templates and one-click animations.
               </p>
 
               {/* CTA Buttons Row */}
@@ -477,7 +526,9 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                     hover:border-violet-400/50 transition-all duration-300 cursor-pointer"
                 >
                   <FiZap className="text-violet-400 text-sm" />
-                  <span className="text-violet-300 text-xs font-medium">AI Tools</span>
+                  <span className="text-violet-300 text-xs font-medium">
+                    AI Tools
+                  </span>
                 </button>
               </div>
             </div>
@@ -490,7 +541,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-1 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(139,92,246,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/80 via-transparent to-blue-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -498,7 +555,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-2 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-tl from-blue-900/80 via-transparent to-cyan-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -506,7 +569,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-3 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(236,72,153,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-r from-pink-900/80 via-transparent to-purple-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -514,7 +583,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-4 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(139,92,246,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/80 via-transparent to-blue-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -522,7 +597,13 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-5 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-tl from-blue-900/80 via-transparent to-cyan-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
 
@@ -530,18 +611,22 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
                 <div className="carousel-item c-item-6 w-20 h-36 rounded-xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md overflow-hidden shadow-[0_0_15px_rgba(236,72,153,0.3)] group">
                   <div className="absolute inset-0 bg-gradient-to-r from-pink-900/80 via-transparent to-purple-900/80 opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-white/70" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg
+                      className="w-7 h-7 text-white/70"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
                   </div>
                 </div>
               </div>
-
             </div>
 
             {/* Quote - Below Carousel */}
             <p className="hidden lg:block absolute bottom-6 right-12 text-white/70 text-sm italic">
               "Creativity is intelligence having fun."
             </p>
-
           </div>
 
           {/* Decorative Corner Elements */}
@@ -567,215 +652,383 @@ export const HomeSection: React.FC<HomeSectionProps> = ({
 
             {/* AI Tools Horizontal Carousel */}
             <div className="relative group/carousel">
-              {/* Scrollable Container */}
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
-              {/* AI Background Remover - Transparency Grid Design */}
-              <div
-                onClick={handleToolsClick}
-                className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20"
-              >
-                {/* Checkerboard Pattern Background */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(45deg, #1a1a2e 25%, transparent 25%),
-                      linear-gradient(-45deg, #1a1a2e 25%, transparent 25%),
-                      linear-gradient(45deg, transparent 75%, #1a1a2e 75%),
-                      linear-gradient(-45deg, transparent 75%, #1a1a2e 75%)
-                    `,
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                    backgroundColor: '#0f0f1a'
-                  }}
-                />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-transparent to-pink-900/40" />
-                {/* Glowing Shape */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl opacity-60 blur-2xl group-hover:opacity-80 transition-opacity duration-500" />
-                {/* Shine Effect on Hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                {/* Popular Badge */}
-                <div className="absolute top-2 left-2 z-10">
-                  <span className="px-2 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg">
-                    Popular
-                  </span>
-                </div>
-                {/* Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
-                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-lg mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-0.5">Image Generator (AI)</h3>
-                  <p className="text-white/60 text-[10px]">Create Al images and remove backgrounds
-automatically</p>
-                </div>
-                {/* Border Glow */}
-                <div className="absolute inset-0 rounded-2xl border border-purple-500/30 group-hover:border-purple-400/50 transition-colors duration-300" />
-              </div>
-
-              {/* VEO3 Video Generator - Neon Waveform Design */}
-              <div
-                onClick={handleToolsClick}
-                className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/20 bg-slate-900"
-              >
-                {/* Dark Gradient Base */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-                {/* Animated Blobs */}
-                <div className="absolute top-0 -left-4 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse" />
-                <div className="absolute top-0 -right-4 w-48 h-48 bg-pink-600 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }} />
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
-                {/* New Badge */}
-                <div className="absolute top-2 left-2 z-10 flex gap-2">
-                  <span className="px-2 py-1 text-[10px] font-bold text-slate-900 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full shadow-lg">
-                    New
-                  </span>
-                </div>
-                {/* Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
-                  {/* Play Button */}
-                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-full mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
-                    <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-white mb-0.5">Video Generator (AI)</h3>
-                  <p className="text-white/60 text-[10px]">Generate videos automatically from text
-or prompts.</p>
-                </div>
-                {/* Waveform Bars */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-end gap-0.5 z-10">
-                  <div className="w-1 h-2.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" />
-                  <div className="w-1 h-5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-                  <div className="w-1 h-3 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-1 h-6 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.3s' }} />
-                  <div className="w-1 h-4 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                  <div className="w-1 h-2 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
-                  <div className="w-1 h-4.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.6s' }} />
-                  <div className="w-1 h-2.5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.7s' }} />
-                  <div className="w-1 h-5.5 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
-                  <div className="w-1 h-3 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.9s' }} />
-                </div>
-                {/* Border Glow */}
-                <div className="absolute inset-0 rounded-2xl border border-pink-500/30 group-hover:border-pink-400/50 transition-colors duration-300" />
-              </div>
-
-              {/* Coming Soon Tool 1: YouTube Video Downloader */}
-              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
-                {/* Subtle Grid Pattern */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }} />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-orange-900/20" />
-                {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
-                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Video Downloader</h3>
-                  <p className="text-slate-500 text-[10px] mb-1.5">Download videos from Youtube</p>
-                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
-                    Coming Soon
-                  </span>
-                </div>
-                {/* Border */}
-                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
-              </div>
-
-              {/* Coming Soon Tool 2: Smart Captions */}
-              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
-                {/* Subtle Grid Pattern */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }} />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-indigo-900/20" />
-                {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
-                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Smart Captions</h3>
-                  <p className="text-slate-500 text-[10px] mb-1.5">Auto-generate editable subtitles</p>
-                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
-                    Coming Soon
-                  </span>
-                </div>
-                {/* Border */}
-                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
-              </div>
-
-              {/* Coming Soon Tool 3: AI Story Narrator */}
-              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
-                {/* Subtle Grid Pattern */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }} />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-violet-900/20" />
-                {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
-                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">AI Story Narrator</h3>
-                  <p className="text-slate-500 text-[10px] mb-1.5">Convert text to speech or modify voices</p>
-                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
-                    Coming Soon
-                  </span>
-                </div>
-                {/* Border */}
-                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
-              </div>
-
-              {/* Coming Soon Tool 4: Voice Studio */}
-              <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
-                {/* Subtle Grid Pattern */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }} />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-teal-900/20" />
-                {/* Lock Icon and Content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-                  <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
-                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-300 mb-0.5">Voice Studio</h3>
-                  <p className="text-slate-500 text-[10px] mb-1.5">Transform recordings into different voice styles</p>
-                  <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
-                    Coming Soon
-                  </span>
-                </div>
-                {/* Border */}
-                <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
-              </div>
-              </div>
-
-              {/* Next Arrow Button */}
+              {/* Previous Arrow Button (LEFT) */}
               <button
                 onClick={(e) => {
-                  e.currentTarget.previousElementSibling?.scrollBy({ left: 300, behavior: 'smooth' });
+                  const scrollContainer = e.currentTarget
+                    .nextElementSibling as HTMLElement;
+                  scrollContainer?.scrollBy({ left: -300, behavior: "smooth" });
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 hover:bg-slate-50 z-10"
+              >
+                <svg
+                  className="w-6 h-6 text-slate-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Scrollable Container */}
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
+                {/* AI Background Remover - Transparency Grid Design */}
+                <div
+                  onClick={handleToolsClick}
+                  className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20"
+                >
+                  {/* Checkerboard Pattern Background */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `
+              linear-gradient(45deg, #1a1a2e 25%, transparent 25%),
+              linear-gradient(-45deg, #1a1a2e 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #1a1a2e 75%),
+              linear-gradient(-45deg, transparent 75%, #1a1a2e 75%)
+            `,
+                      backgroundSize: "20px 20px",
+                      backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
+                      backgroundColor: "#0f0f1a",
+                    }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-transparent to-pink-900/40" />
+                  {/* Glowing Shape */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl opacity-60 blur-2xl group-hover:opacity-80 transition-opacity duration-500" />
+                  {/* Shine Effect on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  {/* Popular Badge */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className="px-2 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg">
+                      Popular
+                    </span>
+                  </div>
+                  {/* Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-lg mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-0.5">
+                      Image Generator (AI)
+                    </h3>
+                    <p className="text-white/60 text-[10px]">
+                      Create Al images and remove backgrounds automatically
+                    </p>
+                  </div>
+                  {/* Border Glow */}
+                  <div className="absolute inset-0 rounded-2xl border border-purple-500/30 group-hover:border-purple-400/50 transition-colors duration-300" />
+                </div>
+
+                {/* VEO3 Video Generator - Neon Waveform Design */}
+                <div
+                  onClick={handleToolsClick}
+                  className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/20 bg-slate-900"
+                >
+                  {/* Dark Gradient Base */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+                  {/* Animated Blobs */}
+                  <div className="absolute top-0 -left-4 w-48 h-48 bg-purple-600 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse" />
+                  <div
+                    className="absolute top-0 -right-4 w-48 h-48 bg-pink-600 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse"
+                    style={{ animationDelay: "1s" }}
+                  />
+                  <div
+                    className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse"
+                    style={{ animationDelay: "2s" }}
+                  />
+                  {/* New Badge */}
+                  <div className="absolute top-2 left-2 z-10 flex gap-2">
+                    <span className="px-2 py-1 text-[10px] font-bold text-slate-900 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full shadow-lg">
+                      New
+                    </span>
+                  </div>
+                  {/* Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center z-10">
+                    {/* Play Button */}
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-2 rounded-full mb-1.5 shadow-2xl group-hover:scale-110 group-hover:bg-white/15 transition-all duration-300">
+                      <svg
+                        className="w-5 h-5 text-white ml-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-0.5">
+                      Video Generator (AI)
+                    </h3>
+                    <p className="text-white/60 text-[10px]">
+                      Generate videos automatically from text or prompts.
+                    </p>
+                  </div>
+                  {/* Waveform Bars */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-end gap-0.5 z-10">
+                    <div className="w-1 h-2.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse" />
+                    <div
+                      className="w-1 h-5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <div
+                      className="w-1 h-3 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                    <div
+                      className="w-1 h-6 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.3s" }}
+                    />
+                    <div
+                      className="w-1 h-4 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.4s" }}
+                    />
+                    <div
+                      className="w-1 h-2 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.5s" }}
+                    />
+                    <div
+                      className="w-1 h-4.5 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.6s" }}
+                    />
+                    <div
+                      className="w-1 h-2.5 bg-gradient-to-t from-purple-500 to-purple-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.7s" }}
+                    />
+                    <div
+                      className="w-1 h-5.5 bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.8s" }}
+                    />
+                    <div
+                      className="w-1 h-3 bg-gradient-to-t from-pink-500 to-pink-400 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.9s" }}
+                    />
+                  </div>
+                  {/* Border Glow */}
+                  <div className="absolute inset-0 rounded-2xl border border-pink-500/30 group-hover:border-pink-400/50 transition-colors duration-300" />
+                </div>
+
+                {/* Coming Soon Tool 1: YouTube Video Downloader */}
+                <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                  {/* Subtle Grid Pattern */}
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-orange-900/20" />
+                  {/* Lock Icon and Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                    <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                      <svg
+                        className="w-5 h-5 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-300 mb-0.5">
+                      Video Downloader
+                    </h3>
+                    <p className="text-slate-500 text-[10px] mb-1.5">
+                      Download videos from Youtube
+                    </p>
+                    <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                      Coming Soon
+                    </span>
+                  </div>
+                  {/* Border */}
+                  <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+                </div>
+
+                {/* Coming Soon Tool 2: Smart Captions */}
+                <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                  {/* Subtle Grid Pattern */}
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-indigo-900/20" />
+                  {/* Lock Icon and Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                    <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                      <svg
+                        className="w-5 h-5 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-300 mb-0.5">
+                      Smart Captions
+                    </h3>
+                    <p className="text-slate-500 text-[10px] mb-1.5">
+                      Auto-generate editable subtitles
+                    </p>
+                    <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                      Coming Soon
+                    </span>
+                  </div>
+                  {/* Border */}
+                  <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+                </div>
+
+                {/* Coming Soon Tool 3: AI Story Narrator */}
+                <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                  {/* Subtle Grid Pattern */}
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-violet-900/20" />
+                  {/* Lock Icon and Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                    <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                      <svg
+                        className="w-5 h-5 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-300 mb-0.5">
+                      AI Story Narrator
+                    </h3>
+                    <p className="text-slate-500 text-[10px] mb-1.5">
+                      Convert text to speech or modify voices
+                    </p>
+                    <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                      Coming Soon
+                    </span>
+                  </div>
+                  {/* Border */}
+                  <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+                </div>
+
+                {/* Coming Soon Tool 4: Voice Studio */}
+                <div className="relative h-32 w-56 flex-shrink-0 rounded-xl overflow-hidden group bg-slate-900/80 backdrop-blur-sm">
+                  {/* Subtle Grid Pattern */}
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-transparent to-teal-900/20" />
+                  {/* Lock Icon and Content */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
+                    <div className="bg-white/5 border border-white/10 p-2 rounded-lg mb-1.5">
+                      <svg
+                        className="w-5 h-5 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-300 mb-0.5">
+                      Voice Studio
+                    </h3>
+                    <p className="text-slate-500 text-[10px] mb-1.5">
+                      Transform recordings into different voice styles
+                    </p>
+                    <span className="inline-block px-2 py-0.5 text-[9px] font-bold text-slate-900 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full uppercase tracking-wider shadow-lg">
+                      Coming Soon
+                    </span>
+                  </div>
+
+                  
+                  
+                  {/* Border */}
+                  <div className="absolute inset-0 rounded-2xl border border-slate-700/50" />
+                </div>
+
+                
+              </div>
+
+              
+
+              {/* Next Arrow Button (RIGHT) */}
+              <button
+                onClick={(e) => {
+                  const scrollContainer = e.currentTarget
+                    .previousElementSibling as HTMLElement;
+                  scrollContainer?.scrollBy({ left: 300, behavior: "smooth" });
                 }}
                 className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 hover:bg-slate-50 z-10"
               >
-                <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-6 h-6 text-slate-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -788,7 +1041,7 @@ or prompts.</p>
             onViewAll={() => setNewProjectOpen?.(true)}
           />
 
-{/* Recently Created Templates */}
+          {/* Recently Created Templates */}
           {/* {projects.length > 0 && (
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

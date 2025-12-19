@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import {
   FiZap,
   FiX,
   FiDollarSign,
+  FiMoreVertical, // ✅ NEW: Three-dot icon
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { SUBSCRIPTION_PRICE } from "../../../data/subscriptionData";
@@ -55,6 +56,10 @@ export const BillingTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // ✅ NEW: Three-dot menu state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchSub = async () => {
       try {
@@ -71,7 +76,20 @@ export const BillingTab: React.FC = () => {
     fetchSub();
   }, []);
 
+  // ✅ NEW: Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleManageBilling = async () => {
+    setMenuOpen(false); // ✅ Close menu
     setIsProcessing(true);
     try {
       const token = localStorage.getItem("token");
@@ -472,14 +490,71 @@ export const BillingTab: React.FC = () => {
           )}
         </div>
 
-        {/* Next Billing */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <FiDollarSign className="text-green-600 text-xl" />
-            <h4 className="font-bold text-gray-800">
-              {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
-            </h4>
+        {/* ✅ Next Billing with Three-Dot Menu */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <FiDollarSign className="text-green-600 text-xl" />
+              <h4 className="font-bold text-gray-800">
+                {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
+              </h4>
+            </div>
+
+            {/* ✅ Three-Dot Menu (only show for paid subscriptions) */}
+            {!isFreeTrialOnly && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FiMoreVertical className="text-gray-600 text-xl" />
+                </button>
+
+                {/* ✅ Dropdown Menu - Only Cancel/Reactivate */}
+                <AnimatePresence>
+                  {menuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
+                    >
+                      {subscription.cancelAtPeriodEnd ? (
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            handleReactivateSubscription();
+                          }}
+                          disabled={isProcessing}
+                          className="w-full px-4 py-3 text-left text-sm text-green-700 hover:bg-green-50 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FiZap className="text-green-600" />
+                          <span className="font-medium">
+                            Reactivate Subscription
+                          </span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setOpenCancelModal(true);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                        >
+                          <FiAlertCircle className="text-red-600" />
+                          <span className="font-medium">
+                            Cancel Subscription
+                          </span>
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
+
           <div
             className={`p-5 rounded-xl border-2 ${
               isFreeTrialOnly
@@ -512,7 +587,7 @@ export const BillingTab: React.FC = () => {
                     ${SUBSCRIPTION_PRICE}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <span className="text-gray-600 font-medium">
                     Billing Date
                   </span>
@@ -526,6 +601,45 @@ export const BillingTab: React.FC = () => {
                       }
                     )}
                   </span>
+                </div>
+
+                {/* ✅ NEW: Manage Billing Portal Link BELOW billing date */}
+                <div className="mt-4">
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={isProcessing}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-indigo-300 rounded-lg text-indigo-700 font-medium hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Opening...
+                      </>
+                    ) : (
+                      <>
+                        <FiExternalLink />
+                        Manage Billing Portal
+                      </>
+                    )}
+                  </button>
                 </div>
               </>
             )}
@@ -571,17 +685,17 @@ export const BillingTab: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Action Buttons */}
-      <motion.div
-        className="flex flex-col sm:flex-row gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        {isFreeTrialOnly ? (
+      {/* ✅ REMOVED: Bottom Action Buttons */}
+      {/* Only show "Subscribe" button for free trial users */}
+      {isFreeTrialOnly && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <button
             onClick={() => navigate("/dashboard")}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl"
             style={{
               background:
                 "linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)",
@@ -590,86 +704,8 @@ export const BillingTab: React.FC = () => {
             <FiZap />
             Subscribe to Continue After Trial
           </button>
-        ) : (
-          <>
-            <button
-              onClick={handleManageBilling}
-              disabled={isProcessing}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
-              style={{
-                background:
-                  "linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)",
-              }}
-            >
-              {isProcessing ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Opening...
-                </>
-              ) : (
-                <>
-                  <FiExternalLink />
-                  Manage Billing Portal
-                </>
-              )}
-            </button>
-
-            {subscription.cancelAtPeriodEnd ? (
-              <button
-                onClick={handleReactivateSubscription}
-                disabled={isProcessing}
-                className="flex-1 px-6 py-4 bg-white border-2 border-green-500 rounded-xl text-green-600 font-bold hover:bg-green-50 transition-all duration-300 hover:border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Reactivating...
-                  </span>
-                ) : (
-                  "Reactivate Subscription"
-                )}
-              </button>
-            ) : (
-              <button
-                onClick={() => setOpenCancelModal(true)}
-                className="flex-1 px-6 py-4 bg-white border-2 border-red-300 rounded-xl text-red-600 font-bold hover:bg-red-50 transition-all duration-300 hover:border-red-400"
-              >
-                Cancel Subscription
-              </button>
-            )}
-          </>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Cancel Subscription Modal */}
       <AnimatePresence>

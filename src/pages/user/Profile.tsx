@@ -1,10 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import {
-  FiEdit2,
-  FiCamera,
-  FiTrendingUp,
-  FiPieChart,
-} from "react-icons/fi";
+import { FiEdit2, FiCamera, FiTrendingUp, FiPieChart } from "react-icons/fi";
 import { motion } from "framer-motion";
 import {
   LineChart,
@@ -19,6 +14,7 @@ import { templatesWithTheirIds } from "../../data/TemplateIds";
 import { updateUsername } from "../../utils/UsernameUpdater";
 import { useProfileFileUpload } from "../../hooks/uploads/ProfileUpload";
 import toast from "react-hot-toast";
+import { backendPrefix } from "../../config";
 
 // Helper function to generate continuous date range
 const generateDateRange = (days: number) => {
@@ -41,12 +37,20 @@ const generateDateRange = (days: number) => {
   return result;
 };
 
+interface TooltipPayload {
+  payload: {
+    day: string;
+    renders: number;
+  };
+  value: number;
+}
+
 const CustomTooltip = ({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: any[];
+  payload?: TooltipPayload[];
 }) => {
   if (active && payload && payload.length) {
     return (
@@ -64,12 +68,39 @@ const CustomTooltip = ({
   return null;
 };
 
+interface Render {
+  id: string;
+  templateId: string;
+  renderedAt: string;
+  type?: string;
+}
+
+interface Project {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+interface UserUpload {
+  id: string;
+  url: string;
+  createdAt: string;
+}
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+  profilePicture?: string;
+}
+
 interface ProfilePageProps {
-  userData: any;
-  userDatasets: any[];
-  projects: any[];
-  userUploads: any[];
-  renders: any[];
+  userData: UserData | null;
+  userDatasets: unknown[]; // Not used, so unknown is fine
+  projects: Project[];
+  userUploads: UserUpload[];
+  renders: Render[];
   fetchProfileDetails: () => void;
 }
 
@@ -83,6 +114,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameValue, setUsernameValue] = useState(userData?.name || "");
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
+
+  // ✅ NEW: Global template stats state
+  const [globalMostUsed, setGlobalMostUsed] = useState<{
+    templateName: string;
+    count: number;
+  } | null>(null);
+  const [loadingGlobalStats, setLoadingGlobalStats] = useState(true);
 
   const { uploadFile, isUploading } = useProfileFileUpload({ type: "image" });
   const [profilePic, setProfilePic] = useState(
@@ -98,37 +136,37 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       })
     : "Unknown";
 
-  const templatesUsageData = useMemo(() => {
-    const counts: Record<string, number> = {};
+  // const templatesUsageData = useMemo(() => {
+  //   const counts: Record<string, number> = {};
 
-    Object.keys(templatesWithTheirIds).forEach((templateId) => {
-      counts[templateId] = 0;
-    });
+  //   Object.keys(templatesWithTheirIds).forEach((templateId) => {
+  //     counts[templateId] = 0;
+  //   });
 
-    renders.forEach((r) => {
-      if (!r.templateId) return;
-      counts[r.templateId] = (counts[r.templateId] || 0) + 1;
-    });
+  //   renders.forEach((r) => {
+  //     if (!r.templateId) return;
+  //     counts[r.templateId] = (counts[r.templateId] || 0) + 1;
+  //   });
 
-    return Object.entries(counts)
-      .filter(([, usage]) => usage > 0)
-      .map(([templateId, usage]) => ({
-        templateId,
-        template: templatesWithTheirIds[templateId] || "Unknown",
-        usage,
-      }))
-      .sort((a, b) => b.usage - a.usage);
-  }, [renders]);
+  //   return Object.entries(counts)
+  //     .filter(([, usage]) => usage > 0)
+  //     .map(([templateId, usage]) => ({
+  //       templateId,
+  //       template: templatesWithTheirIds[templateId] || "Unknown",
+  //       usage,
+  //     }))
+  //     .sort((a, b) => b.usage - a.usage);
+  // }, [renders]);
 
   const [chartTimeRange, setChartTimeRange] = useState<
     "7d" | "30d" | "90d" | "all"
   >("30d");
 
-  const mostUsedTemplateAllTime = templatesUsageData.length
-    ? templatesUsageData.reduce((prev, curr) =>
-        curr.usage > prev.usage ? curr : prev
-      ).template
-    : "No templates used yet.";
+  // const mostUsedTemplateAllTime = templatesUsageData.length
+  //   ? templatesUsageData.reduce((prev, curr) =>
+  //       curr.usage > prev.usage ? curr : prev
+  //     ).template
+  //   : "No templates used yet.";
 
   const filteredRenderingData = useMemo(() => {
     if (chartTimeRange === "all") {
@@ -216,6 +254,46 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       }))
       .sort((a, b) => b.usage - a.usage);
   }, [renders, chartTimeRange]);
+
+  // ✅ NEW: Fetch global template statistics
+  useEffect(() => {
+    const fetchGlobalTemplateStats = async () => {
+      setLoadingGlobalStats(true);
+      try {
+        const currentYear = new Date().getFullYear();
+        const response = await fetch(
+          `${backendPrefix}/api/analytics/templates/trending?year=${currentYear}`
+        );
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setGlobalMostUsed({
+            templateName: data.data.templateName,
+            count: data.data.count,
+          });
+          console.log(
+            `✅ Loaded global template stats: ${data.data.templateName} (${data.data.count} uses)`
+          );
+        } else {
+          // Fallback
+          setGlobalMostUsed({
+            templateName: "No data yet",
+            count: 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch global template stats:", error);
+        setGlobalMostUsed({
+          templateName: "Unable to load",
+          count: 0,
+        });
+      } finally {
+        setLoadingGlobalStats(false);
+      }
+    };
+
+    fetchGlobalTemplateStats();
+  }, []);
 
   useEffect(() => {
     if (userData?.name) {
@@ -382,15 +460,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* ✅ UPDATED: Stats Grid with Global Template */}
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 mb-8"
         layout
       >
         {[
           {
-            label: "Most Used Template",
-            value: mostUsedTemplateAllTime,
+            label: `Most Used Templates in ${new Date().getFullYear()}`,
+            value: globalMostUsed?.templateName || "No data",
+            subtext:
+              globalMostUsed && globalMostUsed.count > 0
+                ? `${globalMostUsed.count.toLocaleString()} uses platform-wide` // ✅ Changed
+                : "across all users",
             icon: <FiTrendingUp />,
             color: "text-indigo-600",
           },
@@ -416,6 +498,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               <div className="flex-1">
                 <p className="text-sm text-gray-500 mb-2">{stat.label}</p>
                 <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
+                {/* ✅ NEW: Show subtext (total uses) */}
+                {stat.subtext && (
+                  <p className="text-xs text-gray-400 mt-1">{stat.subtext}</p>
+                )}
               </div>
               <div className={`text-4xl ${stat.color}`}>{stat.icon}</div>
             </div>
@@ -474,9 +560,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <h3 className="font-semibold text-gray-800 mb-2">
             Rendering History
           </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Your daily render count.
-          </p>
+          <p className="text-sm text-gray-500 mb-4">Your daily render count.</p>
 
           {filteredRenderingData.every((d) => d.renders === 0) ? (
             <div className="h-[250px] flex items-center justify-center">
@@ -550,7 +634,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
         >
           <h3 className="font-semibold text-gray-800 mb-2">Template Usage</h3>
-          <p className="text-sm text-gray-500 mb-4">Most used templates.</p>
+          <p className="text-sm text-gray-500 mb-4">
+            Your most used templates. 
+          </p>
 
           {filteredTemplatesUsageData.length === 0 ? (
             <div className="h-[250px] flex items-center justify-center">

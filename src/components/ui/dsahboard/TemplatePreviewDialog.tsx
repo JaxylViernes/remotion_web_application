@@ -78,7 +78,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
         },
       }}
     >
-      {/* Video Background */}
+      {/* Video Background - SINGLE VIDEO */}
       <Box
         sx={{
           position: "absolute",
@@ -88,7 +88,8 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
           height: "100%",
           zIndex: 1,
           display: "flex",
-          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
           overflow: "hidden",
           "&::before": {
             content: '""',
@@ -102,43 +103,20 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
           },
         }}
       >
-        {isMobile ? (
-          <video
-            ref={videoRef}
-            muted
-            autoPlay
-            loop
-            playsInline
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-            src={`${templateUrlFinder(selectedTemplate as string)}`}
-          />
-        ) : (
-          <>
-            {[0, 1].map((index) => (
-              <video
-                key={index}
-                ref={index === 0 ? videoRef : null}
-                muted
-                autoPlay
-                loop
-                playsInline
-                style={{
-                  minWidth: "50%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                  flex: "0 0 50%",
-                }}
-                src={`${templateUrlFinder(selectedTemplate as string)}`}
-              />
-            ))}
-          </>
-        )}
+        <video
+          ref={videoRef}
+          muted
+          autoPlay
+          loop
+          playsInline
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+          src={`${templateUrlFinder(selectedTemplate as string)}`}
+        />
       </Box>
 
       {/* Close Button */}
@@ -225,11 +203,11 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
               {selectedDescription || "No description available."}
             </Typography>
 
-            {/* Technical Details */}
+            {/* Technical Details - REDUCED SPACING */}
             <Stack
               direction="row"
-              spacing={1}
-              sx={{ flexWrap: "wrap", gap: 1 }}
+              spacing={0.5}
+              sx={{ flexWrap: "wrap", gap: 0.5 }}
             >
               <Chip
                 label={`${videoDimensions.width || 1080}×${videoDimensions.height || 1920}`}
@@ -243,6 +221,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                   height: 28,
                   "& .MuiChip-label": {
                     fontWeight: 600,
+                    px: 1,
                   },
                 }}
               />
@@ -258,6 +237,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                   height: 28,
                   "& .MuiChip-label": {
                     fontWeight: 600,
+                    px: 1,
                   },
                 }}
               />
@@ -274,6 +254,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
                     height: 28,
                     "& .MuiChip-label": {
                       fontWeight: 600,
+                      px: 1,
                     },
                   }}
                 />
