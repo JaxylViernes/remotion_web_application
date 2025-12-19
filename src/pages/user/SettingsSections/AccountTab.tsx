@@ -31,13 +31,13 @@ export const AccountTab: React.FC<AccountTabProps> = ({
   const { uploadFile, isUploading } = useProfileFileUpload({ type: "image" });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const formattedDate = userData?.createdAt
-    ? new Date(userData.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "Unknown";
+  // const formattedDate = userData?.createdAt
+  //   ? new Date(userData.createdAt).toLocaleDateString("en-US", {
+  //       year: "numeric",
+  //       month: "long",
+  //       day: "numeric",
+  //     })
+  //   : "Unknown";
 
   // Profile picture upload handler
   const handleProfilePicChange = async (

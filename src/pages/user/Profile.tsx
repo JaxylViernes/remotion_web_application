@@ -259,6 +259,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   useEffect(() => {
     const fetchGlobalTemplateStats = async () => {
       setLoadingGlobalStats(true);
+      console.log(loadingGlobalStats);
       try {
         const currentYear = new Date().getFullYear();
         const response = await fetch(

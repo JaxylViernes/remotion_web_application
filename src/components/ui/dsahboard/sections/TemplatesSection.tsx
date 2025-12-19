@@ -116,7 +116,7 @@ export const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onTry }) => 
           
           {/* Horizontal scrollable cards - Same design as HomePage */}
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {recentTemplates.map((template, index) => (
+            {recentTemplates.map((template) => (
               <div
                 key={template.name}
                 className="flex-shrink-0"
