@@ -250,7 +250,7 @@ export const BillingTab: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Cancellation Warning Banner */}
-      {subscription.cancelAtPeriodEnd && (
+      {subscription.cancelAtPeriodEnd && !subscription.isLifetime && (
         <motion.div
           className="p-5 bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-2xl shadow-sm"
           initial={{ scale: 0.95, opacity: 0 }}
@@ -292,6 +292,42 @@ export const BillingTab: React.FC = () => {
         </motion.div>
       )}
 
+      {/* ✅ NEW: Lifetime Access Banner */}
+      {subscription.isLifetime && (
+        <motion.div
+          className="p-5 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-2xl shadow-md"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center flex-shrink-0">
+              <FiZap className="text-white text-2xl" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-yellow-900 mb-2">
+                🌟 Lifetime Access{" "}
+                {subscription.isCompanyAccount && "- Company Account"}
+              </p>
+              <p className="text-sm text-yellow-800 leading-relaxed mb-2">
+                You have unlimited access to all features. This subscription
+                never expires and you will never be charged.
+              </p>
+              {subscription.companyName && (
+                <p className="text-xs text-yellow-700 font-medium">
+                  Company: {subscription.companyName}
+                </p>
+              )}
+              {subscription.specialNotes && (
+                <p className="text-xs text-yellow-600 mt-1">
+                  {subscription.specialNotes}
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Current Plan Card */}
       <motion.div
         className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
@@ -323,7 +359,9 @@ export const BillingTab: React.FC = () => {
                 </h4>
                 <div
                   className={`inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold backdrop-blur-sm border text-white ${
-                    subscription.cancelAtPeriodEnd
+                    subscription.isLifetime
+                      ? "bg-gradient-to-r from-yellow-500/80 to-orange-500/80 border-yellow-300"
+                      : subscription.cancelAtPeriodEnd
                       ? "bg-red-500/80 border-red-300"
                       : "bg-white/20 border-white/30"
                   }`}
@@ -331,16 +369,23 @@ export const BillingTab: React.FC = () => {
                   <FiZap className="text-base sm:text-lg" />
                   {formatStatus(
                     subscription.status,
-                    subscription.cancelAtPeriodEnd
+                    subscription.cancelAtPeriodEnd,
+                    subscription.isLifetime
                   )}
                 </div>
               </div>
-              <div className="text-left sm:text-right">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                  ${SUBSCRIPTION_PRICE}
+
+              {/* ✅ Only show price for non-lifetime users */}
+              {!subscription.isLifetime && (
+                <div className="text-left sm:text-right">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+                    ${SUBSCRIPTION_PRICE}
+                  </div>
+                  <div className="text-white/80 text-base sm:text-lg">
+                    /month
+                  </div>
                 </div>
-                <div className="text-white/80 text-base sm:text-lg">/month</div>
-              </div>
+              )}
             </div>
 
             {/* Features Grid */}
@@ -367,10 +412,11 @@ export const BillingTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Trial Expiry Display */}
+        {/* Trial Expiry Display - Only for trials */}
         {(subscription.status === "trialing" ||
           subscription.status === "free_trial") &&
-          subscription.trialEnd && (
+          subscription.trialEnd &&
+          !subscription.isLifetime && (
             <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-100">
               <p className="text-sm text-gray-700">
                 {subscription.status === "free_trial" ? (
@@ -404,249 +450,251 @@ export const BillingTab: React.FC = () => {
       </motion.div>
 
       {/* Payment Method & Billing Info */}
-      <motion.div
-        className="grid md:grid-cols-2 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        {/* Payment Method */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <FiCreditCard className="text-indigo-600 text-xl" />
-            <h4 className="font-bold text-gray-800">Payment Method</h4>
-          </div>
-          {isFreeTrialOnly ? (
-            <div className="p-5 rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <div className="text-center py-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <FiCreditCard className="text-indigo-600 text-2xl" />
-                </div>
-                <p className="text-sm font-semibold text-gray-800 mb-2">
-                  No Payment Method Added
-                </p>
-                <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                  Add a payment method to continue your subscription after the
-                  free trial ends
-                </p>
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition text-sm"
-                >
-                  Add Payment Method
-                </button>
-              </div>
+      {!subscription.isLifetime && (
+        <motion.div
+          className="grid md:grid-cols-2 gap-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Payment Method */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <FiCreditCard className="text-indigo-600 text-xl" />
+              <h4 className="font-bold text-gray-800">Payment Method</h4>
             </div>
-          ) : (
-            <div className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-gray-50">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                    CARD
+            {isFreeTrialOnly ? (
+              <div className="p-5 rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <FiCreditCard className="text-indigo-600 text-2xl" />
                   </div>
-                  <div>
-                    <p className="font-mono text-gray-800 font-semibold">
-                      •••• •••• •••• ••••
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Payment method on file
-                    </p>
-                  </div>
-                </div>
-                <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                  Active
+                  <p className="text-sm font-semibold text-gray-800 mb-2">
+                    No Payment Method Added
+                  </p>
+                  <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                    Add a payment method to continue your subscription after the
+                    free trial ends
+                  </p>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition text-sm"
+                  >
+                    Add Payment Method
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={handleManageBilling}
-                disabled={isProcessing}
-                className="w-full py-2 px-4 bg-white border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Opening...
-                  </span>
-                ) : (
-                  "Update Card"
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ✅ Next Billing with Three-Dot Menu */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <FiDollarSign className="text-green-600 text-xl" />
-              <h4 className="font-bold text-gray-800">
-                {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
-              </h4>
-            </div>
-
-            {/* ✅ Three-Dot Menu (only show for paid subscriptions) */}
-            {!isFreeTrialOnly && (
-              <div className="relative" ref={menuRef}>
+            ) : (
+              <div className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-gray-50">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                      CARD
+                    </div>
+                    <div>
+                      <p className="font-mono text-gray-800 font-semibold">
+                        •••• •••• •••• ••••
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Payment method on file
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                    Active
+                  </div>
+                </div>
                 <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={handleManageBilling}
+                  disabled={isProcessing}
+                  className="w-full py-2 px-4 bg-white border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FiMoreVertical className="text-gray-600 text-xl" />
-                </button>
-
-                {/* ✅ Dropdown Menu - Only Cancel/Reactivate */}
-                <AnimatePresence>
-                  {menuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
-                    >
-                      {subscription.cancelAtPeriodEnd ? (
-                        <button
-                          onClick={() => {
-                            setMenuOpen(false);
-                            handleReactivateSubscription();
-                          }}
-                          disabled={isProcessing}
-                          className="w-full px-4 py-3 text-left text-sm text-green-700 hover:bg-green-50 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FiZap className="text-green-600" />
-                          <span className="font-medium">
-                            Reactivate Subscription
-                          </span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setMenuOpen(false);
-                            setOpenCancelModal(true);
-                          }}
-                          className="w-full px-4 py-3 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                        >
-                          <FiAlertCircle className="text-red-600" />
-                          <span className="font-medium">
-                            Cancel Subscription
-                          </span>
-                        </button>
-                      )}
-                    </motion.div>
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Opening...
+                    </span>
+                  ) : (
+                    "Update Card"
                   )}
-                </AnimatePresence>
+                </button>
               </div>
             )}
           </div>
 
-          <div
-            className={`p-5 rounded-xl border-2 ${
-              isFreeTrialOnly
-                ? "border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50"
-                : "border-gray-200 bg-gradient-to-br from-green-50 to-emerald-50"
-            }`}
-          >
-            {isFreeTrialOnly ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-600 font-medium">Trial Ends</span>
-                  <span className="text-2xl font-bold text-gray-800">
-                    {subscription.trialEnd &&
-                      new Date(subscription.trialEnd).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric" }
-                      )}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Add payment method before trial ends to continue your
-                  subscription
-                </p>
+          {/* ✅ Next Billing with Three-Dot Menu */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <FiDollarSign className="text-green-600 text-xl" />
+                <h4 className="font-bold text-gray-800">
+                  {isFreeTrialOnly ? "Trial Period" : "Next Billing"}
+                </h4>
               </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-600 font-medium">Amount</span>
-                  <span className="text-3xl font-bold text-gray-800">
-                    ${SUBSCRIPTION_PRICE}
-                  </span>
+
+              {/* ✅ Three-Dot Menu (only show for paid subscriptions) */}
+              {!isFreeTrialOnly && (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <FiMoreVertical className="text-gray-600 text-xl" />
+                  </button>
+
+                  {/* ✅ Dropdown Menu - Only Cancel/Reactivate */}
+                  <AnimatePresence>
+                    {menuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
+                      >
+                        {subscription.cancelAtPeriodEnd ? (
+                          <button
+                            onClick={() => {
+                              setMenuOpen(false);
+                              handleReactivateSubscription();
+                            }}
+                            disabled={isProcessing}
+                            className="w-full px-4 py-3 text-left text-sm text-green-700 hover:bg-green-50 flex items-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FiZap className="text-green-600" />
+                            <span className="font-medium">
+                              Reactivate Subscription
+                            </span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setMenuOpen(false);
+                              setOpenCancelModal(true);
+                            }}
+                            className="w-full px-4 py-3 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <FiAlertCircle className="text-red-600" />
+                            <span className="font-medium">
+                              Cancel Subscription
+                            </span>
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">
-                    Billing Date
-                  </span>
-                  <span className="font-semibold text-gray-800">
-                    {new Date(subscription.currentPeriodEnd).toLocaleDateString(
-                      "en-US",
-                      {
+              )}
+            </div>
+
+            <div
+              className={`p-5 rounded-xl border-2 ${
+                isFreeTrialOnly
+                  ? "border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50"
+                  : "border-gray-200 bg-gradient-to-br from-green-50 to-emerald-50"
+              }`}
+            >
+              {isFreeTrialOnly ? (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-gray-600 font-medium">
+                      Trial Ends
+                    </span>
+                    <span className="text-2xl font-bold text-gray-800">
+                      {subscription.trialEnd &&
+                        new Date(subscription.trialEnd).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" }
+                        )}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Add payment method before trial ends to continue your
+                    subscription
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-gray-600 font-medium">Amount</span>
+                    <span className="text-3xl font-bold text-gray-800">
+                      ${SUBSCRIPTION_PRICE}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                    <span className="text-gray-600 font-medium">
+                      Billing Date
+                    </span>
+                    <span className="font-semibold text-gray-800">
+                      {new Date(
+                        subscription.currentPeriodEnd
+                      ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
-                      }
-                    )}
-                  </span>
-                </div>
+                      })}
+                    </span>
+                  </div>
 
-                {/* ✅ NEW: Manage Billing Portal Link BELOW billing date */}
-                <div className="mt-4">
-                  <button
-                    onClick={handleManageBilling}
-                    disabled={isProcessing}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-indigo-300 rounded-lg text-indigo-700 font-medium hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <svg
-                          className="animate-spin h-4 w-4"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Opening...
-                      </>
-                    ) : (
-                      <>
-                        <FiExternalLink />
-                        Manage Billing Portal
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+                  {/* ✅ NEW: Manage Billing Portal Link BELOW billing date */}
+                  <div className="mt-4">
+                    <button
+                      onClick={handleManageBilling}
+                      disabled={isProcessing}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-indigo-300 rounded-lg text-indigo-700 font-medium hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          Opening...
+                        </>
+                      ) : (
+                        <>
+                          <FiExternalLink />
+                          Manage Billing Portal
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </motion.div>
-
+        </motion.div>
+      )}
       {/* Free Trial Info Box */}
       {isFreeTrialOnly && (
         <motion.div

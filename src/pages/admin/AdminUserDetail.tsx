@@ -17,6 +17,7 @@ import {
   FiCreditCard,
   FiAlertCircle,
   FiShield,
+  FiStar,
 } from "react-icons/fi";
 
 interface UserDetail {
@@ -62,6 +63,10 @@ interface UserDetail {
 }
 
 export const AdminUserDetail: React.FC = () => {
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [grantingLifetime, setGrantingLifetime] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [specialNotes, setSpecialNotes] = useState("");
   const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,14 +82,11 @@ export const AdminUserDetail: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(
-        `${backendPrefix}/admin/users/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${backendPrefix}/admin/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await response.json();
 
@@ -96,7 +98,7 @@ export const AdminUserDetail: React.FC = () => {
     } catch (error: any) {
       console.error("Failed to fetch user details:", error);
       setError(error.message || "Failed to load user details");
-      
+
       if (error.message.includes("Unauthorized")) {
         logout();
         navigate("/admin/login");
@@ -126,6 +128,45 @@ export const AdminUserDetail: React.FC = () => {
     }
   };
 
+  const handleGrantLifetime = async () => {
+    setGrantingLifetime(true);
+    try {
+      const response = await fetch(
+        `${backendPrefix}/admin/subscriptions/grant-lifetime`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userId,
+            companyName: companyName.trim() || null,
+            notes: specialNotes.trim() || null,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("✅ Lifetime access granted successfully!");
+        setShowGrantModal(false);
+        setCompanyName("");
+        setSpecialNotes("");
+        // Refresh user details
+        fetchUserDetails();
+      } else {
+        throw new Error(data.error || "Failed to grant lifetime access");
+      }
+    } catch (error: any) {
+      console.error("Grant lifetime error:", error);
+      alert(`❌ ${error.message}`);
+    } finally {
+      setGrantingLifetime(false);
+    }
+  };
+
   const getSubscriptionBadge = (status: string) => {
     const badges: Record<string, { color: string; label: string }> = {
       active: { color: "bg-green-100 text-green-800", label: "Active" },
@@ -133,12 +174,25 @@ export const AdminUserDetail: React.FC = () => {
       free_trial: { color: "bg-cyan-100 text-cyan-800", label: "Free Trial" },
       canceled: { color: "bg-red-100 text-red-800", label: "Canceled" },
       past_due: { color: "bg-orange-100 text-orange-800", label: "Past Due" },
+      lifetime: {
+        color: "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900",
+        label: "🌟 Lifetime",
+      },
+      company: {
+        color: "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900",
+        label: "🏢 Company",
+      },
     };
 
-    const badge = badges[status] || { color: "bg-gray-100 text-gray-800", label: status };
+    const badge = badges[status] || {
+      color: "bg-gray-100 text-gray-800",
+      label: status,
+    };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+      >
         {badge.label}
       </span>
     );
@@ -160,7 +214,9 @@ export const AdminUserDetail: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
           <FiAlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Failed to Load User</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Failed to Load User
+          </h2>
           <p className="text-gray-600 mb-6">{error || "User not found"}</p>
           <button
             onClick={() => navigate("/admin/users")}
@@ -205,7 +261,9 @@ export const AdminUserDetail: React.FC = () => {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl">
-                {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                {user.name
+                  ? user.name.charAt(0).toUpperCase()
+                  : user.email.charAt(0).toUpperCase()}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
@@ -239,19 +297,29 @@ export const AdminUserDetail: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500 mb-1">Member Since</p>
-              <div className="flex items-center gap-1 text-gray-700">
-                <FiCalendar className="w-4 h-4" />
-                <span className="font-medium">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </span>
+            <div className="flex flex-col items-end gap-3">
+              <div className="text-right">
+                <p className="text-sm text-gray-500 mb-1">Member Since</p>
+                <div className="flex items-center gap-1 text-gray-700">
+                  <FiCalendar className="w-4 h-4" />
+                  <span className="font-medium">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                {user.lastLogin && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Last login: {new Date(user.lastLogin).toLocaleString()}
+                  </p>
+                )}
               </div>
-              {user.lastLogin && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Last login: {new Date(user.lastLogin).toLocaleString()}
-                </p>
-              )}
+              {/* ✅ Grant Lifetime Access Button */}
+              <button
+                onClick={() => setShowGrantModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <FiStar className="w-4 h-4" />
+                Grant Lifetime Access
+              </button>
             </div>
           </div>
         </div>
@@ -263,7 +331,9 @@ export const AdminUserDetail: React.FC = () => {
               <FiPackage className="w-5 h-5 text-blue-500" />
               <span className="text-sm text-gray-600">Projects</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{user.stats.totalProjects}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {user.stats.totalProjects}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -271,7 +341,9 @@ export const AdminUserDetail: React.FC = () => {
               <FiVideo className="w-5 h-5 text-green-500" />
               <span className="text-sm text-gray-600">Renders</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{user.stats.totalRenders}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {user.stats.totalRenders}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -279,7 +351,9 @@ export const AdminUserDetail: React.FC = () => {
               <FiEye className="w-5 h-5 text-purple-500" />
               <span className="text-sm text-gray-600">Visits (30d)</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{user.stats.totalVisits}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {user.stats.totalVisits}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -287,7 +361,9 @@ export const AdminUserDetail: React.FC = () => {
               <FiVideo className="w-5 h-5 text-orange-500" />
               <span className="text-sm text-gray-600">AI Videos</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{user.stats.totalVeoGenerations}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {user.stats.totalVeoGenerations}
+            </p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -295,7 +371,9 @@ export const AdminUserDetail: React.FC = () => {
               <FiImage className="w-5 h-5 text-pink-500" />
               <span className="text-sm text-gray-600">AI Images</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{user.stats.totalImageGenerations}</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {user.stats.totalImageGenerations}
+            </p>
           </div>
         </div>
 
@@ -305,27 +383,64 @@ export const AdminUserDetail: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <FiCreditCard className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-lg font-bold text-gray-800">Subscription History</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                Subscription History
+              </h3>
             </div>
 
             {user.subscriptions.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No subscriptions</p>
             ) : (
               <div className="space-y-3">
-                {user.subscriptions.map((sub) => (
+                {user.subscriptions.map((sub: any) => (
                   <div
                     key={sub.id}
                     className="border border-gray-200 rounded-lg p-4"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-800">{sub.plan}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-800">
+                          {sub.plan}
+                        </span>
+                        {/* ✅ Show company name if exists */}
+                        {sub.companyName && (
+                          <span className="text-xs text-gray-500">
+                            ({sub.companyName})
+                          </span>
+                        )}
+                      </div>
                       {getSubscriptionBadge(sub.status)}
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Started: {new Date(sub.createdAt).toLocaleDateString()}</p>
-                      <p>Current Period: {new Date(sub.currentPeriodStart).toLocaleDateString()} - {new Date(sub.currentPeriodEnd).toLocaleDateString()}</p>
+                      <p>
+                        Started: {new Date(sub.createdAt).toLocaleDateString()}
+                      </p>
+                      {!sub.isLifetime && (
+                        <p>
+                          Current Period:{" "}
+                          {new Date(
+                            sub.currentPeriodStart
+                          ).toLocaleDateString()}{" "}
+                          -{" "}
+                          {new Date(sub.currentPeriodEnd).toLocaleDateString()}
+                        </p>
+                      )}
+                      {sub.isLifetime && (
+                        <p className="text-yellow-700 font-medium">
+                          🌟 Never expires
+                        </p>
+                      )}
                       {sub.canceledAt && (
-                        <p className="text-red-600">Canceled: {new Date(sub.canceledAt).toLocaleDateString()}</p>
+                        <p className="text-red-600">
+                          Canceled:{" "}
+                          {new Date(sub.canceledAt).toLocaleDateString()}
+                        </p>
+                      )}
+                      {/* ✅ Show special notes */}
+                      {sub.specialNotes && (
+                        <p className="text-xs text-gray-500 italic mt-2">
+                          Note: {sub.specialNotes}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -338,7 +453,9 @@ export const AdminUserDetail: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <FiPackage className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-bold text-gray-800">Recent Projects</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                Recent Projects
+              </h3>
             </div>
 
             {user.recentProjects.length === 0 ? (
@@ -366,7 +483,9 @@ export const AdminUserDetail: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <FiVideo className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-bold text-gray-800">Recent Renders</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                Recent Renders
+              </h3>
             </div>
 
             {user.recentRenders.length === 0 ? (
@@ -394,11 +513,15 @@ export const AdminUserDetail: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <FiEye className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-bold text-gray-800">Recent Activity</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                Recent Activity
+              </h3>
             </div>
 
             {user.recentVisits.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No recent activity</p>
+              <p className="text-gray-500 text-center py-8">
+                No recent activity
+              </p>
             ) : (
               <div className="space-y-2">
                 {user.recentVisits.map((visit, idx) => (
@@ -418,6 +541,92 @@ export const AdminUserDetail: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* ✅ Grant Lifetime Access Modal */}
+        {showGrantModal && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowGrantModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowGrantModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl flex items-center justify-center">
+                  <FiStar className="text-white text-2xl" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Grant Lifetime Access
+                  </h2>
+                  <p className="text-sm text-gray-500">User ID: {userId}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Company Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="e.g., ViralMotion HQ"
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty for personal lifetime access
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={specialNotes}
+                    onChange={(e) => setSpecialNotes(e.target.value)}
+                    placeholder="Internal notes about this grant..."
+                    rows={3}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-xs text-yellow-800 leading-relaxed">
+                  ⚠️ This will grant unlimited access to all features. The
+                  subscription will never expire and won't be charged.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGrantModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGrantLifetime}
+                  disabled={grantingLifetime}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {grantingLifetime ? "Granting..." : "Confirm Grant"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
