@@ -12,10 +12,8 @@ import { SUBSCRIPTION_PRICE } from "../../data/subscriptionData.ts";
 import { backendPrefix } from "../../config.ts";
 import toast from "react-hot-toast";
 
-// Stripe promise will be initialized after fetching the key
 let stripePromise: Promise<any> | null = null;
 
-// Card Element styling
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
@@ -35,7 +33,6 @@ const CARD_ELEMENT_OPTIONS = {
   hidePostalCode: true,
 };
 
-// Main form component
 function CheckoutForm() {
   const navigate = useNavigate();
   const stripe = useStripe();
@@ -48,11 +45,32 @@ function CheckoutForm() {
     nameOnCard: "",
     zipCode: "",
   });
+  // ✅ NEW: Track if user already had trial
+  const [hadFreeTrial, setHadFreeTrial] = useState(false);
 
-  // ✅ Fetch client secret on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
 
+    // ✅ First, check subscription status
+    fetch(`${backendPrefix}/api/subscription/status`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((r) => r.json())
+      .then((statusData) => {
+        console.log("📊 Subscription status:", statusData);
+        
+        // ✅ Check if user had a free trial
+        if (statusData.status === "free_trial" || statusData.trialExpired) {
+          setHadFreeTrial(true);
+          console.log("🆓 User already had free trial - will charge immediately");
+        }
+      })
+      .catch((err) => console.error("Failed to check status:", err));
+
+    // Create setup intent
     fetch(`${backendPrefix}/api/subscription/create-setup-intent`, {
       method: "POST",
       headers: {
@@ -108,7 +126,6 @@ function CheckoutForm() {
     setIsProcessing(true);
 
     try {
-      // Step 1: Confirm card setup with Stripe
       const { error: setupError, setupIntent } = await stripe.confirmCardSetup(
         clientSecret,
         {
@@ -135,7 +152,6 @@ function CheckoutForm() {
 
       console.log("✅ Card setup confirmed:", setupIntent.id);
 
-      // Step 2: Send payment method to backend to create subscription
       const token = localStorage.getItem("token");
       const response = await fetch(
         `${backendPrefix}/api/subscription/confirm`,
@@ -157,7 +173,6 @@ function CheckoutForm() {
         throw new Error(data.error || "Failed to create subscription");
       }
 
-      // Step 3: Success!
       console.log("✅ Subscription created:", data.subscription);
       toast.success("Subscription activated successfully!");
       setShowReceiptModal(true);
@@ -179,13 +194,10 @@ function CheckoutForm() {
   };
 
   const handleBack = () => {
-    
     navigate("/dashboard");
   };
 
-  // ✅ Calculate dates - billing starts immediately (no additional trial)
   const today = new Date();
-  // const billingStartDate = today; // Immediate billing
   const nextBillingDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   return (
@@ -196,7 +208,6 @@ function CheckoutForm() {
           "linear-gradient(135deg, #f8f9fc 0%, #faf6fb 25%, #f6f9fc 50%, #f9f6fa 75%, #f6fafb 100%)",
       }}
     >
-      {/* CSS Variables */}
       <style>{`
         :root {
           --primary-1: #8b5cf6;
@@ -270,28 +281,31 @@ function CheckoutForm() {
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-6 sm:mb-10 mt-8 sm:mt-12">
-            <div
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm shadow-lg mb-4 sm:mb-6 animate-bounce-subtle"
-              style={{
-                background: "linear-gradient(135deg, #a855f7, #ec4899)",
-                boxShadow: "0 8px 24px rgba(168, 85, 247, 0.35)",
-              }}
-            >
-              <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* ✅ FIXED: Only show "Free Trial" badge if user hasn't had one yet */}
+            {!hadFreeTrial && (
+              <div
+                className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm shadow-lg mb-4 sm:mb-6 animate-bounce-subtle"
+                style={{
+                  background: "linear-gradient(135deg, #a855f7, #ec4899)",
+                  boxShadow: "0 8px 24px rgba(168, 85, 247, 0.35)",
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2.5"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span>7 Days FREE Trial</span>
-            </div>
+                <svg
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2.5"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>7 Days FREE Trial</span>
+              </div>
+            )}
 
             <h1
               className="font-['Syne',sans-serif] text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-tight px-4"
@@ -304,14 +318,16 @@ function CheckoutForm() {
                 paddingBottom: "0.15em",
               }}
             >
-              Start Creating Today
+              {hadFreeTrial ? "Continue Your Journey" : "Start Creating Today"}
             </h1>
             <p className="text-slate-500 text-sm sm:text-base lg:text-lg px-4">
-              Get instant access to unlimited video creation tools.
+              {hadFreeTrial
+                ? "Subscribe now to regain full access to all features."
+                : "Get instant access to unlimited video creation tools."}
             </p>
           </div>
 
-          {/* Two Column Layout - Now stacks on mobile */}
+          {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Left Column - Pricing Card */}
             <div
@@ -342,31 +358,56 @@ function CheckoutForm() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-2">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-[10px] font-bold tracking-wide">
-                      RISK-FREE
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-bold">7 - days free trial</h3>
+                  {/* ✅ FIXED: Show different badge based on trial status */}
+                  {hadFreeTrial ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-2">
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                      </svg>
+                      <span className="text-[10px] font-bold tracking-wide">
+                        PAID SUBSCRIPTION
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-2">
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-[10px] font-bold tracking-wide">
+                        RISK-FREE
+                      </span>
+                    </div>
+                  )}
+                  <h3 className="text-xl font-bold">
+                    {hadFreeTrial ? "Monthly Subscription" : "7-days free trial"}
+                  </h3>
                 </div>
               </div>
 
+              {/* ✅ FIXED: Show actual charge amount */}
               <div className="relative text-center py-6 border-b border-white/20">
-                <p className="text-white/80 text-sm mb-1">Subscription Fee</p>
-                <p className="text-6xl font-bold">$0</p>
+                <p className="text-white/80 text-sm mb-1">
+                  {hadFreeTrial ? "First Payment" : "Trial Period"}
+                </p>
+                <p className="text-6xl font-bold">
+                  ${hadFreeTrial ? SUBSCRIPTION_PRICE : "0"}
+                </p>
               </div>
 
               <div className="relative space-y-3 py-5 border-b border-white/20">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium">After Trial</p>
+                    <p className="font-medium">
+                      {hadFreeTrial ? "Today's Charge" : "After Trial"}
+                    </p>
                     <p className="text-white/70 text-xs">Billed monthly</p>
                   </div>
                   <p className="font-bold text-lg">${SUBSCRIPTION_PRICE}</p>
@@ -381,9 +422,12 @@ function CheckoutForm() {
                 </div>
               </div>
 
+              {/* ✅ FIXED: Show correct total */}
               <div className="relative flex justify-between items-center py-5 border-b border-white/20">
                 <p className="font-bold text-lg">Total due today</p>
-                <p className="font-bold text-2xl">$0.00</p>
+                <p className="font-bold text-2xl">
+                  ${hadFreeTrial ? SUBSCRIPTION_PRICE : "0.00"}
+                </p>
               </div>
 
               <div className="relative mt-5 flex items-center gap-3 p-4 rounded-xl bg-white/15 backdrop-blur-sm">
@@ -413,6 +457,7 @@ function CheckoutForm() {
                 Payment Information
               </h2>
 
+              {/* ✅ FIXED: Show different message based on trial status */}
               <div className="mb-4 sm:mb-5 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-50/80 to-pink-50/80 border border-violet-100">
                 <div className="flex items-start gap-2 sm:gap-3">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -432,25 +477,36 @@ function CheckoutForm() {
                   </div>
                   <div>
                     <p className="text-xs sm:text-sm text-slate-800 font-semibold">
-                      Subscribe for ${SUBSCRIPTION_PRICE}/month
+                      {hadFreeTrial
+                        ? `Charge $${SUBSCRIPTION_PRICE} today`
+                        : `Subscribe for $${SUBSCRIPTION_PRICE}/month`}
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Your subscription starts today. Next billing:{" "}
-                      {nextBillingDate.toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                      .
+                      {hadFreeTrial ? (
+                        <>
+                          Your card will be charged ${SUBSCRIPTION_PRICE} immediately.
+                          Next billing:{" "}
+                          {nextBillingDate.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                          .
+                        </>
+                      ) : (
+                        <>
+                          Your subscription starts today. Next billing:{" "}
+                          {nextBillingDate.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                          .
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Card badges - Hide on mobile, show compact on tablet+ */}
-              <div className="hidden sm:flex items-center gap-3 mb-5">
-                <span className="text-sm text-slate-500">We accept:</span>
-                <div className="flex gap-2">{/* Card badges */}</div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
@@ -507,7 +563,20 @@ function CheckoutForm() {
                         className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
                         viewBox="0 0 24 24"
                       >
-                        {/* Loading spinner */}
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Processing...
                     </span>
@@ -516,6 +585,7 @@ function CheckoutForm() {
                   )}
                 </button>
 
+                {/* ✅ FIXED: Update footer text */}
                 <p className="text-[10px] sm:text-xs text-slate-400 text-center leading-relaxed pt-1">
                   By subscribing, you agree to our{" "}
                   <a href="#" className="text-violet-500 hover:underline">
@@ -525,8 +595,15 @@ function CheckoutForm() {
                   <a href="#" className="text-violet-500 hover:underline">
                     Privacy Policy
                   </a>
-                  . Your card will be charged ${SUBSCRIPTION_PRICE}/month
-                  starting today.
+                  .{" "}
+                  {hadFreeTrial ? (
+                    <>Your card will be charged ${SUBSCRIPTION_PRICE} today.</>
+                  ) : (
+                    <>
+                      Your card will be charged ${SUBSCRIPTION_PRICE}/month
+                      starting today.
+                    </>
+                  )}
                 </p>
               </form>
             </div>
@@ -534,7 +611,7 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* Success Modal */}
+      {/* Success Modal - Keep as is */}
       <AnimatePresence>
         {showReceiptModal && (
           <motion.div
@@ -604,7 +681,9 @@ function CheckoutForm() {
                     Welcome to ViralMotion!
                   </h2>
                   <p className="text-slate-600 text-lg">
-                    Your trial has started successfully
+                    {hadFreeTrial
+                      ? "Your subscription is now active"
+                      : "Your trial has started successfully"}
                   </p>
                 </div>
 
@@ -698,14 +777,30 @@ function CheckoutForm() {
                           What's Next?
                         </p>
                         <p className="text-slate-600 text-xs leading-relaxed">
-                          Your subscription is now active! You've been charged $
-                          {SUBSCRIPTION_PRICE} today. Your next billing date is{" "}
-                          {nextBillingDate.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                          .
+                          {hadFreeTrial ? (
+                            <>
+                              You've been charged ${SUBSCRIPTION_PRICE} today.
+                              Your next billing date is{" "}
+                              {nextBillingDate.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                              .
+                            </>
+                          ) : (
+                            <>
+                              Your subscription is now active! You've been
+                              charged ${SUBSCRIPTION_PRICE} today. Your next
+                              billing date is{" "}
+                              {nextBillingDate.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                              .
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -735,7 +830,6 @@ function CheckoutForm() {
   );
 }
 
-// Main wrapper component
 export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [publishableKey, setPublishableKey] = useState("");
@@ -746,7 +840,6 @@ export default function SubscriptionPage() {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        // ✅ STEP 1: Check subscription status FIRST
         const statusResponse = await fetch(
           `${backendPrefix}/api/subscription/status`,
           {
@@ -762,12 +855,10 @@ export default function SubscriptionPage() {
 
           console.log("📊 Subscription status check:", statusData);
 
-          // ✅ FIXED: Only block users with PAID subscriptions
-          // Allow free_trial users to add payment method
           if (
             statusData.hasSubscription &&
             !statusData.trialExpired &&
-            statusData.status !== "free_trial" // ✅ Key change: allow free_trial
+            statusData.status !== "free_trial"
           ) {
             console.log(
               "✅ User already has paid subscription, redirecting to dashboard"
@@ -776,10 +867,9 @@ export default function SubscriptionPage() {
             setTimeout(() => {
               window.location.href = "/dashboard";
             }, 1000);
-            return; // Stop initialization
+            return;
           }
 
-          // ✅ Free trial users can proceed to add payment
           if (statusData.status === "free_trial") {
             console.log(
               "🎁 Free trial user - allowing payment method addition"
@@ -787,7 +877,6 @@ export default function SubscriptionPage() {
           }
         }
 
-        // ✅ STEP 2: Only proceed with setup intent if no active subscription
         const response = await fetch(
           `${backendPrefix}/api/subscription/create-setup-intent`,
           {
@@ -812,7 +901,6 @@ export default function SubscriptionPage() {
         console.error("Failed to initialize payment form:", err);
         toast.error(err.message || "Failed to load payment form");
 
-        // ✅ If error is about existing subscription, redirect
         if (
           err.message?.includes("already have") ||
           err.message?.includes("active subscription")

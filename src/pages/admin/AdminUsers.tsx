@@ -4,12 +4,12 @@ import { useAdmin } from "../../contexts/AdminContext";
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import type { AdminSection } from "../../components/admin/AdminSidebar";
 import { backendPrefix } from "../../config";
-import { 
-  FiSearch, 
-  FiMail, 
-  FiCalendar, 
-  FiCheck, 
-  FiX, 
+import {
+  FiSearch,
+  FiMail,
+  FiCalendar,
+  FiCheck,
+  FiX,
   FiFilter,
   FiChevronUp,
   FiChevronDown,
@@ -54,7 +54,7 @@ export const AdminUsers: React.FC = () => {
   // ✅ NEW: Sort states
   const [sortBy, setSortBy] = useState<SortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  
+
   const { token, logout, isLoading } = useAdmin();
   const navigate = useNavigate();
 
@@ -118,7 +118,19 @@ export const AdminUsers: React.FC = () => {
 
     console.log("✅ Token found - fetching users");
     fetchUsers();
-  }, [token, page, subscriptionFilter, verifiedFilter, providerFilter, dateFrom, dateTo, sortBy, sortOrder, navigate, isLoading]);
+  }, [
+    token,
+    page,
+    subscriptionFilter,
+    verifiedFilter,
+    providerFilter,
+    dateFrom,
+    dateTo,
+    sortBy,
+    sortOrder,
+    navigate,
+    isLoading,
+  ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +215,17 @@ export const AdminUsers: React.FC = () => {
         color: "bg-yellow-100 text-yellow-800",
         label: "Incomplete",
       },
+      // ✅ Add lifetime badges
+      lifetime: {
+        color:
+          "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900 font-semibold",
+        label: "🌟 Lifetime",
+      },
+      company: {
+        color:
+          "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900 font-semibold",
+        label: "🏢 Company",
+      },
     };
 
     const badge = badges[status as keyof typeof badges] || {
@@ -211,7 +234,9 @@ export const AdminUsers: React.FC = () => {
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+      >
         {badge.label}
       </span>
     );
@@ -307,6 +332,10 @@ export const AdminUsers: React.FC = () => {
                 <option value="active">Active Only</option>
                 <option value="trialing">Paid Trial</option>
                 <option value="free_trial">Free Trial</option>
+                <option value="lifetime">Lifetime Access</option>{" "}
+                {/* ✅ Add this */}
+                <option value="company">Company Accounts</option>{" "}
+                {/* ✅ Add this */}
                 <option value="none">No Subscription</option>
                 <option value="canceled">Canceled</option>
               </select>
@@ -368,7 +397,12 @@ export const AdminUsers: React.FC = () => {
               </div>
 
               {/* Clear Filters Button */}
-              {(subscriptionFilter || verifiedFilter || providerFilter || search || dateFrom || dateTo) && (
+              {(subscriptionFilter ||
+                verifiedFilter ||
+                providerFilter ||
+                search ||
+                dateFrom ||
+                dateTo) && (
                 <button
                   onClick={clearFilters}
                   className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm"
@@ -390,7 +424,12 @@ export const AdminUsers: React.FC = () => {
           ) : users.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-gray-600">No users found</p>
-              {(subscriptionFilter || verifiedFilter || providerFilter || search || dateFrom || dateTo) && (
+              {(subscriptionFilter ||
+                verifiedFilter ||
+                providerFilter ||
+                search ||
+                dateFrom ||
+                dateTo) && (
                 <button
                   onClick={clearFilters}
                   className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -405,7 +444,7 @@ export const AdminUsers: React.FC = () => {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     {/* ✅ User Column - Sortable */}
-                    <th 
+                    <th
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("name")}
                     >
@@ -424,7 +463,7 @@ export const AdminUsers: React.FC = () => {
                       Provider
                     </th>
                     {/* ✅ Joined Column - Sortable */}
-                    <th 
+                    <th
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("createdAt")}
                     >
@@ -474,7 +513,10 @@ export const AdminUsers: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getSubscriptionBadge(user.subscriptionStatus, user.subscriptionPlan)}
+                        {getSubscriptionBadge(
+                          user.subscriptionStatus,
+                          user.subscriptionPlan
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {user.provider || "local"}
@@ -512,7 +554,8 @@ export const AdminUsers: React.FC = () => {
                 </button>
               </div>
               <span className="text-sm text-gray-600">
-                Page {page} of {totalPages} • Showing {users.length} of {totalUsers} users
+                Page {page} of {totalPages} • Showing {users.length} of{" "}
+                {totalUsers} users
               </span>
             </div>
           )}
