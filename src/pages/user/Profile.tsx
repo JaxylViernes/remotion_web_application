@@ -91,7 +91,7 @@ interface UserData {
   id: number;
   name: string;
   email: string;
-  createdAt: string;
+  createdAt: string | Date;
   profilePicture?: string;
 }
 
@@ -111,6 +111,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   renders,
   fetchProfileDetails,
 }) => {
+  function normalizeDate(value: string | Date): Date | null {
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value
+        .trim()
+        .replace(" ", "T")
+        .replace(/\.\d+/, (match) => match.slice(0, 4));
+
+      const date = new Date(normalized + "Z");
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    return null;
+  }
+
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [usernameValue, setUsernameValue] = useState(userData?.name || "");
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
@@ -128,13 +146,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const formattedDate = userData?.createdAt
-    ? new Date(userData.createdAt).toLocaleDateString("en-US", {
+  const createdAtDate = userData?.createdAt
+    ? normalizeDate(userData.createdAt)
+    : null;
+
+  const formattedDate = createdAtDate
+    ? createdAtDate.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       })
     : "Unknown";
+
+  // 2025-12-09 04:35:08.16949
 
   // const templatesUsageData = useMemo(() => {
   //   const counts: Record<string, number> = {};
@@ -636,7 +660,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         >
           <h3 className="font-semibold text-gray-800 mb-2">Template Usage</h3>
           <p className="text-sm text-gray-500 mb-4">
-            Your most used templates. 
+            Your most used templates.
           </p>
 
           {filteredTemplatesUsageData.length === 0 ? (
