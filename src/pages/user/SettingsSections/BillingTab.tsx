@@ -370,7 +370,6 @@ export const BillingTab: React.FC = () => {
                   {formatStatus(
                     subscription.status,
                     subscription.cancelAtPeriodEnd,
-                    subscription.isLifetime
                   )}
                 </div>
               </div>
