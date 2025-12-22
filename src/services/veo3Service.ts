@@ -80,6 +80,16 @@ class VEO3Service {
     );
     return response.data;
   }
+
+  async improvePrompt(prompt: string) {
+  const token = localStorage.getItem("token");
+  const response = await axios.post(
+    `${backendPrefix}/api/prompt-improvement/improve`,
+    { prompt, type: 'video' },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+}
 }
 
 export const veo3Service = new VEO3Service();

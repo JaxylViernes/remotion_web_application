@@ -48,6 +48,17 @@ class ImageGenService {
     );
     return response.data;
   }
+
+  // NEW: Improve prompt
+  async improvePrompt(prompt: string) {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `${backendPrefix}/api/prompt-improvement/improve`,
+      { prompt, type: 'image' },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  }
 }
 
 export const imageGenService = new ImageGenService();
