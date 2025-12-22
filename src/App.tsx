@@ -349,6 +349,96 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ✅ NEW: Subscription Protected Route - Checks authentication AND subscription
+function SubscriptionProtectedRoute({ children }: { children: React.ReactNode }) {
+  const [checking, setChecking] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!token) {
+        setHasAccess(false);
+        setChecking(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${backendPrefix}/api/subscription/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        console.log("🔐 SubscriptionProtectedRoute - Subscription check:", data);
+        console.log("   - hasSubscription:", data.hasSubscription);
+        console.log("   - isLifetime:", data.isLifetime);
+        console.log("   - status:", data.status);
+        console.log("   - trialExpired:", data.trialExpired);
+
+        if (data.success) {
+          // ✅ CRITICAL: Check lifetime FIRST
+          if (data.isLifetime === true) {
+            console.log("🌟 Lifetime access detected - GRANTING ACCESS");
+            setHasAccess(true);
+          } else if (data.hasSubscription === true && data.trialExpired !== true) {
+            console.log("✅ Active subscription detected - GRANTING ACCESS");
+            setHasAccess(true);
+          } else {
+            console.log("❌ No active subscription - DENYING ACCESS");
+            console.log("   Reason: hasSubscription=", data.hasSubscription, "trialExpired=", data.trialExpired);
+            setHasAccess(false);
+          }
+        } else {
+          console.log("❌ API returned success: false");
+          setHasAccess(false);
+        }
+      } catch (error) {
+        console.error("❌ Subscription check error:", error);
+        setHasAccess(false);
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkSubscription();
+  }, [token]);
+
+  // Still checking
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Checking access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No token
+  if (!token) {
+    console.log("🚫 No token, redirecting to login");
+    return <Navigate to="/login" replace />;
+  }
+
+  // No subscription access
+  if (!hasAccess) {
+    console.log("🚫 No subscription access, redirecting to subscription page");
+    return <Navigate to="/subscription" replace />;
+  }
+
+  // Has access!
+  console.log("✅ Access granted, rendering protected content");
+  return <>{children}</>;
+}
+
 // ✅ NEW: Public Only Route (redirect to subscription if logged in)
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token");
@@ -424,9 +514,9 @@ function AppContent() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <SubscriptionProtectedRoute>
             <Dashboard />
-          </ProtectedRoute>
+          </SubscriptionProtectedRoute>
         }
       />
 

@@ -4,6 +4,7 @@ import { useAdmin } from "../../contexts/AdminContext";
 import { AdminSidebar } from "../../components/admin/AdminSidebar";
 import type { AdminSection } from "../../components/admin/AdminSidebar";
 import { backendPrefix } from "../../config";
+import toast from "react-hot-toast";
 import {
   FiArrowLeft,
   FiMail,
@@ -18,6 +19,8 @@ import {
   FiAlertCircle,
   FiShield,
   FiStar,
+  FiTrash2,
+  FiAlertTriangle,
 } from "react-icons/fi";
 
 interface UserDetail {
@@ -45,6 +48,10 @@ interface UserDetail {
     currentPeriodEnd: string;
     createdAt: string;
     canceledAt: string | null;
+    isLifetime?: boolean;
+    isCompanyAccount?: boolean;
+    companyName?: string | null;
+    specialNotes?: string | null;
   }>;
   recentProjects: Array<{
     id: number;
@@ -63,16 +70,22 @@ interface UserDetail {
 }
 
 export const AdminUserDetail: React.FC = () => {
-  const [showGrantModal, setShowGrantModal] = useState(false);
-  const [grantingLifetime, setGrantingLifetime] = useState(false);
-  const [companyName, setCompanyName] = useState("");
-  const [specialNotes, setSpecialNotes] = useState("");
   const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [showRevokeModal, setShowRevokeModal] = useState(false); // ✅ NEW
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [grantingLifetime, setGrantingLifetime] = useState(false);
+
+  const [revokingLifetime, setRevokingLifetime] = useState(false); // ✅ NEW
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [specialNotes, setSpecialNotes] = useState("");
 
   const { token, logout, isLoading } = useAdmin();
   const navigate = useNavigate();
@@ -128,6 +141,17 @@ export const AdminUserDetail: React.FC = () => {
     }
   };
 
+  // ✅ Check if user has lifetime access
+  const hasLifetimeAccess =
+    user?.subscriptions.some(
+      (sub) => sub.isLifetime && sub.status !== "canceled"
+    ) || false;
+
+  // ✅ Get active lifetime subscription
+  const lifetimeSubscription = user?.subscriptions.find(
+    (sub) => sub.isLifetime && sub.status !== "canceled"
+  );
+
   const handleGrantLifetime = async () => {
     setGrantingLifetime(true);
     try {
@@ -150,7 +174,21 @@ export const AdminUserDetail: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert("✅ Lifetime access granted successfully!");
+        toast.success("Lifetime access granted successfully!", {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: "#10b981",
+            color: "#fff",
+            fontWeight: "600",
+            padding: "16px",
+            borderRadius: "12px",
+          },
+          iconTheme: {
+            primary: "#fff",
+            secondary: "#10b981",
+          },
+        });
         setShowGrantModal(false);
         setCompanyName("");
         setSpecialNotes("");
@@ -161,9 +199,148 @@ export const AdminUserDetail: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Grant lifetime error:", error);
-      alert(`❌ ${error.message}`);
+      toast.error(`❌ ${error.message}`, {
+        duration: 4000,
+        position: "top-right",
+        style: {
+          background: "#ef4444",
+          color: "#fff",
+          fontWeight: "600",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+        iconTheme: {
+          primary: "#fff",
+          secondary: "#ef4444",
+        },
+      });
     } finally {
       setGrantingLifetime(false);
+    }
+  };
+
+  // ✅ NEW: Handle revoke lifetime access
+  const handleRevokeLifetime = async () => {
+    setRevokingLifetime(true);
+    try {
+      const response = await fetch(
+        `${backendPrefix}/admin/subscriptions/revoke-lifetime`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Lifetime access revoked successfully!", {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: "#10b981",
+            color: "#fff",
+            fontWeight: "600",
+            padding: "16px",
+            borderRadius: "12px",
+          },
+          iconTheme: {
+            primary: "#fff",
+            secondary: "#10b981",
+          },
+        });
+        setShowRevokeModal(false);
+        // Refresh user details
+        fetchUserDetails();
+      } else {
+        throw new Error(data.error || "Failed to revoke lifetime access");
+      }
+    } catch (error: any) {
+      console.error("Revoke lifetime error:", error);
+      toast.error(`❌ ${error.message}`, {
+        duration: 4000,
+        position: "top-right",
+        style: {
+          background: "#ef4444",
+          color: "#fff",
+          fontWeight: "600",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+        iconTheme: {
+          primary: "#fff",
+          secondary: "#ef4444",
+        },
+      });
+    } finally {
+      setRevokingLifetime(false);
+    }
+  };
+
+  // ✅ NEW: Handle delete user
+  const handleDeleteUser = async () => {
+    setDeletingUser(true);
+    try {
+      const response = await fetch(`${backendPrefix}/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("User deleted successfully! Redirecting...", {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: "#10b981",
+            color: "#fff",
+            fontWeight: "600",
+            padding: "16px",
+            borderRadius: "12px",
+          },
+          iconTheme: {
+            primary: "#fff",
+            secondary: "#10b981",
+          },
+        });
+        setShowDeleteModal(false);
+
+        // Wait a moment before redirecting so user sees the toast
+        setTimeout(() => {
+          navigate("/admin/users");
+        }, 1000);
+      } else {
+        throw new Error(data.error || "Failed to delete user");
+      }
+    } catch (error: any) {
+      console.error("Delete user error:", error);
+      toast.error(`❌ ${error.message}`, {
+        duration: 4000,
+        position: "top-right",
+        style: {
+          background: "#ef4444",
+          color: "#fff",
+          fontWeight: "600",
+          padding: "16px",
+          borderRadius: "12px",
+        },
+        iconTheme: {
+          primary: "#fff",
+          secondary: "#ef4444",
+        },
+      });
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -175,11 +352,13 @@ export const AdminUserDetail: React.FC = () => {
       canceled: { color: "bg-red-100 text-red-800", label: "Canceled" },
       past_due: { color: "bg-orange-100 text-orange-800", label: "Past Due" },
       lifetime: {
-        color: "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900",
+        color:
+          "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900 font-semibold",
         label: "🌟 Lifetime",
       },
       company: {
-        color: "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900",
+        color:
+          "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-900 font-semibold",
         label: "🏢 Company",
       },
     };
@@ -256,6 +435,42 @@ export const AdminUserDetail: React.FC = () => {
           Back to Users
         </button>
 
+        {/* ✅ Lifetime Access Banner (if user has it) */}
+        {hasLifetimeAccess && lifetimeSubscription && (
+          <div className="mb-6 p-5 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-2xl shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center flex-shrink-0">
+                <FiStar className="text-white text-2xl" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-yellow-900 mb-2">
+                  🌟 This user has Lifetime Access
+                </p>
+                <div className="text-xs text-yellow-800 space-y-1">
+                  {lifetimeSubscription.isCompanyAccount && (
+                    <p>
+                      <strong>Company:</strong>{" "}
+                      {lifetimeSubscription.companyName || "N/A"}
+                    </p>
+                  )}
+                  {lifetimeSubscription.specialNotes && (
+                    <p>
+                      <strong>Notes:</strong>{" "}
+                      {lifetimeSubscription.specialNotes}
+                    </p>
+                  )}
+                  <p>
+                    <strong>Granted:</strong>{" "}
+                    {new Date(
+                      lifetimeSubscription.createdAt
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* User Header Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-start justify-between">
@@ -312,14 +527,37 @@ export const AdminUserDetail: React.FC = () => {
                   </p>
                 )}
               </div>
-              {/* ✅ Grant Lifetime Access Button */}
-              <button
-                onClick={() => setShowGrantModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
-              >
-                <FiStar className="w-4 h-4" />
-                Grant Lifetime Access
-              </button>
+
+              {/* Button group */}
+              <div className="flex gap-2">
+                {/* Grant/Revoke Lifetime Button */}
+                {!hasLifetimeAccess ? (
+                  <button
+                    onClick={() => setShowGrantModal(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <FiStar className="w-4 h-4" />
+                    Grant Lifetime Access
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowRevokeModal(true)}
+                    className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                    Revoke Lifetime Access
+                  </button>
+                )}
+
+                {/* ✅ NEW: Delete User Button */}
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg font-semibold hover:shadow-lg hover:from-red-600 hover:to-red-700 transition-all flex items-center gap-2"
+                >
+                  <FiTrash2 className="w-4 h-4" />
+                  Delete User
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -402,7 +640,6 @@ export const AdminUserDetail: React.FC = () => {
                         <span className="font-medium text-gray-800">
                           {sub.plan}
                         </span>
-                        {/* ✅ Show company name if exists */}
                         {sub.companyName && (
                           <span className="text-xs text-gray-500">
                             ({sub.companyName})
@@ -436,7 +673,6 @@ export const AdminUserDetail: React.FC = () => {
                           {new Date(sub.canceledAt).toLocaleDateString()}
                         </p>
                       )}
-                      {/* ✅ Show special notes */}
                       {sub.specialNotes && (
                         <p className="text-xs text-gray-500 italic mt-2">
                           Note: {sub.specialNotes}
@@ -622,6 +858,175 @@ export const AdminUserDetail: React.FC = () => {
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {grantingLifetime ? "Granting..." : "Confirm Grant"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ NEW: Revoke Lifetime Access Modal */}
+        {showRevokeModal && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowRevokeModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowRevokeModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                  <FiTrash2 className="text-white text-2xl" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Revoke Lifetime Access
+                  </h2>
+                  <p className="text-sm text-gray-500">User: {user.email}</p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-800 leading-relaxed mb-2">
+                  ⚠️ <strong>Are you sure?</strong>
+                </p>
+                <ul className="text-xs text-red-700 space-y-1 ml-4">
+                  <li>• User will lose lifetime access</li>
+                  <li>• Their subscription will be marked as canceled</li>
+                  <li>
+                    • They will need to subscribe again to access features
+                  </li>
+                  <li>• This action cannot be easily undone</li>
+                </ul>
+              </div>
+
+              {lifetimeSubscription && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6">
+                  <p className="text-xs text-gray-600">
+                    <strong>Current lifetime details:</strong>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Type:{" "}
+                    {lifetimeSubscription.isCompanyAccount
+                      ? "Company"
+                      : "Personal"}
+                  </p>
+                  {lifetimeSubscription.companyName && (
+                    <p className="text-xs text-gray-600">
+                      Company: {lifetimeSubscription.companyName}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-600">
+                    Granted:{" "}
+                    {new Date(
+                      lifetimeSubscription.createdAt
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRevokeModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRevokeLifetime}
+                  disabled={revokingLifetime}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {revokingLifetime ? "Revoking..." : "Confirm Revoke"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ NEW: Delete User Modal */}
+        {showDeleteModal && (
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                  <FiAlertTriangle className="text-white text-2xl" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Delete User Account
+                  </h2>
+                  <p className="text-sm text-gray-500">User: {user.email}</p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-800 leading-relaxed mb-3">
+                  <strong>⚠️ WARNING: This action cannot be undone!</strong>
+                </p>
+                <ul className="text-xs text-red-700 space-y-1.5 ml-4">
+                  <li>• User account will be permanently deleted</li>
+                  <li>• All projects and renders will be deleted</li>
+                  <li>• All AI generations will be deleted</li>
+                  <li>• All uploads and datasets will be deleted</li>
+                  <li>• Stripe subscription will be canceled</li>
+                  <li>• User will be immediately logged out</li>
+                  <li>• This action is IRREVERSIBLE</li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6">
+                <p className="text-xs text-gray-700 mb-2">
+                  <strong>User Statistics:</strong>
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                  <div>Projects: {user.stats.totalProjects}</div>
+                  <div>Renders: {user.stats.totalRenders}</div>
+                  <div>AI Videos: {user.stats.totalVeoGenerations}</div>
+                  <div>AI Images: {user.stats.totalImageGenerations}</div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+                <p className="text-xs text-yellow-800">
+                  <strong>💡 Tip:</strong> Consider revoking access instead of
+                  deleting if you want to preserve data.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deletingUser}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingUser ? "Deleting..." : "Delete Permanently"}
                 </button>
               </div>
             </div>

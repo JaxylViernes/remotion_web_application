@@ -1,4 +1,3 @@
-
 // src/components/ui/dashboard/sections/tools/VEO3Generator.tsx
 import React, { useState, useEffect } from "react";
 import {
@@ -93,7 +92,9 @@ export const VEO3Generator: React.FC = () => {
   // New states for Prompt Library and Docs
   const [showPromptLibrary, setShowPromptLibrary] = useState(false);
   const [showPromptDocs, setShowPromptDocs] = useState(false);
-
+  const [isImproved, setIsImproved] = useState(false);
+  const [originalPrompt, setOriginalPrompt] = useState("");
+  const [improvingPrompt, setImprovingPrompt] = useState(false);
 
   const MAX_RECENT = 6;
 
@@ -190,7 +191,7 @@ export const VEO3Generator: React.FC = () => {
   };
   const handleEdit = (generation: VEO3Generation) => {
     // Navigate to editor with video data as state
-    navigate('/editor', {
+    navigate("/editor", {
       state: {
         fromVEO: true,
         videoData: {
@@ -199,8 +200,8 @@ export const VEO3Generator: React.FC = () => {
           duration: parseInt(generation.duration),
           aspectRatio: generation.aspectRatio,
           model: generation.model,
-        }
-      }
+        },
+      },
     });
   };
 
@@ -263,6 +264,37 @@ export const VEO3Generator: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleImprovePrompt = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt first");
+      return;
+    }
+
+    if (isImproved) {
+      // Revert to original
+      setPrompt(originalPrompt);
+      setIsImproved(false);
+    } else {
+      // Improve prompt
+      try {
+        setImprovingPrompt(true);
+        setOriginalPrompt(prompt);
+
+        const response = await veo3Service.improvePrompt(prompt);
+
+        if (response.success && response.improvedPrompt) {
+          setPrompt(response.improvedPrompt);
+          setIsImproved(true);
+        }
+      } catch (error) {
+        console.error("Failed to improve prompt:", error);
+        alert("Failed to improve prompt. Please try again.");
+      } finally {
+        setImprovingPrompt(false);
+      }
+    }
   };
 
   return (
@@ -395,17 +427,86 @@ export const VEO3Generator: React.FC = () => {
 
               {/* Prompt */}
               <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-4 sm:p-5 transition-all duration-300 hover:shadow-xl">
-                <label className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span>
-                  Your Prompt
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span>
+                    Your Prompt
+                  </label>
+
+                  {/* Improve Prompt Toggle */}
+                  <button
+                    onClick={handleImprovePrompt}
+                    disabled={!prompt.trim() || improvingPrompt}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isImproved
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md"
+                        : "bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 text-indigo-700 hover:shadow-md"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {improvingPrompt ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                        <span>Improving...</span>
+                      </>
+                    ) : isImproved ? (
+                      <>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M9 11l-4 4L3 13" />
+                          <path d="M20 4v7a4 4 0 01-4 4H5" />
+                        </svg>
+                        <span>Revert</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 size={14} />
+                        <span>Improve Prompt</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <textarea
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    if (isImproved) {
+                      setIsImproved(false);
+                    }
+                  }}
                   placeholder="Describe the video you want to create... Be creative and detailed!"
                   rows={6}
-                  className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 text-sm text-gray-800 outline-none resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 rounded-xl border-2 text-sm text-gray-800 outline-none resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
+                    isImproved
+                      ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200"
+                      : "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200"
+                  }`}
                 />
+
+                {isImproved && (
+                  <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Prompt improved! Click "Revert" to restore original.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || loading}
@@ -904,10 +1005,7 @@ export const VEO3Generator: React.FC = () => {
                   </h4>
                   <p className="text-xs text-gray-600 mt-1 flex flex-wrap gap-1.5">
                     <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">
-                      {activeGeneration.model.replace(
-                        "-generate-preview",
-                        ""
-                      )}
+                      {activeGeneration.model.replace("-generate-preview", "")}
                     </span>
                     <span>{activeGeneration.duration}</span>
                     <span>•</span>

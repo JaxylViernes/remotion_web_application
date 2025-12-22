@@ -93,7 +93,7 @@ export const AdminSetup: React.FC = () => {
                 setFormData({ ...formData, setupKey: e.target.value })
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="Enter setup key from .env"
+              placeholder="Enter setup key"
               required
             />
           </div>
@@ -125,7 +125,7 @@ export const AdminSetup: React.FC = () => {
                 setFormData({ ...formData, email: e.target.value })
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="admin@viralmotion.ai"
+              placeholder="Your email"
               required
             />
           </div>
