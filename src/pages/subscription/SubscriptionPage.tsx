@@ -40,18 +40,18 @@ function CheckoutForm() {
 
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // ✅ NEW
   const [clientSecret, setClientSecret] = useState("");
   const [formData, setFormData] = useState({
     nameOnCard: "",
     zipCode: "",
   });
-  // ✅ NEW: Track if user already had trial
   const [hadFreeTrial, setHadFreeTrial] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // ✅ First, check subscription status
+    // Check subscription status
     fetch(`${backendPrefix}/api/subscription/status`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -62,7 +62,6 @@ function CheckoutForm() {
       .then((statusData) => {
         console.log("📊 Subscription status:", statusData);
         
-        // ✅ Check if user had a free trial
         if (statusData.status === "free_trial" || statusData.trialExpired) {
           setHadFreeTrial(true);
           console.log("🆓 User already had free trial - will charge immediately");
@@ -193,8 +192,42 @@ function CheckoutForm() {
     navigate("/dashboard");
   };
 
-  const handleBack = () => {
-    navigate("/dashboard");
+  // ✅ NEW: Logout function
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Call logout endpoint
+      await fetch(`${backendPrefix}/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Clear local storage
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      
+      // Show success message
+      toast.success("Logged out successfully");
+      
+      // Redirect to login
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if API fails, still clear local storage and redirect
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      navigate("/login");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const today = new Date();
@@ -245,24 +278,53 @@ function CheckoutForm() {
 
       {/* Header */}
       <div className="absolute top-3 sm:top-6 left-3 sm:left-6 right-3 sm:right-6 z-20 flex justify-between items-center">
+        {/* ✅ CHANGED: Back button to Logout button */}
         <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 hover:bg-white hover:border-slate-300 text-slate-700 font-medium transition-all duration-300 shadow-sm hover:shadow-md text-sm"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 hover:bg-white hover:border-red-300 text-slate-700 hover:text-red-600 font-medium transition-all duration-300 shadow-sm hover:shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg
-            className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="hidden sm:inline">Back</span>
+          {isLoggingOut ? (
+            <>
+              <svg
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Logging out...</span>
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span>Logout</span>
+            </>
+          )}
         </button>
 
         <div className="flex items-center gap-2">
@@ -281,7 +343,6 @@ function CheckoutForm() {
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-6 sm:mb-10 mt-8 sm:mt-12">
-            {/* ✅ FIXED: Only show "Free Trial" badge if user hasn't had one yet */}
             {!hadFreeTrial && (
               <div
                 className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-white font-semibold text-xs sm:text-sm shadow-lg mb-4 sm:mb-6 animate-bounce-subtle"
@@ -327,7 +388,7 @@ function CheckoutForm() {
             </p>
           </div>
 
-          {/* Two Column Layout */}
+          {/* Two Column Layout - Keep rest of the component the same */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Left Column - Pricing Card */}
             <div
@@ -358,7 +419,6 @@ function CheckoutForm() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  {/* ✅ FIXED: Show different badge based on trial status */}
                   {hadFreeTrial ? (
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-2">
                       <svg
@@ -392,7 +452,6 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* ✅ FIXED: Show actual charge amount */}
               <div className="relative text-center py-6 border-b border-white/20">
                 <p className="text-white/80 text-sm mb-1">
                   {hadFreeTrial ? "First Payment" : "Trial Period"}
@@ -422,7 +481,6 @@ function CheckoutForm() {
                 </div>
               </div>
 
-              {/* ✅ FIXED: Show correct total */}
               <div className="relative flex justify-between items-center py-5 border-b border-white/20">
                 <p className="font-bold text-lg">Total due today</p>
                 <p className="font-bold text-2xl">
@@ -451,13 +509,12 @@ function CheckoutForm() {
               </div>
             </div>
 
-            {/* Right Column - Payment Form */}
+            {/* Right Column - Payment Form - Keep the same */}
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xl border border-slate-100 order-1 lg:order-2">
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5">
                 Payment Information
               </h2>
 
-              {/* ✅ FIXED: Show different message based on trial status */}
               <div className="mb-4 sm:mb-5 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-50/80 to-pink-50/80 border border-violet-100">
                 <div className="flex items-start gap-2 sm:gap-3">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -585,7 +642,6 @@ function CheckoutForm() {
                   )}
                 </button>
 
-                {/* ✅ FIXED: Update footer text */}
                 <p className="text-[10px] sm:text-xs text-slate-400 text-center leading-relaxed pt-1">
                   By subscribing, you agree to our{" "}
                   <a href="#" className="text-violet-500 hover:underline">
@@ -611,7 +667,7 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* Success Modal - Keep as is */}
+      {/* Success Modal - Keep the same */}
       <AnimatePresence>
         {showReceiptModal && (
           <motion.div
@@ -835,34 +891,45 @@ export default function SubscriptionPage() {
   const [publishableKey, setPublishableKey] = useState("");
 
   useEffect(() => {
-    const initPaymentForm = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
+  const initPaymentForm = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
 
-        const statusResponse = await fetch(
-          `${backendPrefix}/api/subscription/status`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+      const statusResponse = await fetch(
+        `${backendPrefix}/api/subscription/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+
+        console.log("📊 Subscription page - status check:", statusData);
+
+        // ✅ FIXED: More specific conditions
+        if (statusData.success) {
+          // Check for lifetime access
+          if (statusData.isLifetime) {
+            console.log("🌟 Lifetime access detected - redirecting to dashboard");
+            toast.success("You have lifetime access!");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 1000);
+            return;
           }
-        );
 
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-
-          console.log("📊 Subscription status check:", statusData);
-
+          // Check for active paid subscription (not free trial)
           if (
             statusData.hasSubscription &&
             !statusData.trialExpired &&
-            statusData.status !== "free_trial"
+            (statusData.status === "active" || statusData.status === "trialing")
           ) {
-            console.log(
-              "✅ User already has paid subscription, redirecting to dashboard"
-            );
+            console.log("✅ Active paid subscription detected - redirecting to dashboard");
             toast.success("You already have an active subscription!");
             setTimeout(() => {
               window.location.href = "/dashboard";
@@ -870,52 +937,48 @@ export default function SubscriptionPage() {
             return;
           }
 
-          if (statusData.status === "free_trial") {
-            console.log(
-              "🎁 Free trial user - allowing payment method addition"
-            );
+          // Allow free trial users to stay on subscription page to add payment
+          if (statusData.status === "free_trial" && !statusData.trialExpired) {
+            console.log("🎁 Free trial user - allowing payment method addition");
+          }
+
+          // Allow users with no subscription to subscribe
+          if (!statusData.hasSubscription || statusData.trialExpired) {
+            console.log("❌ No active subscription - user can subscribe");
           }
         }
-
-        const response = await fetch(
-          `${backendPrefix}/api/subscription/create-setup-intent`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.publishableKey) {
-          setPublishableKey(data.publishableKey);
-          stripePromise = loadStripe(data.publishableKey);
-          console.log("✅ Stripe initialized successfully");
-        } else {
-          throw new Error(data.error || "Failed to initialize payment");
-        }
-      } catch (err: any) {
-        console.error("Failed to initialize payment form:", err);
-        toast.error(err.message || "Failed to load payment form");
-
-        if (
-          err.message?.includes("already have") ||
-          err.message?.includes("active subscription")
-        ) {
-          setTimeout(() => {
-            window.location.href = "/dashboard";
-          }, 2000);
-        }
-      } finally {
-        setLoading(false);
       }
-    };
 
-    initPaymentForm();
-  }, []);
+      const response = await fetch(
+        `${backendPrefix}/api/subscription/create-setup-intent`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.publishableKey) {
+        setPublishableKey(data.publishableKey);
+        stripePromise = loadStripe(data.publishableKey);
+        console.log("✅ Stripe initialized successfully");
+      } else {
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+    } catch (err: any) {
+      console.error("Failed to initialize payment form:", err);
+      toast.error(err.message || "Failed to load payment form");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  initPaymentForm();
+}, []);
 
   if (loading || !publishableKey || !stripePromise) {
     return (
