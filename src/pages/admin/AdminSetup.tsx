@@ -44,15 +44,15 @@ export const AdminSetup: React.FC = () => {
     }
   };
 
-  const handleSectionChange = (section: AdminSection) => {
-  setActiveSection(section);
-  if (section === "dashboard") {
-    navigate("/admin/dashboard");
-  } else if (section === "users") {
-    navigate("/admin/users");
-  }
-  // Security is already the current page, no need to navigate
-};
+//   const handleSectionChange = (section: AdminSection) => {
+//   setActiveSection(section);
+//   if (section === "dashboard") {
+//     navigate("/admin/dashboard");
+//   } else if (section === "users") {
+//     navigate("/admin/users");
+//   }
+//   // Security is already the current page, no need to navigate
+// };
 
   if (success) {
     return (
