@@ -20,7 +20,7 @@ interface WizardState {
   postTitle: string;
   postText: string;
 
-    // Reddit Card Customization (NEW)
+  // Reddit Card Customization (NEW)
   subredditName: string;
   posterUsername: string;
   timePosted: string;
@@ -28,22 +28,22 @@ interface WizardState {
   commentCount: string;
   awardsCount: string;
   avatarUrl: string;
-  
+
   // Generated Data
   words: WordTiming[];
   voiceoverUrl: string;
   estimatedDuration: number;
-  
+
   // Style
   fontSize: number;
   fontFamily: string;
   fontColor: string;
   sentenceBgColor: string;
   backgroundOverlayColor: string;
-  
+
   // Video
   backgroundVideo: string;
-  
+
   // Audio
   aiVoice: string;
   emotion: string;
@@ -51,7 +51,7 @@ interface WizardState {
   pitch: number;
   backgroundMusicPath: string;
   musicVolume: number;
-  
+
   // UI State
   isGeneratingVoiceover: boolean;
   voiceoverGenerated: boolean;
@@ -80,12 +80,27 @@ const FONT_FAMILIES = [
 ];
 
 const AI_VOICES = [
-  { value: "alloy", label: "Alloy", gender: "Neutral", desc: "Balanced, clear" },
+  {
+    value: "alloy",
+    label: "Alloy",
+    gender: "Neutral",
+    desc: "Balanced, clear",
+  },
   { value: "echo", label: "Echo", gender: "Male", desc: "Deep, authoritative" },
-  { value: "fable", label: "Fable", gender: "Male", desc: "Warm, storytelling" },
+  {
+    value: "fable",
+    label: "Fable",
+    gender: "Male",
+    desc: "Warm, storytelling",
+  },
   { value: "onyx", label: "Onyx", gender: "Male", desc: "Professional, news" },
   { value: "nova", label: "Nova", gender: "Female", desc: "Energetic, young" },
-  { value: "shimmer", label: "Shimmer", gender: "Female", desc: "Soft, friendly" },
+  {
+    value: "shimmer",
+    label: "Shimmer",
+    gender: "Female",
+    desc: "Soft, friendly",
+  },
 ];
 
 const EMOTIONS = [
@@ -99,19 +114,23 @@ const EMOTIONS = [
 
 const BACKGROUND_VIDEOS = [
   {
-    value: "https://res.cloudinary.com/dcu9xuof0/video/upload/v1765260195/Subway_Surfers_2024_-_Gameplay_4K_9x16_No_Copyright_n4ym8w.mp4",
+    value:
+      "https://res.cloudinary.com/dcu9xuof0/video/upload/v1765260195/Subway_Surfers_2024_-_Gameplay_4K_9x16_No_Copyright_n4ym8w.mp4",
     label: "Subway Surfers",
   },
   {
-    value: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    value:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     label: "Abstract Fire",
   },
   {
-    value: "https://res.cloudinary.com/djnyytyd0/video/upload/v1764558376/the_way_they_got_so_much_aura_so_tuff_song_ilyTOMMY_-_pretty_ho3_..._sar5qk.mp4",
+    value:
+      "https://res.cloudinary.com/djnyytyd0/video/upload/v1764558376/the_way_they_got_so_much_aura_so_tuff_song_ilyTOMMY_-_pretty_ho3_..._sar5qk.mp4",
     label: "Aura Dance",
   },
   {
-    value: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    value:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     label: "Nature",
   },
 ];
@@ -124,7 +143,8 @@ const BACKGROUND_MUSIC = [
 ];
 
 const SAMPLE_REDDIT_DATA = {
-  title: "AITA for refusing to help my grandparents close their summer house unless they pay me?",
+  title:
+    "AITA for refusing to help my grandparents close their summer house unless they pay me?",
   text: "Me (21F), a university student. My grandparents have a summer cabin which all of my family uses.",
   story: `Me, a 21 year old female, I am a university student. My grandparents have a summer cabin out in the country, which all of my family uses. Every year around this time, it needs to be "closed up" for the winter.
 
@@ -144,30 +164,30 @@ My grandma said she was disappointed that I was being so "transactional" about f
 // ============================================================================
 
 function estimateWordTimings(text: string, speed: number = 1.0): WordTiming[] {
-  const words = text.split(/\s+/).filter(w => w.trim());
+  const words = text.split(/\s+/).filter((w) => w.trim());
   const baseWordsPerSecond = 2.5 * speed;
   const avgWordDuration = 1 / baseWordsPerSecond;
-  
+
   let currentTime = 0;
-  
+
   return words.map((word) => {
-    const wordLength = word.replace(/[^a-zA-Z]/g, '').length;
+    const wordLength = word.replace(/[^a-zA-Z]/g, "").length;
     const duration = avgWordDuration * (0.8 + (wordLength / 10) * 0.4);
-    
+
     const timing: WordTiming = {
       word: word,
       start: currentTime,
       end: currentTime + duration,
     };
-    
+
     currentTime += duration;
-    
+
     if (/[.!?]$/.test(word)) {
       currentTime += 0.4 / speed;
     } else if (/[,;:]$/.test(word)) {
       currentTime += 0.2 / speed;
     }
-    
+
     return timing;
   });
 }
@@ -248,24 +268,26 @@ const RedditVideoWizard: React.FC = () => {
 
     try {
       // Step 1: Generate voiceover (returns raw MP3)
-      const response = await fetch(`${backendPrefix}/sound/generate-voiceover`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: state.postText,
-          voice: state.aiVoice,
-          emotion: state.emotion,
-          speed: state.speed,
-          pitch: state.pitch,
-        }),
-      });
+      const response = await fetch(
+        `${backendPrefix}/sound/generate-voiceover`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: state.postText,
+            voice: state.aiVoice,
+            emotion: state.emotion,
+            speed: state.speed,
+            pitch: state.pitch,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to generate voiceover");
 
       const audioBlob = await response.blob();
       const persistentUrl = URL.createObjectURL(audioBlob);
       console.log("🎙️ Voiceover URL:", persistentUrl);
-
 
       const wordTimings = estimateWordTimings(state.postText, state.speed);
       const duration = calculateDuration(wordTimings);
@@ -281,7 +303,7 @@ const RedditVideoWizard: React.FC = () => {
       toast.success("Voiceover generated! 🎙️");
     } catch (error) {
       console.error("Generate voiceover error:", error);
-      
+
       const wordTimings = estimateWordTimings(state.postText, state.speed);
       const duration = calculateDuration(wordTimings);
 
@@ -297,34 +319,34 @@ const RedditVideoWizard: React.FC = () => {
     }
   };
 
-
   // Preview the generated voiceover
   const handlePreviewVoiceover = () => {
     if (state.voiceoverUrl) {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      
+
       const audio = new Audio(state.voiceoverUrl);
       audioRef.current = audio;
-      
+
       // Debug the audio element
-      audio.addEventListener('loadedmetadata', () => {
+      audio.addEventListener("loadedmetadata", () => {
         console.log("🎵 Audio metadata:", {
           duration: audio.duration,
           readyState: audio.readyState,
           src: audio.src.substring(0, 60),
         });
       });
-      
-      audio.addEventListener('error', () => {
+
+      audio.addEventListener("error", () => {
         console.error("❌ Audio error:", audio.error);
         toast.error("Audio load error");
       });
-      
+
       audio.volume = 1.0;
-      
-      audio.play()
+
+      audio
+        .play()
         .then(() => {
           console.log("✅ Audio playing:", {
             currentTime: audio.currentTime,
@@ -349,7 +371,8 @@ const RedditVideoWizard: React.FC = () => {
   // ============================================================================
 
   const canProceed = useCallback(() => {
-    if (currentStep === "script") return state.postTitle.trim() && state.postText.trim();
+    if (currentStep === "script")
+      return state.postTitle.trim() && state.postText.trim();
     return true;
   }, [currentStep, state.postTitle, state.postText]);
 
@@ -368,9 +391,12 @@ const RedditVideoWizard: React.FC = () => {
   };
 
   const loadSampleData = () => {
-    const estimatedWords = estimateWordTimings(SAMPLE_REDDIT_DATA.story, state.speed);
+    const estimatedWords = estimateWordTimings(
+      SAMPLE_REDDIT_DATA.story,
+      state.speed
+    );
     const duration = calculateDuration(estimatedWords);
-    
+
     updateState({
       postTitle: SAMPLE_REDDIT_DATA.title,
       postText: SAMPLE_REDDIT_DATA.story,
@@ -383,7 +409,7 @@ const RedditVideoWizard: React.FC = () => {
   const proceedToEditor = () => {
     let words = state.words;
     let duration = state.estimatedDuration;
-    
+
     if (words.length === 0 && state.postText) {
       words = estimateWordTimings(state.postText, state.speed);
       duration = calculateDuration(words);
@@ -397,13 +423,13 @@ const RedditVideoWizard: React.FC = () => {
         duration: duration,
         words: words,
       },
-       redditCard: {
+      redditCard: {
         subredditName: state.subredditName,
         posterUsername: state.posterUsername,
         timePosted: state.timePosted,
         upvotes: state.upvotes,
         commentCount: state.commentCount,
-       awardsCount: state.awardsCount,
+        awardsCount: state.awardsCount,
         avatarUrl: state.avatarUrl,
       },
       style: {
@@ -413,8 +439,8 @@ const RedditVideoWizard: React.FC = () => {
         sentenceBgColor: state.sentenceBgColor,
         backgroundOverlayColor: state.backgroundOverlayColor,
       },
-      video: { 
-        backgroundVideo: state.backgroundVideo 
+      video: {
+        backgroundVideo: state.backgroundVideo,
       },
       audio: {
         aiVoice: state.aiVoice,
@@ -423,25 +449,28 @@ const RedditVideoWizard: React.FC = () => {
         musicVolume: state.musicVolume,
       },
     };
-    
+
     console.log("📦 Saving config to sessionStorage:", config);
-    console.log("🎙️ Voiceover URL:", state.voiceoverUrl ? state.voiceoverUrl.substring(0, 100) + "..." : "NONE");
-    
+    console.log(
+      "🎙️ Voiceover URL:",
+      state.voiceoverUrl ? state.voiceoverUrl.substring(0, 100) + "..." : "NONE"
+    );
+
     sessionStorage.setItem("redditVideoConfig", JSON.stringify(config));
 
-// Clear any persisted editor state for template 10 so fresh layers are created
-localStorage.removeItem('editor_state_template_10');
+    // Clear any persisted editor state for template 10 so fresh layers are created
+    localStorage.removeItem("editor_state_template_10");
 
-// Also clear any other possible keys
-for (let i = localStorage.length - 1; i >= 0; i--) {
-  const key = localStorage.key(i);
-  if (key && key.includes('template_10')) {
-    localStorage.removeItem(key);
-  }
-}
-console.log("🧹 Cleared persisted state before navigating to editor");
+    // Also clear any other possible keys
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.includes("template_10")) {
+        localStorage.removeItem(key);
+      }
+    }
+    console.log("🧹 Cleared persisted state before navigating to editor");
 
-navigate("/editor?template=10&fromWizard=true");
+    navigate("/editor?template=10&fromWizard=true");
   };
 
   // ============================================================================
@@ -497,7 +526,9 @@ navigate("/editor?template=10&fromWizard=true");
     stepPillActive: {
       backgroundColor: isDark ? "#2d2d30" : "#ffffff",
       color: colors.textPrimary,
-      boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.08)",
+      boxShadow: isDark
+        ? "0 2px 8px rgba(0,0,0,0.3)"
+        : "0 2px 8px rgba(0,0,0,0.08)",
     },
     headerActions: {
       display: "flex",
@@ -550,7 +581,7 @@ navigate("/editor?template=10&fromWizard=true");
       backgroundColor: "#000",
       borderRadius: 36,
       padding: 10,
-      boxShadow: isDark 
+      boxShadow: isDark
         ? "0 25px 50px rgba(0,0,0,0.5), inset 0 0 0 2px #333"
         : "0 25px 50px rgba(0,0,0,0.15), inset 0 0 0 2px #e5e7eb",
       position: "relative",
@@ -753,7 +784,9 @@ navigate("/editor?template=10&fromWizard=true");
     },
     voiceCardActive: {
       borderColor: "#14b8a6",
-      backgroundColor: isDark ? "rgba(20, 184, 166, 0.15)" : "rgba(20, 184, 166, 0.1)",
+      backgroundColor: isDark
+        ? "rgba(20, 184, 166, 0.15)"
+        : "rgba(20, 184, 166, 0.1)",
     },
     voiceName: {
       fontSize: 13,
@@ -789,7 +822,9 @@ navigate("/editor?template=10&fromWizard=true");
     },
     emotionBtnActive: {
       borderColor: "#14b8a6",
-      backgroundColor: isDark ? "rgba(20, 184, 166, 0.15)" : "rgba(20, 184, 166, 0.1)",
+      backgroundColor: isDark
+        ? "rgba(20, 184, 166, 0.15)"
+        : "rgba(20, 184, 166, 0.1)",
     },
     generateBtn: {
       width: "100%",
@@ -818,7 +853,9 @@ navigate("/editor?template=10&fromWizard=true");
       alignItems: "center",
       justifyContent: "space-between",
       padding: "12px 14px",
-      backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.1)",
+      backgroundColor: isDark
+        ? "rgba(16, 185, 129, 0.15)"
+        : "rgba(16, 185, 129, 0.1)",
       border: "1px solid rgba(16, 185, 129, 0.3)",
       borderRadius: 10,
       marginTop: 12,
@@ -904,7 +941,9 @@ navigate("/editor?template=10&fromWizard=true");
       alignItems: "center",
       gap: 8,
       padding: "12px 14px",
-      backgroundColor: isDark ? "rgba(20, 184, 166, 0.1)" : "rgba(20, 184, 166, 0.05)",
+      backgroundColor: isDark
+        ? "rgba(20, 184, 166, 0.1)"
+        : "rgba(20, 184, 166, 0.05)",
       border: "1px solid rgba(20, 184, 166, 0.2)",
       borderRadius: 10,
       marginTop: 16,
@@ -937,195 +976,305 @@ navigate("/editor?template=10&fromWizard=true");
             autoPlay
             playsInline
           />
-          <div style={{
-            ...styles.previewOverlay,
-            backgroundColor: state.backgroundOverlayColor,
-          }}>
-           {(currentStep === "script" || currentStep === "style") ? (
-  <div style={{
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    padding: "12px 14px",
-    width: "92%",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  }}>
-    {/* Header Row */}
-    <div style={{ 
-      display: "flex", 
-      alignItems: "flex-start", 
-      justifyContent: "space-between",
-      marginBottom: 8,
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-        {/* Avatar */}
-        {state.avatarUrl ? (
-          <img 
-            src={state.avatarUrl} 
-            alt="avatar"
-            style={{ 
-              width: 18, 
-              height: 18, 
-              borderRadius: "50%", 
-              objectFit: "cover",
-              flexShrink: 0,
-            }} 
-          />
-        ) : (
-          <div style={{ 
-            width: 18, 
-            height: 18, 
-            borderRadius: "50%", 
-            background: "linear-gradient(135deg, #00D8D6 0%, #0079D3 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-              <circle cx="12" cy="8" r="5" fill="white"/>
-              <path d="M4 20c0-4 4-7 8-7s8 3 8 7" fill="white"/>
-            </svg>
-          </div>
-        )}
-        
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {/* Subreddit + Time */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: "#1a1a1b" }}>
-              r/{state.subredditName || "Advice"}
-            </span>
-            <span style={{ fontSize: 9, color: "#576f76" }}>•</span>
-            <span style={{ fontSize: 9, color: "#576f76" }}>{state.timePosted || "1d ago"}</span>
-          </div>
-          {/* Username */}
-          <span style={{ fontSize: 8, color: "#576f76" }}>
-            {state.posterUsername || "Superb_Community_339"}
-          </span>
-        </div>
-      </div>
+          <div
+            style={{
+              ...styles.previewOverlay,
+              backgroundColor: state.backgroundOverlayColor,
+            }}
+          >
+            {currentStep === "script" || currentStep === "style" ? (
+              <div
+                style={{
+                  backgroundColor: "#ffffff",
+                  borderRadius: 8,
+                  padding: "12px 14px",
+                  width: "92%",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+                  fontFamily:
+                    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                }}
+              >
+                {/* Header Row */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 6,
+                    }}
+                  >
+                    {/* Avatar */}
+                    {state.avatarUrl ? (
+                      <img
+                        src={state.avatarUrl}
+                        alt="avatar"
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #00D8D6 0%, #0079D3 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="white"
+                        >
+                          <circle cx="12" cy="8" r="5" fill="white" />
+                          <path d="M4 20c0-4 4-7 8-7s8 3 8 7" fill="white" />
+                        </svg>
+                      </div>
+                    )}
 
-      {/* Three Dots */}
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="#576f76">
-        <circle cx="5" cy="12" r="2"/>
-        <circle cx="12" cy="12" r="2"/>
-        <circle cx="19" cy="12" r="2"/>
-      </svg>
-    </div>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      {/* Subreddit + Time */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: "#1a1a1b",
+                          }}
+                        >
+                          r/{state.subredditName || "Advice"}
+                        </span>
+                        <span style={{ fontSize: 9, color: "#576f76" }}>•</span>
+                        <span style={{ fontSize: 9, color: "#576f76" }}>
+                          {state.timePosted || "1d ago"}
+                        </span>
+                      </div>
+                      {/* Username */}
+                      <span style={{ fontSize: 8, color: "#576f76" }}>
+                        {state.posterUsername || "Superb_Community_339"}
+                      </span>
+                    </div>
+                  </div>
 
-    {/* Title */}
-    <div style={{
-      fontSize: 11,
-      fontWeight: 700,
-      margin: "0 0 6px 0",
-      lineHeight: 1.3,
-      color: "#1a1a1b",
-    }}>
-      {state.postTitle || "Your title will appear here..."}
-    </div>
+                  {/* Three Dots */}
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="#576f76"
+                  >
+                    <circle cx="5" cy="12" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="19" cy="12" r="2" />
+                  </svg>
+                </div>
 
-    {/* Body */}
-    <div style={{
-      fontSize: 9,
-      lineHeight: 1.5,
-      color: "#1a1a1b",
-    }}>
-      {(state.postText || "Your story preview text...").slice(0, 80)}
-      {(state.postText || "").length > 80 && "..."}
-    </div>
+                {/* Title */}
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    margin: "0 0 6px 0",
+                    lineHeight: 1.3,
+                    color: "#1a1a1b",
+                  }}
+                >
+                  {state.postTitle || "Your title will appear here..."}
+                </div>
 
-    {/* Engagement Bar */}
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      marginTop: 10,
-      paddingTop: 8,
-    }}>
-      {/* Upvote Pill */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 4,
-        backgroundColor: "#f6f7f8",
-        borderRadius: 12,
-        padding: "4px 8px",
-      }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#576f76" strokeWidth="2.5">
-          <path d="M12 19V5M5 12l7-7 7 7"/>
-        </svg>
-        <span style={{ fontSize: 8, fontWeight: 600, color: "#1a1a1b" }}>{state.upvotes || "2.9K"}</span>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#576f76" strokeWidth="2.5">
-          <path d="M12 5v14M5 12l7 7 7-7"/>
-        </svg>
-      </div>
+                {/* Body */}
+                <div
+                  style={{
+                    fontSize: 9,
+                    lineHeight: 1.5,
+                    color: "#1a1a1b",
+                  }}
+                >
+                  {(state.postText || "Your story preview text...").slice(
+                    0,
+                    80
+                  )}
+                  {(state.postText || "").length > 80 && "..."}
+                </div>
 
-      {/* Comments Pill */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 4,
-        backgroundColor: "#f6f7f8",
-        borderRadius: 12,
-        padding: "4px 8px",
-      }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#576f76" strokeWidth="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}>{state.commentCount || "1.8K"}</span>
-      </div>
+                {/* Engagement Bar */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginTop: 10,
+                    paddingTop: 8,
+                  }}
+                >
+                  {/* Upvote Pill */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      backgroundColor: "#f6f7f8",
+                      borderRadius: 12,
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#576f76"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                    <span
+                      style={{ fontSize: 8, fontWeight: 600, color: "#1a1a1b" }}
+                    >
+                      {state.upvotes || "2.9K"}
+                    </span>
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#576f76"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 5v14M5 12l7 7 7-7" />
+                    </svg>
+                  </div>
 
-      {/* Awards Pill */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 3,
-        backgroundColor: "#f6f7f8",
-        borderRadius: 12,
-        padding: "4px 8px",
-      }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="#FFD700">
-          <circle cx="12" cy="9" r="6"/>
-          <path d="M8 15l-2 6 6-3 6 3-2-6"/>
-        </svg>
-        <span style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}>{state.awardsCount || "1"}</span>
-      </div>
+                  {/* Comments Pill */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      backgroundColor: "#f6f7f8",
+                      borderRadius: 12,
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#576f76"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <span
+                      style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}
+                    >
+                      {state.commentCount || "1.8K"}
+                    </span>
+                  </div>
 
-      {/* Share Pill */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 4,
-        backgroundColor: "#f6f7f8",
-        borderRadius: 12,
-        padding: "4px 8px",
-      }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#576f76" strokeWidth="2">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-          <polyline points="16 6 12 2 8 6"/>
-          <line x1="12" y1="2" x2="12" y2="15"/>
-        </svg>
-        <span style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}>Share</span>
-      </div>
-    </div>
-  </div>
-) : (
-              <div style={{
-                backgroundColor: "rgba(0,0,0,0.6)",
-                borderRadius: 12,
-                padding: 20,
-                width: "90%",
-              }}>
-                <p style={{
-                  textAlign: "center",
-                  color: state.fontColor,
-                  fontFamily: state.fontFamily,
-                  fontSize: state.fontSize / 3.5,
-                  fontWeight: 700,
-                  textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-                  margin: 0,
-                  lineHeight: 1.4,
-                }}>
+                  {/* Awards Pill */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                      backgroundColor: "#f6f7f8",
+                      borderRadius: 12,
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="#FFD700"
+                    >
+                      <circle cx="12" cy="9" r="6" />
+                      <path d="M8 15l-2 6 6-3 6 3-2-6" />
+                    </svg>
+                    <span
+                      style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}
+                    >
+                      {state.awardsCount || "1"}
+                    </span>
+                  </div>
+
+                  {/* Share Pill */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      backgroundColor: "#f6f7f8",
+                      borderRadius: 12,
+                      padding: "4px 8px",
+                    }}
+                  >
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#576f76"
+                      strokeWidth="2"
+                    >
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                    <span
+                      style={{ fontSize: 8, fontWeight: 500, color: "#576f76" }}
+                    >
+                      Share
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                  borderRadius: 12,
+                  padding: 20,
+                  width: "90%",
+                }}
+              >
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: state.fontColor,
+                    fontFamily: state.fontFamily,
+                    fontSize: state.fontSize / 3.5,
+                    fontWeight: 700,
+                    textShadow: "0 2px 8px rgba(0,0,0,0.8)",
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
                   {(state.postText || "Story text preview...").slice(0, 120)}...
                 </p>
               </div>
@@ -1133,19 +1282,29 @@ navigate("/editor?template=10&fromWizard=true");
           </div>
         </div>
       </div>
-      
+
       {state.postText && (
         <div style={styles.stats}>
           <div style={styles.stat}>
-            <div style={styles.statValue}>{Math.ceil(state.estimatedDuration || state.postText.split(" ").length / 2.5)}s</div>
+            <div style={styles.statValue}>
+              {Math.ceil(
+                state.estimatedDuration ||
+                  state.postText.split(" ").length / 2.5
+              )}
+              s
+            </div>
             <div style={styles.statLabel}>Duration</div>
           </div>
           <div style={styles.stat}>
-            <div style={styles.statValue}>{state.postText.split(" ").length}</div>
+            <div style={styles.statValue}>
+              {state.postText.split(" ").length}
+            </div>
             <div style={styles.statLabel}>Words</div>
           </div>
           <div style={styles.stat}>
-            <div style={styles.statValue}>{state.voiceoverGenerated ? "✓" : "—"}</div>
+            <div style={styles.statValue}>
+              {state.voiceoverGenerated ? "✓" : "—"}
+            </div>
             <div style={styles.statLabel}>Voice</div>
           </div>
         </div>
@@ -1176,107 +1335,119 @@ navigate("/editor?template=10&fromWizard=true");
       <div style={styles.inputGroup}>
         <label style={styles.label}>
           <span>Story Text</span>
-          <span style={{ color: colors.textSecondary }}>{state.postText.length}/4000</span>
+          <span style={{ color: colors.textSecondary }}>
+            {state.postText.length}/4000
+          </span>
         </label>
         <textarea
           placeholder="Paste your Reddit story here or type it out..."
           value={state.postText}
-          onChange={(e) => updateState({ 
-            postText: e.target.value,
-            words: [],
-            voiceoverGenerated: false,
-            voiceoverUrl: "",
-          })}
+          onChange={(e) =>
+            updateState({
+              postText: e.target.value,
+              words: [],
+              voiceoverGenerated: false,
+              voiceoverUrl: "",
+            })
+          }
           style={{ ...styles.textarea, minHeight: 180 }}
           maxLength={4000}
         />
 
         <div style={styles.card}>
-  <div style={styles.cardTitle}>👤 Reddit Card Settings</div>
-  
-  <div style={{ ...styles.row, gap: 12 }}>
-    <div style={{ flex: 1 }}>
-      <label style={styles.label}>Subreddit Name</label>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ color: colors.textSecondary, fontSize: 14 }}>r/</span>
-        <input
-          type="text"
-          value={state.subredditName}
-          onChange={(e) => updateState({ subredditName: e.target.value })}
-          placeholder="AmItheAsshole"
-          style={styles.input}
-        />
-      </div>
-    </div>
-    <div style={{ flex: 1 }}>
-      <label style={styles.label}>Username</label>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ color: colors.textSecondary, fontSize: 14 }}>u/</span>
-        <input
-          type="text"
-          value={state.posterUsername}
-          onChange={(e) => updateState({ posterUsername: e.target.value })}
-          placeholder="throwaway"
-          style={styles.input}
-        />
-      </div>
-    </div>
-  </div>
+          <div style={styles.cardTitle}>👤 Reddit Card Settings</div>
 
-  <div style={{ ...styles.row, gap: 12, marginTop: 12 }}>
-  <div style={{ flex: 1 }}>
-    <label style={styles.label}>Time Posted</label>
-    <input
-      type="text"
-      value={state.timePosted}
-      onChange={(e) => updateState({ timePosted: e.target.value })}
-      placeholder="1d ago"
-      style={styles.input}
-    />
-  </div>
-  <div style={{ flex: 1 }}>
-    <label style={styles.label}>Upvotes</label>
-    <input
-      type="text"
-      value={state.upvotes}
-      onChange={(e) => updateState({ upvotes: e.target.value })}
-      placeholder="2.9K"
-      style={styles.input}
-    />
-  </div>
-  <div style={{ flex: 1 }}>
-    <label style={styles.label}>Comments</label>
-    <input
-      type="text"
-      value={state.commentCount}
-      onChange={(e) => updateState({ commentCount: e.target.value })}
-      placeholder="1.8K"
-      style={styles.input}
-    />
-  </div>
-  <div style={{ flex: 1 }}>
-    <label style={styles.label}>Awards</label>
-    <input
-      type="text"
-      value={state.awardsCount}
-      onChange={(e) => updateState({ awardsCount: e.target.value })}
-      placeholder="1"
-      style={styles.input}
-    />
-  </div>
-</div>
+          <div style={{ ...styles.row, gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Subreddit Name</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  r/
+                </span>
+                <input
+                  type="text"
+                  value={state.subredditName}
+                  onChange={(e) =>
+                    updateState({ subredditName: e.target.value })
+                  }
+                  placeholder="AmItheAsshole"
+                  style={styles.input}
+                />
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Username</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ color: colors.textSecondary, fontSize: 14 }}>
+                  u/
+                </span>
+                <input
+                  type="text"
+                  value={state.posterUsername}
+                  onChange={(e) =>
+                    updateState({ posterUsername: e.target.value })
+                  }
+                  placeholder="throwaway"
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
 
-  <div style={{ marginTop: 12 }}>
-    <label style={styles.label}>Custom Avatar URL (optional)</label>
-    <input
-      type="text"
-      value={state.avatarUrl}
-      onChange={(e) => updateState({ avatarUrl: e.target.value })}
-      placeholder="https://example.com/avatar.png (leave empty for default)"
-      style={styles.input}
-    />
-  </div>
-</div>
+          <div style={{ ...styles.row, gap: 12, marginTop: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Time Posted</label>
+              <input
+                type="text"
+                value={state.timePosted}
+                onChange={(e) => updateState({ timePosted: e.target.value })}
+                placeholder="1d ago"
+                style={styles.input}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Upvotes</label>
+              <input
+                type="text"
+                value={state.upvotes}
+                onChange={(e) => updateState({ upvotes: e.target.value })}
+                placeholder="2.9K"
+                style={styles.input}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Comments</label>
+              <input
+                type="text"
+                value={state.commentCount}
+                onChange={(e) => updateState({ commentCount: e.target.value })}
+                placeholder="1.8K"
+                style={styles.input}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Awards</label>
+              <input
+                type="text"
+                value={state.awardsCount}
+                onChange={(e) => updateState({ awardsCount: e.target.value })}
+                placeholder="1"
+                style={styles.input}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <label style={styles.label}>Custom Avatar URL (optional)</label>
+            <input
+              type="text"
+              value={state.avatarUrl}
+              onChange={(e) => updateState({ avatarUrl: e.target.value })}
+              placeholder="https://example.com/avatar.png (leave empty for default)"
+              style={styles.input}
+            />
+          </div>
+        </div>
       </div>
 
       <div style={styles.divider} />
@@ -1299,7 +1470,7 @@ navigate("/editor?template=10&fromWizard=true");
     <>
       <div style={styles.card}>
         <div style={styles.cardTitle}>🔤 Typography</div>
-        
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Font Family</label>
           <div style={styles.pillGroup}>
@@ -1327,7 +1498,9 @@ navigate("/editor?template=10&fromWizard=true");
               min="32"
               max="72"
               value={state.fontSize}
-              onChange={(e) => updateState({ fontSize: Number(e.target.value) })}
+              onChange={(e) =>
+                updateState({ fontSize: Number(e.target.value) })
+              }
               style={styles.slider}
             />
             <span style={styles.sliderValue}>{state.fontSize}px</span>
@@ -1337,24 +1510,48 @@ navigate("/editor?template=10&fromWizard=true");
 
       <div style={styles.card}>
         <div style={styles.cardTitle}>🎨 Colors</div>
-        
+
         <div style={styles.row}>
           <div style={styles.col}>
             <label style={styles.label}>Text Color</label>
             <div style={styles.colorPicker}>
               <div style={styles.colorSwatch}>
-                <input type="color" value={state.fontColor} onChange={(e) => updateState({ fontColor: e.target.value })} style={styles.colorInput} />
+                <input
+                  type="color"
+                  value={state.fontColor}
+                  onChange={(e) => updateState({ fontColor: e.target.value })}
+                  style={styles.colorInput}
+                />
               </div>
-              <input type="text" value={state.fontColor} onChange={(e) => updateState({ fontColor: e.target.value })} style={{ ...styles.input, flex: 1 }} />
+              <input
+                type="text"
+                value={state.fontColor}
+                onChange={(e) => updateState({ fontColor: e.target.value })}
+                style={{ ...styles.input, flex: 1 }}
+              />
             </div>
           </div>
           <div style={styles.col}>
             <label style={styles.label}>Highlight Color</label>
             <div style={styles.colorPicker}>
               <div style={styles.colorSwatch}>
-                <input type="color" value={state.sentenceBgColor} onChange={(e) => updateState({ sentenceBgColor: e.target.value })} style={styles.colorInput} />
+                <input
+                  type="color"
+                  value={state.sentenceBgColor}
+                  onChange={(e) =>
+                    updateState({ sentenceBgColor: e.target.value })
+                  }
+                  style={styles.colorInput}
+                />
               </div>
-              <input type="text" value={state.sentenceBgColor} onChange={(e) => updateState({ sentenceBgColor: e.target.value })} style={{ ...styles.input, flex: 1 }} />
+              <input
+                type="text"
+                value={state.sentenceBgColor}
+                onChange={(e) =>
+                  updateState({ sentenceBgColor: e.target.value })
+                }
+                style={{ ...styles.input, flex: 1 }}
+              />
             </div>
           </div>
         </div>
@@ -1370,8 +1567,15 @@ navigate("/editor?template=10&fromWizard=true");
             ].map((opt) => (
               <button
                 key={opt.value}
-                style={{ ...styles.pill, ...(state.backgroundOverlayColor === opt.value ? styles.pillActive : {}) }}
-                onClick={() => updateState({ backgroundOverlayColor: opt.value })}
+                style={{
+                  ...styles.pill,
+                  ...(state.backgroundOverlayColor === opt.value
+                    ? styles.pillActive
+                    : {}),
+                }}
+                onClick={() =>
+                  updateState({ backgroundOverlayColor: opt.value })
+                }
               >
                 {opt.label}
               </button>
@@ -1389,10 +1593,22 @@ navigate("/editor?template=10&fromWizard=true");
         {BACKGROUND_VIDEOS.map((video) => (
           <div
             key={video.value}
-            style={{ ...styles.videoCard, ...(state.backgroundVideo === video.value ? styles.videoCardActive : {}) }}
+            style={{
+              ...styles.videoCard,
+              ...(state.backgroundVideo === video.value
+                ? styles.videoCardActive
+                : {}),
+            }}
             onClick={() => updateState({ backgroundVideo: video.value })}
           >
-            <video src={video.value} style={styles.videoThumb} muted loop autoPlay playsInline />
+            <video
+              src={video.value}
+              style={styles.videoThumb}
+              muted
+              loop
+              autoPlay
+              playsInline
+            />
             <div style={styles.videoLabel}>
               {state.backgroundVideo === video.value && "✓ "}
               {video.label}
@@ -1415,8 +1631,19 @@ navigate("/editor?template=10&fromWizard=true");
           {AI_VOICES.map((voice) => (
             <div
               key={voice.value}
-              style={{ ...styles.voiceCard, ...(state.aiVoice === voice.value ? styles.voiceCardActive : {}) }}
-              onClick={() => updateState({ aiVoice: voice.value, voiceoverGenerated: false, voiceoverUrl: "" })}
+              style={{
+                ...styles.voiceCard,
+                ...(state.aiVoice === voice.value
+                  ? styles.voiceCardActive
+                  : {}),
+              }}
+              onClick={() =>
+                updateState({
+                  aiVoice: voice.value,
+                  voiceoverGenerated: false,
+                  voiceoverUrl: "",
+                })
+              }
             >
               <div style={styles.voiceName}>{voice.label}</div>
               <div style={styles.voiceGender}>{voice.gender}</div>
@@ -1432,11 +1659,22 @@ navigate("/editor?template=10&fromWizard=true");
           {EMOTIONS.map((e) => (
             <button
               key={e.value}
-              style={{ ...styles.emotionBtn, ...(state.emotion === e.value ? styles.emotionBtnActive : {}) }}
-              onClick={() => updateState({ emotion: e.value, voiceoverGenerated: false, voiceoverUrl: "" })}
+              style={{
+                ...styles.emotionBtn,
+                ...(state.emotion === e.value ? styles.emotionBtnActive : {}),
+              }}
+              onClick={() =>
+                updateState({
+                  emotion: e.value,
+                  voiceoverGenerated: false,
+                  voiceoverUrl: "",
+                })
+              }
             >
               <span style={{ fontSize: 18 }}>{e.icon}</span>
-              <span style={{ fontSize: 10, color: colors.textSecondary }}>{e.label}</span>
+              <span style={{ fontSize: 10, color: colors.textSecondary }}>
+                {e.label}
+              </span>
             </button>
           ))}
         </div>
@@ -1453,7 +1691,13 @@ navigate("/editor?template=10&fromWizard=true");
               max="2.0"
               step="0.1"
               value={state.speed}
-              onChange={(e) => updateState({ speed: parseFloat(e.target.value), voiceoverGenerated: false, voiceoverUrl: "" })}
+              onChange={(e) =>
+                updateState({
+                  speed: parseFloat(e.target.value),
+                  voiceoverGenerated: false,
+                  voiceoverUrl: "",
+                })
+              }
               style={styles.slider}
             />
           </div>
@@ -1468,26 +1712,42 @@ navigate("/editor?template=10&fromWizard=true");
               max="1.5"
               step="0.1"
               value={state.pitch}
-              onChange={(e) => updateState({ pitch: parseFloat(e.target.value), voiceoverGenerated: false, voiceoverUrl: "" })}
+              onChange={(e) =>
+                updateState({
+                  pitch: parseFloat(e.target.value),
+                  voiceoverGenerated: false,
+                  voiceoverUrl: "",
+                })
+              }
               style={styles.slider}
             />
           </div>
         </div>
 
         <div style={styles.estimateBox}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#14b8a6"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <span style={{ fontSize: 13, color: "#5eead4" }}>
-            Estimated duration: ~{Math.ceil(state.postText.length / 15 / state.speed)} seconds
+            Estimated duration: ~
+            {Math.ceil(state.postText.length / 15 / state.speed)} seconds
           </span>
         </div>
 
         <button
           style={{
             ...styles.generateBtn,
-            ...(state.isGeneratingVoiceover || !state.postText.trim() ? styles.generateBtnDisabled : {}),
+            ...(state.isGeneratingVoiceover || !state.postText.trim()
+              ? styles.generateBtnDisabled
+              : {}),
           }}
           onClick={handleGenerateVoiceover}
           disabled={state.isGeneratingVoiceover || !state.postText.trim()}
@@ -1501,7 +1761,14 @@ navigate("/editor?template=10&fromWizard=true");
             <>✅ Regenerate Voiceover</>
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
               </svg>
               Generate Voiceover
@@ -1510,31 +1777,38 @@ navigate("/editor?template=10&fromWizard=true");
         </button>
 
         {state.voiceoverGenerated && state.voiceoverUrl && (
-  <div style={styles.successBadge}>
-    <span style={{ fontSize: 13, fontWeight: 500, color: "#10B981" }}>
-      ✓ Voiceover Ready • {state.words.length} words synced
-    </span>
-    <button style={styles.previewBtn} onClick={handlePreviewVoiceover}>
-      ▶️ Play
-    </button>
-    {/* ADD THIS DOWNLOAD BUTTON */}
-    <button 
-      style={styles.previewBtn} 
-      onClick={() => {
-        const a = document.createElement('a');
-        a.href = state.voiceoverUrl;
-        a.download = 'voiceover.mp3';
-        a.click();
-      }}
-    >
-      ⬇️ Download
-    </button>
-  </div>
-)}
+          <div style={styles.successBadge}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: "#10B981" }}>
+              ✓ Voiceover Ready • {state.words.length} words synced
+            </span>
+            <button style={styles.previewBtn} onClick={handlePreviewVoiceover}>
+              ▶️ Play
+            </button>
+            {/* ADD THIS DOWNLOAD BUTTON */}
+            <button
+              style={styles.previewBtn}
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = state.voiceoverUrl;
+                a.download = "voiceover.mp3";
+                a.click();
+              }}
+            >
+              ⬇️ Download
+            </button>
+          </div>
+        )}
 
-  
         {state.voiceoverGenerated && !state.voiceoverUrl && (
-          <div style={{ ...styles.successBadge, borderColor: "rgba(245, 158, 11, 0.3)", backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "rgba(245, 158, 11, 0.1)" }}>
+          <div
+            style={{
+              ...styles.successBadge,
+              borderColor: "rgba(245, 158, 11, 0.3)",
+              backgroundColor: isDark
+                ? "rgba(245, 158, 11, 0.15)"
+                : "rgba(245, 158, 11, 0.1)",
+            }}
+          >
             <span style={{ fontSize: 13, fontWeight: 500, color: "#F59E0B" }}>
               ⚠️ Word timing only (no audio) • {state.words.length} words
             </span>
@@ -1549,7 +1823,12 @@ navigate("/editor?template=10&fromWizard=true");
           {BACKGROUND_MUSIC.map((music) => (
             <button
               key={music.value}
-              style={{ ...styles.pill, ...(state.backgroundMusicPath === music.value ? styles.pillActive : {}) }}
+              style={{
+                ...styles.pill,
+                ...(state.backgroundMusicPath === music.value
+                  ? styles.pillActive
+                  : {}),
+              }}
               onClick={() => updateState({ backgroundMusicPath: music.value })}
             >
               {music.icon} {music.label}
@@ -1559,17 +1838,23 @@ navigate("/editor?template=10&fromWizard=true");
 
         {state.backgroundMusicPath && (
           <div style={{ marginTop: 16 }}>
-            <label style={styles.label}>Volume: {Math.round(state.musicVolume * 100)}%</label>
+            <label style={styles.label}>
+              Volume: {Math.round(state.musicVolume * 100)}%
+            </label>
             <div style={styles.sliderRow}>
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={state.musicVolume * 100}
-                onChange={(e) => updateState({ musicVolume: Number(e.target.value) / 100 })}
+                onChange={(e) =>
+                  updateState({ musicVolume: Number(e.target.value) / 100 })
+                }
                 style={styles.slider}
               />
-              <span style={styles.sliderValue}>{Math.round(state.musicVolume * 100)}%</span>
+              <span style={styles.sliderValue}>
+                {Math.round(state.musicVolume * 100)}%
+              </span>
             </div>
           </div>
         )}
@@ -1588,7 +1873,7 @@ navigate("/editor?template=10&fromWizard=true");
           to { transform: rotate(360deg); }
         }
       `}</style>
-      
+
       <header style={styles.header}>
         <div style={styles.logo} onClick={() => navigate(-1)}>
           <span style={{ fontSize: 20 }}>←</span>
@@ -1599,7 +1884,10 @@ navigate("/editor?template=10&fromWizard=true");
           {STEPS.map((step) => (
             <button
               key={step.id}
-              style={{ ...styles.stepPill, ...(currentStep === step.id ? styles.stepPillActive : {}) }}
+              style={{
+                ...styles.stepPill,
+                ...(currentStep === step.id ? styles.stepPillActive : {}),
+              }}
               onClick={() => setCurrentStep(step.id)}
             >
               {step.icon} {step.label}
@@ -1609,11 +1897,17 @@ navigate("/editor?template=10&fromWizard=true");
 
         <div style={styles.headerActions}>
           {currentStepIndex > 0 && (
-            <button style={styles.btnSecondary} onClick={goToPrevStep}>← Back</button>
+            <button style={styles.btnSecondary} onClick={goToPrevStep}>
+              ← Back
+            </button>
           )}
           <button
             style={{ ...styles.btnPrimary, opacity: canProceed() ? 1 : 0.5 }}
-            onClick={() => currentStep === "audio" ? proceedToEditor() : canProceed() && goToNextStep()}
+            onClick={() =>
+              currentStep === "audio"
+                ? proceedToEditor()
+                : canProceed() && goToNextStep()
+            }
             disabled={!canProceed()}
           >
             {currentStep === "audio" ? "Create Video" : "Next"} →
